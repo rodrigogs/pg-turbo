@@ -1,17 +1,32 @@
 // ts/tests/unit/schema.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildTableDiscoveryQuery, buildGeneratedColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery } from '../../src/core/schema.js'
+import { buildTableDiscoveryQuery, buildGeneratedColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery, quoteIdent } from '../../src/core/schema.js'
+
+describe('quoteIdent', () => {
+  it('quotes a simple identifier', () => {
+    expect(quoteIdent('users')).toBe('"users"')
+  })
+  it('escapes embedded double quotes', () => {
+    expect(quoteIdent('my"table')).toBe('"my""table"')
+  })
+  it('handles empty string', () => {
+    expect(quoteIdent('')).toBe('""')
+  })
+})
 
 describe('buildTableDiscoveryQuery', () => {
   it('builds query without schema filter', () => {
-    const sql = buildTableDiscoveryQuery(undefined)
-    expect(sql).toContain('pg_catalog.pg_class')
-    expect(sql).toContain("n.nspname NOT LIKE 'pg_%'")
-    expect(sql).not.toContain('n.nspname =')
+    const { text, values } = buildTableDiscoveryQuery(undefined)
+    expect(text).toContain('pg_catalog.pg_class')
+    expect(text).toContain("n.nspname NOT LIKE 'pg_%'")
+    expect(text).not.toContain('$1')
+    expect(values).toEqual([])
   })
-  it('builds query with schema filter', () => {
-    const sql = buildTableDiscoveryQuery('public')
-    expect(sql).toContain("n.nspname = 'public'")
+  it('builds query with schema filter using parameterized query', () => {
+    const { text, values } = buildTableDiscoveryQuery('public')
+    expect(text).toContain('n.nspname = $1')
+    expect(text).not.toContain("'public'")
+    expect(values).toEqual(['public'])
   })
 })
 
@@ -60,9 +75,16 @@ describe('buildDdlDumpArgs', () => {
 })
 
 describe('buildSequenceQuery', () => {
-  it('builds query to fetch sequence values', () => {
-    const sql = buildSequenceQuery(undefined)
-    expect(sql).toContain('pg_sequences')
-    expect(sql).toContain('last_value')
+  it('builds query to fetch sequence values without filter', () => {
+    const { text, values } = buildSequenceQuery(undefined)
+    expect(text).toContain('pg_sequences')
+    expect(text).toContain('last_value')
+    expect(values).toEqual([])
+  })
+  it('builds parameterized query with schema filter', () => {
+    const { text, values } = buildSequenceQuery('public')
+    expect(text).toContain('schemaname = $1')
+    expect(text).not.toContain("'public'")
+    expect(values).toEqual(['public'])
   })
 })

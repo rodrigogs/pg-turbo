@@ -6,6 +6,7 @@ export interface WorkerPoolOptions {
   task: (job: ChunkJob, workerId: number) => Promise<{ rowCount: number; bytesWritten: number }>
   onProgress: (event: ProgressEvent) => void
   maxRetries: number
+  retryDelayMs?: number
   isResumable: (job: ChunkJob) => boolean
   onWorkerError?: (workerId: number, error: Error) => void
 }
@@ -29,6 +30,10 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         results.push({ job, status: 'skipped' })
         opts.onProgress({ type: 'skipped', workerId, job })
         continue
+      }
+      if (job.attempt > 0 && opts.retryDelayMs) {
+        const delay = Math.min(opts.retryDelayMs * Math.pow(2, job.attempt - 1), 60_000)
+        await new Promise(r => setTimeout(r, delay))
       }
       const startTime = Date.now()
       try {

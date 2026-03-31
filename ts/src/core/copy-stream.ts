@@ -6,13 +6,14 @@ import { dirname } from 'node:path'
 import { to as copyTo, from as copyFrom } from 'pg-copy-streams'
 import lz4 from 'lz4'
 import type pg from 'pg'
+import { quoteIdent } from './schema.js'
 
 export function chunkDoneMarker(chunkPath: string): string { return `${chunkPath}.done` }
 export function chunkRestoredMarker(chunkPath: string): string { return `${chunkPath}.restored.done` }
 
 export function buildRestoreCopyQuery(schema: string, table: string, columns: string[]): string {
-  const cols = columns.map(c => `"${c}"`).join(', ')
-  return `COPY "${schema}"."${table}" (${cols}) FROM STDIN`
+  const cols = columns.map(c => quoteIdent(c)).join(', ')
+  return `COPY ${quoteIdent(schema)}.${quoteIdent(table)} (${cols}) FROM STDIN`
 }
 
 export interface DumpChunkResult { rowCount: number; bytesWritten: number }
@@ -35,11 +36,18 @@ export async function dumpChunk(
 export async function restoreChunk(
   client: pg.Client, schema: string, table: string, columns: string[], inputPath: string,
 ): Promise<void> {
-  const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
-  const decompressor = lz4.createDecoderStream()
-  const fileStream = createReadStream(inputPath)
-  await pipeline(fileStream, decompressor, copyStream)
-  await writeFile(chunkRestoredMarker(inputPath), '', 'utf-8')
+  await client.query('BEGIN')
+  try {
+    const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
+    const decompressor = lz4.createDecoderStream()
+    const fileStream = createReadStream(inputPath)
+    await pipeline(fileStream, decompressor, copyStream)
+    await client.query('COMMIT')
+    await writeFile(chunkRestoredMarker(inputPath), '', 'utf-8')
+  } catch (err) {
+    await client.query('ROLLBACK').catch(() => {})
+    throw err
+  }
 }
 
 export async function removePartialChunk(outputPath: string): Promise<void> {

@@ -33,6 +33,11 @@ export async function createSnapshotCoordinator(connectionString: string) {
   await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
   const { rows } = await client.query('SELECT pg_export_snapshot() AS snapshot_id')
   const snapshotId = rows[0].snapshot_id as string
+  if (!/^[\dA-F]+-[\dA-F]+(-\d+)?$/i.test(snapshotId)) {
+    await client.query('ROLLBACK').catch(() => {})
+    await client.end()
+    throw new Error(`Invalid snapshot ID format: ${snapshotId}`)
+  }
   return {
     snapshotId, client,
     close: async () => { await client.query('COMMIT').catch(() => {}); await client.end() },

@@ -1,4 +1,5 @@
 import type { TableInfo, ChunkMeta, ChunkStrategy } from '../types/index.js'
+import { quoteIdent } from './schema.js'
 
 export interface ChunkPlanOptions {
   splitThreshold: number; maxChunks: number; pgMajorVersion: number
@@ -43,10 +44,10 @@ function planCtidChunks(table: TableInfo, splitThreshold: number, maxChunks: num
 }
 
 export function buildCopyQuery(table: TableInfo, chunk: ChunkMeta): string {
-  const cols = table.columns.filter(c => !table.generatedColumns.includes(c)).map(c => `"${c}"`).join(', ')
-  const qualifiedTable = `"${table.schemaName}"."${table.tableName}"`
+  const cols = table.columns.filter(c => !table.generatedColumns.includes(c)).map(c => quoteIdent(c)).join(', ')
+  const qualifiedTable = `${quoteIdent(table.schemaName)}.${quoteIdent(table.tableName)}`
   if (chunk.rangeStart !== undefined && chunk.rangeEnd !== undefined) {
-    const pk = `"${table.pkColumn!}"`
+    const pk = quoteIdent(table.pkColumn!)
     const nullClause = chunk.index === 0 ? `${pk} IS NULL OR ` : ''
     return `COPY (SELECT ${cols} FROM ${qualifiedTable} WHERE ${nullClause}${pk} >= ${chunk.rangeStart} AND ${pk} <= ${chunk.rangeEnd}) TO STDOUT`
   }

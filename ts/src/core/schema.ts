@@ -1,10 +1,13 @@
 import type { TableInfo, SequenceInfo } from '../types/index.js'
 
-export function buildTableDiscoveryQuery(schemaFilter: string | undefined): string {
-  const schemaClause = schemaFilter
-    ? `AND n.nspname = '${schemaFilter}'`
-    : `AND n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'`
-  return `
+export function quoteIdent(name: string): string {
+  return `"${name.replace(/"/g, '""')}"`
+}
+
+export function buildTableDiscoveryQuery(schemaFilter: string | undefined): { text: string; values: unknown[] } {
+  if (schemaFilter) {
+    return {
+      text: `
     SELECT c.oid, n.nspname AS schema_name, c.relname AS table_name, c.relkind,
       c.relpages, c.reltuples::bigint AS estimated_rows,
       pg_table_size(c.oid)::text AS actual_bytes,
@@ -22,8 +25,34 @@ export function buildTableDiscoveryQuery(schemaFilter: string | undefined): stri
         AND a.atttypid IN ('smallint'::regtype, 'int'::regtype, 'bigint'::regtype)
       ORDER BY NOT x.indisprimary, NOT x.indisunique LIMIT 1
     ) AS pkeys ON true
-    WHERE c.relkind IN ('r', 'm') AND c.relpersistence IN ('p', 'u') ${schemaClause}
-    ORDER BY pg_table_size(c.oid) DESC NULLS LAST`
+    WHERE c.relkind IN ('r', 'm') AND c.relpersistence IN ('p', 'u') AND n.nspname = $1
+    ORDER BY pg_table_size(c.oid) DESC NULLS LAST`,
+      values: [schemaFilter],
+    }
+  }
+  return {
+    text: `
+    SELECT c.oid, n.nspname AS schema_name, c.relname AS table_name, c.relkind,
+      c.relpages, c.reltuples::bigint AS estimated_rows,
+      pg_table_size(c.oid)::text AS actual_bytes,
+      pkeys.attname AS pk_column, pkeys.typname AS pk_type
+    FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON c.relnamespace = n.oid
+    LEFT JOIN LATERAL (
+      SELECT a.attname, t.typname
+      FROM pg_index x
+      JOIN pg_class i ON i.oid = x.indexrelid
+      JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = x.indkey[0]
+      JOIN pg_type t ON t.oid = a.atttypid
+      WHERE x.indrelid = c.oid AND (x.indisprimary OR x.indisunique)
+        AND array_length(x.indkey::integer[], 1) = 1
+        AND a.atttypid IN ('smallint'::regtype, 'int'::regtype, 'bigint'::regtype)
+      ORDER BY NOT x.indisprimary, NOT x.indisunique LIMIT 1
+    ) AS pkeys ON true
+    WHERE c.relkind IN ('r', 'm') AND c.relpersistence IN ('p', 'u') AND n.nspname NOT LIKE 'pg_%' AND n.nspname <> 'information_schema'
+    ORDER BY pg_table_size(c.oid) DESC NULLS LAST`,
+    values: [],
+  }
 }
 
 export function buildGeneratedColumnsQuery(): string {
@@ -58,9 +87,17 @@ export function buildDdlDumpArgs(cs: string, outputPath: string, schemaFilter: s
   return args
 }
 
-export function buildSequenceQuery(schemaFilter: string | undefined): string {
-  const clause = schemaFilter ? `WHERE schemaname = '${schemaFilter}'` : `WHERE schemaname NOT LIKE 'pg_%' AND schemaname <> 'information_schema'`
-  return `SELECT schemaname, sequencename, last_value, (last_value IS NOT NULL) AS is_called FROM pg_sequences ${clause} ORDER BY schemaname, sequencename`
+export function buildSequenceQuery(schemaFilter: string | undefined): { text: string; values: unknown[] } {
+  if (schemaFilter) {
+    return {
+      text: `SELECT schemaname, sequencename, last_value, (last_value IS NOT NULL) AS is_called FROM pg_sequences WHERE schemaname = $1 ORDER BY schemaname, sequencename`,
+      values: [schemaFilter],
+    }
+  }
+  return {
+    text: `SELECT schemaname, sequencename, last_value, (last_value IS NOT NULL) AS is_called FROM pg_sequences WHERE schemaname NOT LIKE 'pg_%' AND schemaname <> 'information_schema' ORDER BY schemaname, sequencename`,
+    values: [],
+  }
 }
 
 export function parseSequenceRows(rows: Array<{ schemaname: string; sequencename: string; last_value: string | null; is_called: boolean }>): SequenceInfo[] {

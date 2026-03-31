@@ -1,5 +1,5 @@
 // ts/src/cli/dump.ts
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -19,6 +19,7 @@ import {
   buildTableDiscoveryQuery, parseTableRows,
   buildColumnsQuery, buildGeneratedColumnsQuery,
   buildDdlDumpArgs, buildSequenceQuery, parseSequenceRows,
+  quoteIdent,
 } from '../core/schema.js'
 import { planChunks, buildCopyQuery, chunkStrategy } from '../core/chunker.js'
 import type { ChunkPlanOptions } from '../core/chunker.js'
@@ -42,6 +43,14 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   const cs = cleanConnectionString(opts.dbname)
   const dbName = extractDbName(cs)
   const startTime = Date.now()
+
+  let dashboard: ReturnType<typeof startDashboard> | null = null
+  const cleanup = () => {
+    dashboard?.stop()
+    process.exit(130)
+  }
+  process.on('SIGINT', cleanup)
+  process.on('SIGTERM', cleanup)
 
   // ── Banner ──────────────────────────────────────────────────────────────
   printBanner(opts.dryRun ? 'PostgreSQL Resilient Dump (DRY RUN)' : 'PostgreSQL Resilient Dump')
@@ -88,7 +97,8 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   await discoveryClient.connect()
 
   try {
-    const { rows: tableRows } = await discoveryClient.query(buildTableDiscoveryQuery(opts.schema))
+    const tableQuery = buildTableDiscoveryQuery(opts.schema)
+    const { rows: tableRows } = await discoveryClient.query(tableQuery.text, tableQuery.values)
     const tables = parseTableRows(tableRows as Parameters<typeof parseTableRows>[0])
 
     if (tables.length === 0) {
@@ -122,7 +132,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
       let pkMax: number | null = null
       if (table.pkColumn) {
         const { rows: minMaxRows } = await discoveryClient.query(
-          `SELECT min("${table.pkColumn}") AS mn, max("${table.pkColumn}") AS mx FROM "${table.schemaName}"."${table.tableName}"`,
+          `SELECT min(${quoteIdent(table.pkColumn)}) AS mn, max(${quoteIdent(table.pkColumn)}) AS mx FROM ${quoteIdent(table.schemaName)}.${quoteIdent(table.tableName)}`,
         )
         if (minMaxRows.length > 0 && minMaxRows[0]!.mn !== null) {
           pkMin = parseInt(String(minMaxRows[0]!.mn), 10)
@@ -175,13 +185,20 @@ export async function runDump(opts: DumpOptions): Promise<void> {
     } else {
       await mkdir(opts.output, { recursive: true })
       const ddlArgs = buildDdlDumpArgs(cs, ddlPath, opts.schema, snapshotId, opts.pgDumpArgs)
-      execSync(`pg_dump ${ddlArgs.map(a => `'${a}'`).join(' ')}`, { stdio: 'pipe' })
+      try {
+        execFileSync('pg_dump', ddlArgs, { stdio: 'pipe' })
+      } catch (err: unknown) {
+        const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
+        if (stderr) log.warn(`pg_dump warnings: ${stderr.slice(0, 500)}`)
+        throw err
+      }
       log.success(`DDL saved -> ${ddlPath}`)
     }
     console.log('')
 
     // ── Fetch sequences ───────────────────────────────────────────────────
-    const { rows: seqRows } = await discoveryClient.query(buildSequenceQuery(opts.schema))
+    const seqQuery = buildSequenceQuery(opts.schema)
+    const { rows: seqRows } = await discoveryClient.query(seqQuery.text, seqQuery.values)
     const sequences = parseSequenceRows(seqRows as Parameters<typeof parseSequenceRows>[0])
     if (sequences.length > 0) {
       log.info(`Found ${sequences.length} sequences`)
@@ -205,7 +222,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
       const dashState: DashboardState = {
         totalBytes, processedBytes: 0, startTime: Date.now(), workers,
       }
-      const dashboard = startDashboard(dashState)
+      dashboard = startDashboard(dashState)
 
       // Track worker clients for cleanup
       const workerClients = new Map<number, InstanceType<typeof Client>>()
@@ -214,6 +231,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         jobs: allJobs,
         workerCount: opts.jobs,
         maxRetries: opts.retries,
+        retryDelayMs: opts.retryDelay * 1000,
         isResumable: (job) => existsSync(chunkDoneMarker(job.outputPath)),
         onProgress: (event: ProgressEvent) => {
           const w = workers[event.workerId]
@@ -237,7 +255,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
               dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
             }
           }
-          dashboard.update()
+          dashboard?.update()
         },
         task: async (job, workerId) => {
           let client = workerClients.get(workerId)
@@ -261,7 +279,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         },
       })
 
-      dashboard.stop()
+      dashboard?.stop()
 
       // Release remaining worker clients
       for (const client of workerClients.values()) {

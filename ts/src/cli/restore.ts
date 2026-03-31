@@ -1,5 +1,5 @@
 // ts/src/cli/restore.ts
-import { execSync } from 'node:child_process'
+import { execFileSync } from 'node:child_process'
 import { join } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -18,6 +18,7 @@ import { readManifest } from '../core/manifest.js'
 import { restoreChunk, chunkRestoredMarker } from '../core/copy-stream.js'
 import { runWorkerPool } from '../core/queue.js'
 import { humanSize } from '../core/format.js'
+import { quoteIdent } from '../core/schema.js'
 import {
   log, printBanner, startDashboard, printSummary, printFailedTables,
 } from './ui.js'
@@ -29,6 +30,14 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   const cs = cleanConnectionString(opts.dbname)
   const dbName = extractDbName(cs)
   const startTime = Date.now()
+
+  let dashboard: ReturnType<typeof startDashboard> | null = null
+  const cleanup = () => {
+    dashboard?.stop()
+    process.exit(130)
+  }
+  process.on('SIGINT', cleanup)
+  process.on('SIGTERM', cleanup)
 
   // ── Step 1: Read manifest ───────────────────────────────────────────────
   log.step('Reading manifest...')
@@ -94,10 +103,10 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       try {
         const schemas = [...new Set(tables.map(t => t.schema))]
         for (const schema of schemas) {
-          log.info(`  DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
-          await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`)
-          log.info(`  CREATE SCHEMA "${schema}"`)
-          await client.query(`CREATE SCHEMA "${schema}"`)
+          log.info(`  DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE`)
+          await client.query(`DROP SCHEMA IF EXISTS ${quoteIdent(schema)} CASCADE`)
+          log.info(`  CREATE SCHEMA ${quoteIdent(schema)}`)
+          await client.query(`CREATE SCHEMA ${quoteIdent(schema)}`)
         }
         log.success('Schemas cleaned')
       } finally {
@@ -122,11 +131,13 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
           ...opts.pgRestoreArgs,
           ddlPath,
         ]
-        execSync(`pg_restore ${args.map(a => `'${a}'`).join(' ')}`, { stdio: 'pipe' })
-      } catch {
+        execFileSync('pg_restore', args, { stdio: 'pipe' })
+      } catch (err: unknown) {
         // pg_restore returns non-zero for warnings (e.g., "relation already exists")
         // This is expected behavior when resuming or restoring to non-empty DB
-        log.warn('pg_restore exited with warnings (this is often normal)')
+        const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
+        if (stderr) log.warn(`pg_restore warnings: ${stderr.slice(0, 500)}`)
+        else log.warn('pg_restore exited with warnings (this is often normal)')
       }
       await writeFile(preDataMarker, '', 'utf-8')
       log.success('Pre-data DDL restored')
@@ -172,7 +183,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     const dashState: DashboardState = {
       totalBytes, processedBytes: 0, startTime: Date.now(), workers,
     }
-    const dashboard = startDashboard(dashState)
+    dashboard = startDashboard(dashState)
 
     // Track worker clients for cleanup
     const workerClients = new Map<number, InstanceType<typeof Client>>()
@@ -181,6 +192,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       jobs: allJobs,
       workerCount: opts.jobs,
       maxRetries: opts.retries,
+      retryDelayMs: opts.retryDelay * 1000,
       isResumable: (job) => existsSync(chunkRestoredMarker(job.outputPath)),
       onProgress: (event: ProgressEvent) => {
         const w = workers[event.workerId]
@@ -202,7 +214,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
             dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
           }
         }
-        dashboard.update()
+        dashboard?.update()
       },
       task: async (job, workerId) => {
         let client = workerClients.get(workerId)
@@ -226,7 +238,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       },
     })
 
-    dashboard.stop()
+    dashboard?.stop()
 
     // Release remaining worker clients
     for (const client of workerClients.values()) {
@@ -245,53 +257,6 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         failed.map(r => `${r.job.table.schema}.${r.job.table.name} chunk ${r.job.chunk.index}`),
         opts.retries,
       )
-    }
-
-    // ── Step 6: Post-data DDL ─────────────────────────────────────────────
-    if (!opts.dataOnly) {
-      log.step('Restoring post-data DDL (indexes, constraints)...')
-      if (existsSync(postDataMarker)) {
-        log.info('Already restored (resuming)')
-      } else if (existsSync(ddlPath)) {
-        try {
-          const args = [
-            '--section=post-data', '--no-owner', '--no-privileges',
-            '--clean', '--if-exists',
-            '-d', cs,
-            ...opts.pgRestoreArgs,
-            ddlPath,
-          ]
-          execSync(`pg_restore ${args.map(a => `'${a}'`).join(' ')}`, { stdio: 'pipe' })
-        } catch {
-          log.warn('pg_restore exited with warnings (this is often normal)')
-        }
-        await writeFile(postDataMarker, '', 'utf-8')
-        log.success('Post-data DDL restored')
-      } else {
-        log.warn('No DDL file found — skipping post-data')
-      }
-      console.log('')
-    }
-
-    // ── Step 7: Reset sequences ───────────────────────────────────────────
-    if (manifest.sequences.length > 0 && !opts.dataOnly) {
-      log.step('Resetting sequences...')
-      const seqClient = new Client({ connectionString: appendKeepaliveParams(cs) })
-      await seqClient.connect()
-      try {
-        for (const seq of manifest.sequences) {
-          // Respect schema/table filters
-          if (opts.schema && seq.schema !== opts.schema) continue
-          await seqClient.query(
-            `SELECT setval('"${seq.schema}"."${seq.name}"', $1, $2)`,
-            [seq.lastValue, seq.isCalled],
-          )
-        }
-        log.success(`${manifest.sequences.length} sequences reset`)
-      } finally {
-        await seqClient.end()
-      }
-      console.log('')
     }
 
     // ── Summary ───────────────────────────────────────────────────────────
@@ -313,6 +278,55 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     }
   } else {
     log.info('No table data to restore')
+    console.log('')
+  }
+
+  // ── Post-data DDL (runs regardless of whether there were data chunks) ──
+  if (!opts.dataOnly && !opts.dryRun) {
+    log.step('Restoring post-data DDL (indexes, constraints)...')
+    if (existsSync(postDataMarker)) {
+      log.info('Already restored (resuming)')
+    } else if (existsSync(ddlPath)) {
+      try {
+        const args = [
+          '--section=post-data', '--no-owner', '--no-privileges',
+          '--clean', '--if-exists',
+          '-d', cs,
+          ...opts.pgRestoreArgs,
+          ddlPath,
+        ]
+        execFileSync('pg_restore', args, { stdio: 'pipe' })
+      } catch (err: unknown) {
+        const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
+        if (stderr) log.warn(`pg_restore warnings: ${stderr.slice(0, 500)}`)
+        else log.warn('pg_restore exited with warnings (this is often normal)')
+      }
+      await writeFile(postDataMarker, '', 'utf-8')
+      log.success('Post-data DDL restored')
+    } else {
+      log.warn('No DDL file found — skipping post-data')
+    }
+    console.log('')
+  }
+
+  // ── Reset sequences (runs regardless of whether there were data chunks) ─
+  if (manifest.sequences.length > 0 && !opts.dataOnly && !opts.dryRun) {
+    log.step('Resetting sequences...')
+    const seqClient = new Client({ connectionString: appendKeepaliveParams(cs) })
+    await seqClient.connect()
+    try {
+      for (const seq of manifest.sequences) {
+        // Respect schema/table filters
+        if (opts.schema && seq.schema !== opts.schema) continue
+        await seqClient.query(
+          `SELECT setval(($1 || '.' || $2)::regclass, $3, $4)`,
+          [quoteIdent(seq.schema), quoteIdent(seq.name), seq.lastValue, seq.isCalled],
+        )
+      }
+      log.success(`${manifest.sequences.length} sequences reset`)
+    } finally {
+      await seqClient.end()
+    }
     console.log('')
   }
 
