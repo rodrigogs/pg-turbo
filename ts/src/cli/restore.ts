@@ -95,9 +95,24 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
 
   // ── Step 3: Clean (if requested) ────────────────────────────────────────
   if (opts.clean && !opts.dataOnly) {
-    log.step('Cleaning schemas...')
+    log.step('Cleaning...')
     if (opts.dryRun) {
       log.warn('Skipped (dry run)')
+    } else if (opts.table) {
+      // When filtering to a single table, only truncate that table — don't drop the entire schema
+      const client = new Client({ connectionString: appendKeepaliveParams(cs) })
+      await client.connect()
+      try {
+        for (const t of tables) {
+          if (t.relkind === 'm') continue
+          const qt = `${quoteIdent(t.schema)}.${quoteIdent(t.name)}`
+          log.info(`  TRUNCATE ${qt}`)
+          await client.query(`TRUNCATE ${qt} CASCADE`).catch(() => {})
+        }
+        log.success('Tables truncated')
+      } finally {
+        await client.end()
+      }
     } else {
       const client = new Client({ connectionString: appendKeepaliveParams(cs) })
       await client.connect()
@@ -149,6 +164,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   }
 
   // ── Step 5: Restore table data via COPY ─────────────────────────────────
+  let hadDataFailures = false
   log.step('Restoring table data...')
 
   // Build chunk jobs — skip materialized views (restored via REFRESH in post-data DDL)
@@ -258,28 +274,11 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     console.log('')
 
     if (failed.length > 0) {
+      hadDataFailures = true
       printFailedTables(
         failed.map(r => `${r.job.table.schema}.${r.job.table.name} chunk ${r.job.chunk.index}`),
         opts.retries,
       )
-    }
-
-    // ── Summary ───────────────────────────────────────────────────────────
-    const durationSecs = Math.round((Date.now() - startTime) / 1000)
-    printSummary({
-      title: 'Restore Summary',
-      database: dbName,
-      schema: opts.schema,
-      tableCount: tables.length,
-      succeeded,
-      failed: failed.length,
-      skipped,
-      durationSecs,
-      dryRun: false,
-    })
-
-    if (failed.length > 0) {
-      process.exit(1)
     }
   } else {
     log.info('No table data to restore')
@@ -354,7 +353,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     console.log('')
   }
 
-  // Dry run summary
+  // ── Final summary ──────────────────────────────────────────────────────
   if (opts.dryRun) {
     console.log('')
     const durationSecs = Math.round((Date.now() - startTime) / 1000)
@@ -369,5 +368,9 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       durationSecs,
       dryRun: true,
     })
+  }
+
+  if (hadDataFailures) {
+    process.exit(1)
   }
 }
