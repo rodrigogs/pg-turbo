@@ -45,12 +45,15 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   const startTime = Date.now()
 
   let dashboard: ReturnType<typeof startDashboard> | null = null
+  let interrupted = false
   const cleanup = () => {
+    interrupted = true
     dashboard?.stop()
-    process.exit(130)
+    console.log('')
+    log.warn('Interrupted — cleaning up...')
   }
-  process.on('SIGINT', cleanup)
-  process.on('SIGTERM', cleanup)
+  process.once('SIGINT', cleanup)
+  process.once('SIGTERM', cleanup)
 
   // ── Banner ──────────────────────────────────────────────────────────────
   printBanner(opts.dryRun ? 'PostgreSQL Resilient Dump (DRY RUN)' : 'PostgreSQL Resilient Dump')
@@ -381,5 +384,8 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   } finally {
     await discoveryClient.end().catch(() => {})
     if (snapshotCoordinator) await snapshotCoordinator.close()
+    process.removeListener('SIGINT', cleanup)
+    process.removeListener('SIGTERM', cleanup)
+    if (interrupted) process.exit(130)
   }
 }

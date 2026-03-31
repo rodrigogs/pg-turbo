@@ -32,12 +32,15 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   const startTime = Date.now()
 
   let dashboard: ReturnType<typeof startDashboard> | null = null
+  let interrupted = false
   const cleanup = () => {
+    interrupted = true
     dashboard?.stop()
-    process.exit(130)
+    console.log('')
+    log.warn('Interrupted — cleaning up...')
   }
-  process.on('SIGINT', cleanup)
-  process.on('SIGTERM', cleanup)
+  process.once('SIGINT', cleanup)
+  process.once('SIGTERM', cleanup)
 
   // ── Step 1: Read manifest ───────────────────────────────────────────────
   log.step('Reading manifest...')
@@ -337,16 +340,27 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     log.step('Resetting sequences...')
     const seqClient = new Client({ connectionString: appendKeepaliveParams(cs) })
     await seqClient.connect()
+    let seqOk = 0
+    let seqFailed = 0
     try {
       for (const seq of manifest.sequences) {
-        // Respect schema/table filters
         if (opts.schema && seq.schema !== opts.schema) continue
-        await seqClient.query(
-          `SELECT setval(($1 || '.' || $2)::regclass, $3, $4)`,
-          [quoteIdent(seq.schema), quoteIdent(seq.name), seq.lastValue, seq.isCalled],
-        )
+        try {
+          await seqClient.query(
+            `SELECT setval(($1 || '.' || $2)::regclass, $3, $4)`,
+            [quoteIdent(seq.schema), quoteIdent(seq.name), seq.lastValue, seq.isCalled],
+          )
+          seqOk++
+        } catch (err) {
+          seqFailed++
+          log.warn(`  Failed to reset ${seq.schema}.${seq.name}: ${(err as Error).message}`)
+        }
       }
-      log.success(`${manifest.sequences.length} sequences reset`)
+      if (seqFailed > 0) {
+        log.warn(`${seqOk} sequences reset, ${seqFailed} failed`)
+      } else {
+        log.success(`${seqOk} sequences reset`)
+      }
     } finally {
       await seqClient.end()
     }
@@ -370,7 +384,8 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     })
   }
 
-  if (hadDataFailures) {
-    process.exit(1)
-  }
+  process.removeListener('SIGINT', cleanup)
+  process.removeListener('SIGTERM', cleanup)
+  if (interrupted) process.exit(130)
+  if (hadDataFailures) process.exit(1)
 }
