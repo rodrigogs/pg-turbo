@@ -1,0 +1,188 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - link "CYBERTEC PostgreSQL Logo" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - img "CYBERTEC PostgreSQL Logo" [ref=e5]
+    - navigation [ref=e6]:
+      - navigation "Main" [ref=e8]:
+        - list [ref=e9]:
+          - listitem [ref=e10]:
+            - link "Enterprises" [ref=e11] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/postgresql-for-enterprises/
+          - listitem [ref=e12]:
+            - link "Support" [ref=e13] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/services/postgresql-support/
+          - listitem [ref=e14]:
+            - link "Software" [ref=e15] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/products/
+            - button "Software sub-menu" [ref=e16] [cursor=pointer]:
+              - img
+          - listitem [ref=e17]:
+            - link "Services" [ref=e18] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/services/
+            - button "Services sub-menu" [ref=e19] [cursor=pointer]:
+              - img
+          - listitem [ref=e20]:
+            - link "Company" [ref=e21] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/about-cybertec/
+            - button "Company sub-menu" [ref=e22] [cursor=pointer]:
+              - img
+          - listitem [ref=e23]:
+            - link "Blog" [ref=e24] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/postgresql-blog/
+          - listitem [ref=e25]:
+            - link "Contact Us" [ref=e26] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/contact/
+      - img [ref=e29]
+  - generic [ref=e33]:
+    - heading "(╯°□°)╯︵ ᔭ0ᔭ" [level=1] [ref=e34]
+    - generic [ref=e35]:
+      - text: Whoops! We couldn't find,
+      - text: what you were looking for
+  - generic [ref=e37]:
+    - generic [ref=e38]: Maybe try out our Searchbar?
+    - search [ref=e41]:
+      - generic [ref=e42]:
+        - generic [ref=e43]: "Search for:"
+        - searchbox "Search for:" [ref=e44]
+      - button "Search" [ref=e45] [cursor=pointer]
+    - generic [ref=e46]: "Or simply choose where to go:"
+    - generic [ref=e47]:
+      - link "PostgreSQL Tools" [ref=e48] [cursor=pointer]:
+        - /url: /products/
+      - link "PostgreSQL Blog" [ref=e49] [cursor=pointer]:
+        - /url: /blog/
+  - contentinfo [ref=e50]:
+    - generic [ref=e51]:
+      - link "CYBERTEC Logo white" [ref=e52] [cursor=pointer]:
+        - /url: https://www.cybertec-postgresql.com/
+        - img "CYBERTEC Logo white" [ref=e53]
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]:
+            - text: CYBERTEC PostgreSQL International GmbH
+            - text: Römerstraße 19
+            - text: 2752 Wöllersdorf
+            - text: Austria
+          - generic [ref=e58]:
+            - link "+43 (0) 2622 93022-0" [ref=e59] [cursor=pointer]:
+              - /url: tel:+4302622930220
+              - img [ref=e61]
+              - generic [ref=e63]: +43 (0) 2622 93022-0
+            - link "office@cybertec-postgresql.com" [ref=e64] [cursor=pointer]:
+              - /url: mailto:office@cybertec-postgresql.com
+              - img [ref=e66]
+              - generic [ref=e68]: office@cybertec-postgresql.com
+          - generic [ref=e69]:
+            - link "Check our codebase on Github" [ref=e70] [cursor=pointer]:
+              - /url: https://github.com/cybertec-postgresql
+              - generic "Check our codebase on Github" [ref=e71]:
+                - img [ref=e72]
+            - generic [ref=e74]:
+              - link "Visit our Facebook" [ref=e75] [cursor=pointer]:
+                - /url: https://www.facebook.com/cybertec.postgresql/
+                - img "Visit our Facebook" [ref=e76]
+              - link "Visit our Twitter" [ref=e78] [cursor=pointer]:
+                - /url: https://twitter.com/PostgresSupport
+                - img "Visit our Twitter" [ref=e79]
+              - link "Visit our LinkedIn" [ref=e81] [cursor=pointer]:
+                - /url: https://www.linkedin.com/company/cybertec-postgresql
+                - img "Visit our LinkedIn" [ref=e82]
+              - link "Visit our RSS feed" [ref=e84] [cursor=pointer]:
+                - /url: https://www.cybertec-postgresql.com/en/feed/
+                - img "Visit our RSS feed" [ref=e85]
+              - link "Visit our YouTube channel" [ref=e87] [cursor=pointer]:
+                - /url: https://www.youtube.com/user/cybertecpostgresql
+                - img "Visit our YouTube channel" [ref=e88]
+          - generic [ref=e90]:
+            - link "Learn more about our ISO 27001 certified information security practices." [ref=e91] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/compliance/
+              - img "Learn more about our ISO 27001 certified information security practices." [ref=e92]
+            - link "Learn more about our TISAX certification and information security practices." [ref=e93] [cursor=pointer]:
+              - /url: https://www.cybertec-postgresql.com/en/compliance/
+              - img "Learn more about our TISAX certification and information security practices." [ref=e94]
+          - link [ref=e96] [cursor=pointer]:
+            - /url: https://ll-c.at/zertifizierung/iso-14001/
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - generic [ref=e99]: Customer Support
+            - link "Support Platform" [ref=e100] [cursor=pointer]:
+              - /url: https://cybertec.atlassian.net/servicedesk/customer/portals
+          - generic [ref=e101]:
+            - generic [ref=e102]: Services
+            - link "Support" [ref=e103] [cursor=pointer]:
+              - /url: /services/postgresql-support/
+            - link "CYBERTEC Partner" [ref=e104] [cursor=pointer]:
+              - /url: /services/postgresql-support/reseller/cybertec-partner-network/
+            - link "PostgreSQL Books" [ref=e105] [cursor=pointer]:
+              - /url: /postgresql-books/
+          - generic [ref=e106]:
+            - generic [ref=e107]: Company
+            - link "About us" [ref=e108] [cursor=pointer]:
+              - /url: /about/
+            - link "Jobs" [ref=e109] [cursor=pointer]:
+              - /url: /jobs-and-opportunities/
+        - generic [ref=e110]:
+          - generic [ref=e111]: STAY TUNED WITH OUR NEWSLETTER
+          - generic [ref=e112]: Get the newest PostgreSQL Info & Tools
+          - generic [ref=e114]:
+            - generic [ref=e115]:
+              - status
+              - list
+            - form "Contact form" [ref=e116]:
+              - paragraph [ref=e117]:
+                - generic [ref=e119]: Your Email
+              - paragraph [ref=e120]:
+                - textbox "your@email.com" [ref=e122]
+              - paragraph [ref=e123]:
+                - generic [ref=e127]:
+                  - checkbox "I accept the terms and conditions and read the privacy policy. We use Cloudflare Turnstile to protect this form." [ref=e128]
+                  - generic [ref=e129]:
+                    - text: I accept the
+                    - link "terms and conditions" [ref=e130] [cursor=pointer]:
+                      - /url: /terms-and-conditions/
+                    - text: and read the
+                    - link "privacy policy" [ref=e131] [cursor=pointer]:
+                      - /url: /data-protection-policy/
+                    - text: . We use
+                    - link "Cloudflare Turnstile" [ref=e132] [cursor=pointer]:
+                      - /url: /data-protection-policy/#turnstile
+                    - text: to protect this form.
+              - paragraph [ref=e133]:
+                - button "Submit" [ref=e134]
+  - generic [ref=e137]:
+    - generic [ref=e138]:
+      - link "Data Protection Policy" [ref=e139] [cursor=pointer]:
+        - /url: /data-protection-policy/
+      - link "Terms and conditions" [ref=e140] [cursor=pointer]:
+        - /url: /terms-and-conditions/
+      - link "Terms of Service" [ref=e141] [cursor=pointer]:
+        - /url: /terms-of-service/
+      - link "Imprint" [ref=e142] [cursor=pointer]:
+        - /url: /legal-notice/
+    - generic [ref=e143]:
+      - generic [ref=e144]: ©
+      - generic [ref=e145]: "2026"
+      - generic [ref=e146]: CYBERTEC PostgreSQL International GmbH
+  - img:
+    - generic:
+      - generic "phone-handset"
+      - generic "magnifier"
+      - generic "cross"
+      - generic "cross-circle"
+  - img:
+    - generic:
+      - generic "linkedin"
+      - generic "facebook"
+      - generic "pinterest"
+      - generic "youtube"
+      - generic "rss"
+      - generic "twitter"
+      - generic "instagram"
+      - generic "facebook-blank"
+      - generic "rss-blank"
+      - generic "linkedin-blank"
+      - generic "pinterest"
+      - generic "youtube"
+      - generic "twitter"
+      - generic "instagram"

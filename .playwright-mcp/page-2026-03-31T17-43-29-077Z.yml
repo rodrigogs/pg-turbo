@@ -1,0 +1,356 @@
+- generic [ref=e1]:
+  - banner [ref=e2]:
+    - link "Skip to main content" [ref=e3] [cursor=pointer]:
+      - /url: "#content"
+    - generic [ref=e4]:
+      - link "Stack Overflow" [ref=e5] [cursor=pointer]:
+        - /url: https://stackoverflow.com
+        - img [ref=e6]
+      - link "About" [ref=e8] [cursor=pointer]:
+        - /url: https://stackoverflow.co/
+        - generic [ref=e9]: About
+      - button "Products" [ref=e10] [cursor=pointer]:
+        - generic [ref=e11]: Products
+      - link "For Teams" [ref=e12] [cursor=pointer]:
+        - /url: https://stackoverflow.co/internal/
+        - generic [ref=e13]: For Teams
+      - button "Try new site BETA" [ref=e14] [cursor=pointer]:
+        - generic [ref=e15]: Try new site
+        - generic [ref=e16]: BETA
+      - search [ref=e17]:
+        - generic [ref=e18]:
+          - combobox "Search" [ref=e19]: "[node-postgres] [copy]"
+          - img
+      - navigation "Topbar" [ref=e20]:
+        - list [ref=e21]:
+          - listitem
+          - listitem
+          - listitem [ref=e22]:
+            - link "Log in" [ref=e23] [cursor=pointer]:
+              - /url: https://stackoverflow.com/users/login?ssrc=head&returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2ftagged%2fnode-postgres%2bcopy
+          - listitem [ref=e24]:
+            - link "Sign up" [ref=e25] [cursor=pointer]:
+              - /url: https://stackoverflow.com/users/signup?ssrc=head&returnurl=https%3a%2f%2fstackoverflow.com%2fquestions%2ftagged%2fnode-postgres%2bcopy
+  - generic [ref=e26]:
+    - navigation "Primary" [ref=e29]:
+      - list [ref=e30]:
+        - listitem [ref=e31]:
+          - list [ref=e32]:
+            - listitem [ref=e33]:
+              - link "Home" [ref=e34] [cursor=pointer]:
+                - /url: /
+                - generic [ref=e35]:
+                  - img [ref=e36]
+                  - generic [ref=e38]: Home
+            - listitem [ref=e39]:
+              - link "Questions" [ref=e40] [cursor=pointer]:
+                - /url: /questions
+                - generic [ref=e41]:
+                  - img [ref=e42]
+                  - generic [ref=e44]: Questions
+            - listitem [ref=e45]:
+              - link "AI Assist" [ref=e46] [cursor=pointer]:
+                - /url: https://stackoverflow.com/ai-assist
+                - generic [ref=e47]:
+                  - img [ref=e49]
+                  - generic [ref=e51]: AI Assist
+            - listitem [ref=e52]:
+              - link "Tags" [ref=e53] [cursor=pointer]:
+                - /url: /tags
+                - generic [ref=e54]:
+                  - img [ref=e55]
+                  - generic [ref=e58]: Tags
+            - listitem [ref=e59]
+            - listitem [ref=e60]:
+              - link "Challenges" [ref=e61] [cursor=pointer]:
+                - /url: /beta/challenges
+                - generic [ref=e62]:
+                  - img [ref=e63]
+                  - generic [ref=e65]: Challenges
+            - listitem [ref=e66]:
+              - link "Chat" [expanded] [ref=e67] [cursor=pointer]:
+                - /url: https://chat.stackoverflow.com/?tab=explore
+                - img [ref=e70]
+                - generic [ref=e75]: Chat
+            - listitem [ref=e76]:
+              - link "Articles" [ref=e77] [cursor=pointer]:
+                - /url: https://stackoverflow.blog/contributed?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=so-blog&utm_content=experiment-articles
+                - generic [ref=e78]:
+                  - img [ref=e79]
+                  - generic [ref=e82]: Articles
+            - listitem [ref=e83]:
+              - link "Users" [ref=e84] [cursor=pointer]:
+                - /url: /users
+                - generic [ref=e85]:
+                  - img [ref=e86]
+                  - generic [ref=e88]: Users
+            - listitem [ref=e89]
+            - listitem [ref=e90]:
+              - link "Companies" [ref=e91] [cursor=pointer]:
+                - /url: https://stackoverflow.com/jobs/companies?so_medium=stackoverflow&so_source=SiteNav
+                - generic [ref=e92]:
+                  - img [ref=e93]
+                  - generic [ref=e95]: Companies
+            - listitem [ref=e96]:
+              - button "Collectives" [ref=e98] [cursor=pointer]:
+                - generic [ref=e99]: Collectives
+                - img [ref=e101]
+            - listitem [ref=e103]:
+              - paragraph [ref=e104]:
+                - text: Communities for your favorite technologies.
+                - link "Explore all Collectives" [ref=e105] [cursor=pointer]:
+                  - /url: /collectives-all
+        - listitem [ref=e106]:
+          - generic [ref=e107]: Stack Internal
+          - generic [ref=e108]:
+            - img [ref=e109]
+            - paragraph [ref=e123]:
+              - text: Stack Overflow for Teams is now called
+              - strong [ref=e124]: Stack Internal
+              - text: . Bring the best of human thought and AI automation together at your work.
+            - link "Try for free" [ref=e125] [cursor=pointer]:
+              - /url: https://stackoverflowteams.com/teams/create/free/?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=side-bar&utm_content=explore-teams
+            - link "Learn more" [ref=e126] [cursor=pointer]:
+              - /url: https://stackoverflow.co/internal/?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=side-bar&utm_content=explore-teams
+    - generic [ref=e127]:
+      - generic [ref=e128]:
+        - generic [ref=e129]:
+          - heading "All Questions" [level=1] [ref=e131]
+          - link "Ask Question" [ref=e133] [cursor=pointer]:
+            - /url: /questions/ask
+        - generic [ref=e134]:
+          - text: Tagged with
+          - link "show questions tagged 'node-postgres'" [ref=e135] [cursor=pointer]:
+            - /url: /questions/tagged/node-postgres
+            - text: node-postgres
+          - link "show questions tagged 'copy'" [ref=e136] [cursor=pointer]:
+            - /url: /questions/tagged/copy
+            - text: copy
+        - generic [ref=e138]:
+          - generic [ref=e139]: 0 questions
+          - generic [ref=e141]:
+            - generic [ref=e142]:
+              - link "Newest" [ref=e143] [cursor=pointer]:
+                - /url: /questions/tagged/copy%20node-postgres?tab=Newest
+                - generic [ref=e144]: Newest
+              - link "Active" [ref=e145] [cursor=pointer]:
+                - /url: /questions/tagged/copy%20node-postgres?tab=Active
+                - generic [ref=e146]: Active
+              - link "Bountied" [ref=e147] [cursor=pointer]:
+                - /url: /questions/tagged/copy%20node-postgres?tab=Bounties
+                - generic [ref=e148]: Bountied
+              - link "Unanswered" [ref=e149] [cursor=pointer]:
+                - /url: /questions/tagged/copy%20node-postgres?tab=Unanswered
+                - generic [ref=e150]: Unanswered
+              - button "More" [ref=e151] [cursor=pointer]:
+                - generic [ref=e152]: More
+            - button "Filter" [ref=e154] [cursor=pointer]:
+              - img [ref=e155]
+              - text: Filter
+        - generic [ref=e159]: No questions found. Perhaps you'd like to select a different tab?
+      - generic [ref=e160]:
+        - list [ref=e162]:
+          - listitem [ref=e163]: The Overflow Blog
+          - listitem [ref=e164]:
+            - img [ref=e166]
+            - link "Prevent agentic identity theft" [ref=e170] [cursor=pointer]:
+              - /url: https://stackoverflow.blog/2026/03/27/prevent-agentic-identity-theft/?cb=1
+          - listitem [ref=e171]: Featured on Meta
+          - listitem [ref=e172]:
+            - generic "Meta Stack Overflow" [ref=e174]
+            - link "I’m Jody, the Chief Product and Technology Officer at Stack Overflow. Let’s..." [ref=e176] [cursor=pointer]:
+              - /url: https://meta.stackoverflow.com/questions/438369/i-m-jody-the-chief-product-and-technology-officer-at-stack-overflow-let-s-talk?cb=1
+          - listitem [ref=e177]:
+            - generic "Meta Stack Overflow" [ref=e179]
+            - 'link "Policy: Generative AI (e.g., ChatGPT) is banned" [ref=e181] [cursor=pointer]':
+              - /url: https://meta.stackoverflow.com/questions/421831/policy-generative-ai-e-g-chatgpt-is-banned?cb=1
+          - listitem [ref=e182]:
+            - generic "Meta Stack Overflow" [ref=e184]
+            - link "Release notes and bug fixes for beta.stackoverflow.com" [ref=e186] [cursor=pointer]:
+              - /url: https://meta.stackoverflow.com/questions/438499/release-notes-and-bug-fixes-for-beta-stackoverflow-com?cb=1
+        - generic [ref=e188]:
+          - heading "Hot Network Questions" [level=4] [ref=e189]:
+            - link "Hot Network Questions" [ref=e190] [cursor=pointer]:
+              - /url: https://stackexchange.com/questions?tab=hot
+          - list [ref=e191]:
+            - listitem [ref=e192]:
+              - generic "Electrical Engineering Stack Exchange" [ref=e193]
+              - link "Does \"power circuits\" refer to circuits with 110V, 220V, or 380V?" [ref=e194] [cursor=pointer]:
+                - /url: https://electronics.stackexchange.com/questions/767550/does-power-circuits-refer-to-circuits-with-110v-220v-or-380v
+            - listitem [ref=e195]:
+              - generic "MathOverflow" [ref=e196]
+              - 'link "Reference request: Moduli space of immersed polygons" [ref=e197] [cursor=pointer]':
+                - /url: https://mathoverflow.net/questions/509696/reference-request-moduli-space-of-immersed-polygons
+            - listitem [ref=e198]:
+              - generic "Physics Stack Exchange" [ref=e199]
+              - link "Is there a formal definition in physics of a physical system?" [ref=e200] [cursor=pointer]:
+                - /url: https://physics.stackexchange.com/questions/870649/is-there-a-formal-definition-in-physics-of-a-physical-system
+            - listitem [ref=e201]:
+              - generic "Super User" [ref=e202]
+              - link "Why can’t Windows see Ubuntu Linux shares? It has worked in the past" [ref=e203] [cursor=pointer]:
+                - /url: https://superuser.com/questions/1936295/why-can-t-windows-see-ubuntu-linux-shares-it-has-worked-in-the-past
+            - listitem [ref=e204]:
+              - generic "Code Review Stack Exchange" [ref=e205]
+              - link "firstNonNull implementations" [ref=e206] [cursor=pointer]:
+                - /url: https://codereview.stackexchange.com/questions/301719/firstnonnull-implementations
+            - listitem [ref=e207]:
+              - generic "Biblical Hermeneutics Stack Exchange" [ref=e208]
+              - link "How is the “I” in “the Father is greater than I” understood as referring to Jesus’ human nature while the other I in John 8:58 to his divine nature?" [ref=e209] [cursor=pointer]:
+                - /url: https://hermeneutics.stackexchange.com/questions/115607/how-is-the-i-in-the-father-is-greater-than-i-understood-as-referring-to-jesu
+            - listitem [ref=e210]:
+              - generic "The Workplace Stack Exchange" [ref=e211]
+              - link "Messed up my CV dates — how screwed am I?" [ref=e212] [cursor=pointer]:
+                - /url: https://workplace.stackexchange.com/questions/203315/messed-up-my-cv-dates-how-screwed-am-i
+            - listitem [ref=e213]:
+              - generic "Philosophy Stack Exchange" [ref=e214]
+              - link "What epistemically responsible frameworks exist for using quantum physics analogies to explain Madhyamaka śūnyatā?" [ref=e215] [cursor=pointer]:
+                - /url: https://philosophy.stackexchange.com/questions/137397/what-epistemically-responsible-frameworks-exist-for-using-quantum-physics-analog
+            - listitem [ref=e216]:
+              - generic "Academia Stack Exchange" [ref=e217]
+              - link "Is it easy to change field of research when moving from PhD to postdoc?" [ref=e218] [cursor=pointer]:
+                - /url: https://academia.stackexchange.com/questions/226300/is-it-easy-to-change-field-of-research-when-moving-from-phd-to-postdoc
+            - listitem [ref=e219]:
+              - generic "Mathematics Stack Exchange" [ref=e220]
+              - link "Expectation solution to 'potion chance' mechanic." [ref=e221] [cursor=pointer]:
+                - /url: https://math.stackexchange.com/questions/5130967/expectation-solution-to-potion-chance-mechanic
+            - listitem [ref=e222]:
+              - generic "Ask Different" [ref=e223]
+              - link "Adding \"real\" creation date to scanned \"old\"pictures" [ref=e224] [cursor=pointer]:
+                - /url: https://apple.stackexchange.com/questions/486151/adding-real-creation-date-to-scanned-oldpictures
+            - listitem [ref=e225]:
+              - generic "Stack Overflow" [ref=e226]
+              - link "How to stop member function returning T& being defined for T = void (and is supposed to be)" [ref=e227] [cursor=pointer]:
+                - /url: https://stackoverflow.com/questions/79916870/how-to-stop-member-function-returning-t-being-defined-for-t-void-and-is-supp
+          - link "more hot questions" [ref=e228] [cursor=pointer]:
+            - /url: "#"
+        - link "Newest node-postgres copy questions feed" [ref=e230] [cursor=pointer]:
+          - /url: /feeds/tag?tagnames=node-postgres%20copy&sort=newest
+          - img [ref=e231]
+          - text: Newest node-postgres copy questions feed
+  - contentinfo [ref=e233]:
+    - generic [ref=e234]:
+      - link "Stack Overflow" [ref=e236] [cursor=pointer]:
+        - /url: https://stackoverflow.com
+        - img [ref=e237]
+      - navigation "Footer" [ref=e239]:
+        - generic [ref=e240]:
+          - heading "Stack Overflow" [level=5] [ref=e241]:
+            - link "Stack Overflow" [ref=e242] [cursor=pointer]:
+              - /url: https://stackoverflow.com
+          - list [ref=e243]:
+            - listitem [ref=e244]:
+              - link "Questions" [ref=e245] [cursor=pointer]:
+                - /url: /questions
+            - listitem [ref=e246]:
+              - link "Help" [ref=e247] [cursor=pointer]:
+                - /url: /help
+            - listitem [ref=e248]:
+              - link "Chat" [ref=e249] [cursor=pointer]:
+                - /url: https://chat.stackoverflow.com/?tab=explore
+        - generic [ref=e250]:
+          - heading "Business" [level=5] [ref=e251]:
+            - link "Business" [ref=e252] [cursor=pointer]:
+              - /url: https://stackoverflow.co/
+          - list [ref=e253]:
+            - listitem [ref=e254]:
+              - link "Stack Internal" [ref=e255] [cursor=pointer]:
+                - /url: https://stackoverflow.co/internal/?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=footer&utm_content=teams
+            - listitem [ref=e256]:
+              - link "Stack Data Licensing" [ref=e257] [cursor=pointer]:
+                - /url: https://stackoverflow.co/data-licensing/?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=footer&utm_content=data-licensing
+            - listitem [ref=e258]:
+              - link "Stack Ads" [ref=e259] [cursor=pointer]:
+                - /url: https://stackoverflow.co/advertising/?utm_medium=referral&utm_source=stackoverflow-community&utm_campaign=footer&utm_content=advertising
+        - generic [ref=e260]:
+          - heading "Company" [level=5] [ref=e261]:
+            - link "Company" [ref=e262] [cursor=pointer]:
+              - /url: https://stackoverflow.co/
+          - list [ref=e263]:
+            - listitem [ref=e264]:
+              - link "About" [ref=e265] [cursor=pointer]:
+                - /url: https://stackoverflow.co/
+            - listitem [ref=e266]:
+              - link "Press" [ref=e267] [cursor=pointer]:
+                - /url: https://stackoverflow.co/company/press/
+            - listitem [ref=e268]:
+              - link "Work Here" [ref=e269] [cursor=pointer]:
+                - /url: https://stackoverflow.co/company/work-here/
+            - listitem [ref=e270]:
+              - link "Legal" [ref=e271] [cursor=pointer]:
+                - /url: https://stackoverflow.com/legal
+            - listitem [ref=e272]:
+              - link "Privacy Policy" [ref=e273] [cursor=pointer]:
+                - /url: https://stackoverflow.com/legal/privacy-policy
+            - listitem [ref=e274]:
+              - link "Terms of Service" [ref=e275] [cursor=pointer]:
+                - /url: https://stackoverflow.com/legal/terms-of-service/public
+            - listitem [ref=e276]:
+              - link "Contact Us" [ref=e277] [cursor=pointer]:
+                - /url: /contact
+            - listitem [ref=e278]:
+              - button "Cookie Settings" [ref=e279] [cursor=pointer]
+            - listitem [ref=e280]:
+              - link "Cookie Policy" [ref=e281] [cursor=pointer]:
+                - /url: https://policies.stackoverflow.co/stack-overflow/cookie-policy
+        - generic [ref=e283]:
+          - heading "Stack Exchange Network" [level=5] [ref=e284]:
+            - link "Stack Exchange Network" [ref=e285] [cursor=pointer]:
+              - /url: https://stackexchange.com
+          - list [ref=e286]:
+            - listitem [ref=e287]:
+              - link "Technology" [ref=e288] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#technology
+            - listitem [ref=e289]:
+              - link "Culture & recreation" [ref=e290] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#culturerecreation
+            - listitem [ref=e291]:
+              - link "Life & arts" [ref=e292] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#lifearts
+            - listitem [ref=e293]:
+              - link "Science" [ref=e294] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#science
+            - listitem [ref=e295]:
+              - link "Professional" [ref=e296] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#professional
+            - listitem [ref=e297]:
+              - link "Business" [ref=e298] [cursor=pointer]:
+                - /url: https://stackexchange.com/sites#business
+            - listitem [ref=e299]:
+              - link "API" [ref=e300] [cursor=pointer]:
+                - /url: https://api.stackexchange.com/
+            - listitem [ref=e301]:
+              - link "Data" [ref=e302] [cursor=pointer]:
+                - /url: https://data.stackexchange.com/
+      - generic [ref=e303]:
+        - list [ref=e304]:
+          - listitem [ref=e305]:
+            - link "Blog" [ref=e306] [cursor=pointer]:
+              - /url: https://stackoverflow.blog?blb=1
+          - listitem [ref=e307]:
+            - link "Facebook" [ref=e308] [cursor=pointer]:
+              - /url: https://www.facebook.com/officialstackoverflow/
+          - listitem [ref=e309]:
+            - link "Twitter" [ref=e310] [cursor=pointer]:
+              - /url: https://twitter.com/stackoverflow
+          - listitem [ref=e311]:
+            - link "LinkedIn" [ref=e312] [cursor=pointer]:
+              - /url: https://linkedin.com/company/stack-overflow
+          - listitem [ref=e313]:
+            - link "Instagram" [ref=e314] [cursor=pointer]:
+              - /url: https://www.instagram.com/thestackoverflow
+        - paragraph [ref=e315]:
+          - text: Site design / logo © 2026 Stack Exchange Inc; user contributions licensed under
+          - link "CC BY-SA" [ref=e316] [cursor=pointer]:
+            - /url: https://stackoverflow.com/help/licensing
+          - text: . rev 2026.3.27.41560
+  - dialog "Privacy" [ref=e318]:
+    - generic [ref=e319]:
+      - generic [ref=e322]:
+        - text: By continuing to use this website, you agree Stack Exchange can store cookies on your device and disclose information in accordance with our
+        - link "Cookie Policy" [ref=e323] [cursor=pointer]:
+          - /url: https://policies.stackoverflow.co/stack-overflow/cookie-policy/
+        - text: . By exiting this window, default cookies will be accepted. To reject cookies, select an option from below.
+      - generic [ref=e325]:
+        - button "Necessary cookies only" [ref=e327] [cursor=pointer]
+        - button "Customize settings, Opens the preference center dialog" [ref=e328] [cursor=pointer]: Customize settings
+      - button "Close" [ref=e330] [cursor=pointer]

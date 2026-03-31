@@ -1,0 +1,5 @@
+shell=bash
+enable=quote-safe-variables
+enable=require-variable-braces
+source-path=SCRIPTDIR
+external-sources=true

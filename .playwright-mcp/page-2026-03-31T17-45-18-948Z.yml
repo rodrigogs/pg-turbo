@@ -1,0 +1,682 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - navigation "top" [ref=e4]:
+      - generic [ref=e5]:
+        - link "Total TypeScript Home" [ref=e7] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e8]: Total
+          - generic [ref=e9]: TypeScript
+        - generic [ref=e10]:
+          - list [ref=e11]:
+            - listitem [ref=e12]:
+              - link "Pro Workshops" [ref=e13] [cursor=pointer]:
+                - /url: /workshops
+                - generic [ref=e14]:
+                  - generic [ref=e15]: Pro
+                  - text: Workshops
+            - listitem [ref=e16]:
+              - link "Tutorials" [ref=e17] [cursor=pointer]:
+                - /url: /tutorials
+                - generic [ref=e18]: Tutorials
+            - listitem [ref=e19]:
+              - link "Tips" [ref=e20] [cursor=pointer]:
+                - /url: /tips
+                - generic [ref=e21]: Tips
+            - listitem [ref=e22]:
+              - link "Articles" [ref=e23] [cursor=pointer]:
+                - /url: /articles
+                - generic [ref=e24]: Articles
+            - listitem [ref=e25]:
+              - link "Book New" [ref=e26] [cursor=pointer]:
+                - /url: /books/total-typescript-essentials
+                - generic [ref=e27]:
+                  - text: Book
+                  - generic [ref=e28]: New
+          - list
+    - generic [ref=e29]:
+      - banner [ref=e30]:
+        - generic [ref=e31]:
+          - link "All Articles" [ref=e32] [cursor=pointer]:
+            - /url: /articles
+            - generic [ref=e33]: ←
+            - generic [ref=e34]: All Articles
+          - heading "The TSConfig Cheat Sheet" [level=1] [ref=e35]
+          - generic [ref=e37]:
+            - img "Matt Pocock" [ref=e39]
+            - generic [ref=e40]:
+              - generic [ref=e41]: Matt Pocock
+              - generic [ref=e42]: Matt is a well-regarded TypeScript expert known for his ability to demystify complex TypeScript concepts.
+      - main [ref=e43]:
+        - generic [ref=e44]:
+          - generic [ref=e45]:
+            - generic [ref=e46]:
+              - paragraph [ref=e47]:
+                - code [ref=e48]: tsconfig.json
+                - text: scares everyone. It's a huge file with a TON of potential options.
+              - paragraph [ref=e49]: But really, there are only a few configuration options you need to care about. Let's figure them out, and cheatsheet them.
+              - generic [ref=e50]:
+                - link [ref=e51] [cursor=pointer]:
+                  - /url: "#the-package"
+                  - text: "#"
+                - heading "The Package" [level=2] [ref=e545] [cursor=pointer]
+              - paragraph [ref=e53]:
+                - text: This article is so popular that I've bundled its recommendations into a library! It's called
+                - code [ref=e54]: "@total-typescript/tsconfig"
+                - text: ", and you can check it out"
+                - link "here" [ref=e55] [cursor=pointer]:
+                  - /url: https://github.com/total-typescript/tsconfig
+                - text: .
+              - generic [ref=e56]:
+                - link [ref=e57] [cursor=pointer]:
+                  - /url: "#quickstart"
+                  - text: "#"
+                - heading "Quickstart" [level=2] [ref=e546] [cursor=pointer]
+              - paragraph [ref=e59]: "Want just the code? Here you go:"
+              - code [ref=e548]:
+                - generic [ref=e549]: "{"
+                - generic [ref=e550]: "\"compilerOptions\": {"
+                - generic [ref=e551]: "/* Base Options: */"
+                - generic [ref=e552]: "\"esModuleInterop\": true,"
+                - generic [ref=e553]: "\"skipLibCheck\": true,"
+                - generic [ref=e554]: "\"target\": \"es2022\","
+                - generic [ref=e555]: "\"allowJs\": true,"
+                - generic [ref=e556]: "\"resolveJsonModule\": true,"
+                - generic [ref=e557]: "\"moduleDetection\": \"force\","
+                - generic [ref=e558]: "\"isolatedModules\": true,"
+                - generic [ref=e559]: "\"verbatimModuleSyntax\": true,"
+                - generic [ref=e560]: /* Strictness */
+                - generic [ref=e561]: "\"strict\": true,"
+                - generic [ref=e562]: "\"noUncheckedIndexedAccess\": true,"
+                - generic [ref=e563]: "\"noImplicitOverride\": true,"
+                - generic [ref=e564]: "/* If transpiling with TypeScript: */"
+                - generic [ref=e565]: "\"module\": \"NodeNext\","
+                - generic [ref=e566]: "\"outDir\": \"dist\","
+                - generic [ref=e567]: "\"sourceMap\": true,"
+                - generic [ref=e568]: "/* AND if you're building for a library: */"
+                - generic [ref=e569]: "\"declaration\": true,"
+                - generic [ref=e570]: "/* AND if you're building for a library in a monorepo: */"
+                - generic [ref=e571]: "\"composite\": true,"
+                - generic [ref=e572]: "\"declarationMap\": true,"
+                - generic [ref=e573]: "/* If NOT transpiling with TypeScript: */"
+                - generic [ref=e574]: "\"module\": \"preserve\","
+                - generic [ref=e575]: "\"noEmit\": true,"
+                - generic [ref=e576]: "/* If your code runs in the DOM: */"
+                - generic [ref=e577]: "\"lib\": [\"es2022\", \"dom\", \"dom.iterable\"],"
+                - generic [ref=e578]: "/* If your code doesn't run in the DOM: */"
+                - generic [ref=e579]: "\"lib\": [\"es2022\"]"
+                - generic [ref=e580]: "}"
+                - generic [ref=e581]: "}"
+              - generic [ref=e96]:
+                - link [ref=e97] [cursor=pointer]:
+                  - /url: "#full-explanation"
+                  - text: "#"
+                - heading "Full Explanation" [level=2] [ref=e582] [cursor=pointer]
+              - generic [ref=e99]:
+                - link [ref=e100] [cursor=pointer]:
+                  - /url: "#base-options"
+                  - text: "#"
+                - heading "Base Options" [level=3] [ref=e583] [cursor=pointer]
+              - paragraph [ref=e102]: Here are the base options I recommend for all projects.
+              - code [ref=e585]:
+                - generic [ref=e586]: "{"
+                - generic [ref=e587]: "\"compilerOptions\": {"
+                - generic [ref=e588]: "\"esModuleInterop\": true,"
+                - generic [ref=e589]: "\"skipLibCheck\": true,"
+                - generic [ref=e590]: "\"target\": \"es2022\","
+                - generic [ref=e591]: "\"allowJs\": true,"
+                - generic [ref=e592]: "\"resolveJsonModule\": true,"
+                - generic [ref=e593]: "\"moduleDetection\": \"force\","
+                - generic [ref=e594]: "\"isolatedModules\": true,"
+                - generic [ref=e595]: "\"verbatimModuleSyntax\": true"
+                - generic [ref=e596]: "}"
+                - generic [ref=e597]: "}"
+              - list [ref=e118]:
+                - listitem [ref=e119]:
+                  - link "esModuleInterop" [ref=e120] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#esModuleInterop
+                    - code [ref=e121]: esModuleInterop
+                  - text: ": Helps mend a few of the fences between CommonJS and ES Modules."
+                - listitem [ref=e122]:
+                  - link "skipLibCheck" [ref=e123] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#skipLibCheck
+                    - code [ref=e124]: skipLibCheck
+                  - text: ": Skips checking the types of"
+                  - code [ref=e125]: .d.ts
+                  - text: files. This is important for performance, because otherwise all
+                  - code [ref=e126]: node_modules
+                  - text: will be checked.
+                - listitem [ref=e127]:
+                  - link "target" [ref=e128] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#target
+                    - code [ref=e129]: target
+                  - text: ": The version of JavaScript you're targeting. I recommend"
+                  - code [ref=e130]: es2022
+                  - text: over
+                  - code [ref=e131]: esnext
+                  - text: for stability.
+                - listitem [ref=e132]:
+                  - link "allowJs" [ref=e133] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#allowJs
+                    - code [ref=e134]: allowJs
+                  - text: and
+                  - link "resolveJsonModule" [ref=e135] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#resolveJsonModule
+                    - code [ref=e136]: resolveJsonModule
+                  - text: ": Allows you to import"
+                  - code [ref=e137]: .js
+                  - text: and
+                  - code [ref=e138]: .json
+                  - text: files. Always useful.
+                - listitem [ref=e139]:
+                  - link "moduleDetection" [ref=e140] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#moduleDetection
+                    - code [ref=e141]: moduleDetection
+                  - text: ": This option forces TypeScript to consider all files as modules. This helps to avoid '"
+                  - link "cannot redeclare block-scoped variable" [ref=e142] [cursor=pointer]:
+                    - /url: https://www.totaltypescript.com/cannot-redeclare-block-scoped-variable
+                  - text: "' errors."
+                - listitem [ref=e143]:
+                  - link "isolatedModules" [ref=e144] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#isolatedModules
+                    - code [ref=e145]: isolatedModules
+                  - text: ": This option prevents a few TS features which are unsafe when treating modules as isolated files."
+                - listitem [ref=e146]:
+                  - link "verbatimModuleSyntax" [ref=e147] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#verbatimModuleSyntax
+                    - code [ref=e148]: verbatimModuleSyntax
+                  - text: ": This option forces you to use"
+                  - code [ref=e149]: import type
+                  - text: and
+                  - code [ref=e150]: export type
+                  - text: ", leading to more predictable behavior and fewer unnecessary imports. With"
+                  - code [ref=e151]: "module: NodeNext"
+                  - text: ", it also enforces you're using the correct import syntax for ESM or CJS."
+              - generic [ref=e152]:
+                - link [ref=e153] [cursor=pointer]:
+                  - /url: "#strictness"
+                  - text: "#"
+                - heading "Strictness" [level=3] [ref=e598] [cursor=pointer]
+              - paragraph [ref=e155]: Here are the strictness options I recommend for all projects.
+              - code [ref=e600]:
+                - generic [ref=e601]: "{"
+                - generic [ref=e602]: "\"compilerOptions\": {"
+                - generic [ref=e603]: "\"strict\": true,"
+                - generic [ref=e604]: "\"noUncheckedIndexedAccess\": true,"
+                - generic [ref=e605]: "\"noImplicitOverride\": true"
+                - generic [ref=e606]: "}"
+                - generic [ref=e607]: "}"
+              - list [ref=e166]:
+                - listitem [ref=e167]:
+                  - link "strict" [ref=e168] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#strict
+                    - code [ref=e169]: strict
+                  - text: ": Enables all strict type checking options. Indispensable."
+                - listitem [ref=e170]:
+                  - link "noUncheckedIndexedAccess" [ref=e171] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#noUncheckedIndexedAccess
+                    - code [ref=e172]: noUncheckedIndexedAccess
+                  - text: ": Prevents you from accessing an array or object without first checking if it's defined. This is a great way to prevent runtime errors, and should"
+                  - emphasis [ref=e173]: really
+                  - text: be included in
+                  - code [ref=e174]: strict
+                  - text: .
+                - listitem [ref=e175]:
+                  - link "noImplicitOverride" [ref=e176] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#noImplicitOverride
+                    - code [ref=e177]: noImplicitOverride
+                  - text: ": Makes the"
+                  - code [ref=e178]: override
+                  - text: keyword actually useful in classes.
+              - paragraph [ref=e179]:
+                - text: Many folks recommended the strictness options in
+                - link "tsconfig/bases" [ref=e180] [cursor=pointer]:
+                  - /url: https://github.com/tsconfig/bases/blob/031273b815ff7f672c7c9057fb7d19ef363054b1/bases/strictest.json
+                  - code [ref=e181]: tsconfig/bases
+                - text: ", a wonderful repo which catalogs TSConfig options. These options include lots of rules which I consider too 'noisy', like"
+                - link "noImplicitReturns" [ref=e182] [cursor=pointer]:
+                  - /url: https://www.typescriptlang.org/tsconfig#noImplicitReturns
+                  - code [ref=e183]: noImplicitReturns
+                - text: ","
+                - link "noUnusedLocals" [ref=e184] [cursor=pointer]:
+                  - /url: https://www.typescriptlang.org/tsconfig#noUnusedLocals
+                  - code [ref=e185]: noUnusedLocals
+                - text: ","
+                - link "noUnusedParameters" [ref=e186] [cursor=pointer]:
+                  - /url: https://www.typescriptlang.org/tsconfig#noUnusedParameters
+                  - code [ref=e187]: noUnusedParameters
+                - text: ", and"
+                - link "noFallthroughCasesInSwitch" [ref=e188] [cursor=pointer]:
+                  - /url: https://www.typescriptlang.org/tsconfig#noFallthroughCasesInSwitch
+                  - code [ref=e189]: noFallthroughCasesInSwitch
+                - text: . I recommend you add these rules to your
+                - code [ref=e190]: tsconfig.json
+                - text: only if you want them.
+              - generic [ref=e191]:
+                - link [ref=e192] [cursor=pointer]:
+                  - /url: "#transpiling-with-typescript"
+                  - text: "#"
+                - heading "Transpiling with TypeScript" [level=3] [ref=e608] [cursor=pointer]
+              - paragraph [ref=e194]:
+                - text: If you're transpiling your code (creating JavaScript files) with
+                - code [ref=e195]: tsc
+                - text: ", you'll want these options."
+              - code [ref=e610]:
+                - generic [ref=e611]: "{"
+                - generic [ref=e612]: "\"compilerOptions\": {"
+                - generic [ref=e613]: "\"module\": \"NodeNext\","
+                - generic [ref=e614]: "\"outDir\": \"dist\""
+                - generic [ref=e615]: "}"
+                - generic [ref=e616]: "}"
+              - list [ref=e205]:
+                - listitem [ref=e206]:
+                  - link "module" [ref=e207] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#module
+                    - code [ref=e208]: module
+                  - text: ": Tells TypeScript what module syntax to use."
+                  - code [ref=e209]: NodeNext
+                  - text: is the best option for Node.
+                  - 'link "moduleResolution: NodeNext" [ref=e210] [cursor=pointer]':
+                    - /url: https://www.typescriptlang.org/tsconfig#moduleResolution
+                    - code [ref=e211]: "moduleResolution: NodeNext"
+                  - text: is implied from this option.
+                - listitem [ref=e212]:
+                  - link "outDir" [ref=e213] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#outDir
+                    - code [ref=e214]: outDir
+                  - text: ": Tells TypeScript where to put the compiled JavaScript files."
+                  - code [ref=e215]: dist
+                  - text: is my preferred convention, but it's up to you.
+              - generic [ref=e216]:
+                - link [ref=e217] [cursor=pointer]:
+                  - /url: "#building-for-a-library"
+                  - text: "#"
+                - heading "Building for a Library" [level=4] [ref=e617] [cursor=pointer]
+              - paragraph [ref=e219]:
+                - text: If you're building for a library, you'll want
+                - code [ref=e220]: "declaration: true"
+                - text: .
+              - code [ref=e619]:
+                - generic [ref=e620]: "{"
+                - generic [ref=e621]: "\"compilerOptions\": {"
+                - generic [ref=e622]: "\"declaration\": true"
+                - generic [ref=e623]: "}"
+                - generic [ref=e624]: "}"
+              - list [ref=e229]:
+                - listitem [ref=e230]:
+                  - link "declaration" [ref=e231] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#declaration
+                    - code [ref=e232]: declaration
+                  - text: ": Tells TypeScript to emit"
+                  - code [ref=e233]: .d.ts
+                  - text: files. This is needed so that libraries can get autocomplete on the
+                  - code [ref=e234]: .js
+                  - text: files you're creating.
+              - generic [ref=e235]:
+                - link [ref=e236] [cursor=pointer]:
+                  - /url: "#building-for-a-library-in-a-monorepo"
+                  - text: "#"
+                - heading "Building for a Library in a Monorepo" [level=4] [ref=e625] [cursor=pointer]
+              - paragraph [ref=e238]: If you're building for a library in a monorepo, you'll also want these options.
+              - code [ref=e627]:
+                - generic [ref=e628]: "{"
+                - generic [ref=e629]: "\"compilerOptions\": {"
+                - generic [ref=e630]: "\"declaration\": true,"
+                - generic [ref=e631]: "\"composite\": true,"
+                - generic [ref=e632]: "\"sourceMap\": true,"
+                - generic [ref=e633]: "\"declarationMap\": true"
+                - generic [ref=e634]: "}"
+                - generic [ref=e635]: "}"
+              - list [ref=e250]:
+                - listitem [ref=e251]:
+                  - link "composite" [ref=e252] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#composite
+                    - code [ref=e253]: composite
+                  - text: ": Tells TypeScript to emit"
+                  - code [ref=e254]: .tsbuildinfo
+                  - text: files. This tells TypeScript that your project is part of a monorepo, and also helps it to cache builds to run faster.
+                - listitem [ref=e255]:
+                  - link "sourceMap" [ref=e256] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#sourceMap
+                    - code [ref=e257]: sourceMap
+                  - text: and
+                  - link "declarationMap" [ref=e258] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#declarationMap
+                    - code [ref=e259]: declarationMap
+                  - text: ": Tells TypeScript to emit source maps and declaration maps. These are needed so that when consumers of your libraries are debugging, they can jump to the original source code using go-to-definition."
+              - generic [ref=e260]:
+                - link [ref=e261] [cursor=pointer]:
+                  - /url: "#not-transpiling-with-typescript"
+                  - text: "#"
+                - heading "Not Transpiling with TypeScript" [level=3] [ref=e636] [cursor=pointer]
+              - paragraph [ref=e263]:
+                - text: If you're
+                - emphasis [ref=e264]: not
+                - text: transpiling your code with
+                - code [ref=e265]: tsc
+                - text: ", i.e. using TypeScript as more of a linter, you'll want these options."
+              - code [ref=e638]:
+                - generic [ref=e639]: "{"
+                - generic [ref=e640]: "\"compilerOptions\": {"
+                - generic [ref=e641]: "\"module\": \"preserve\","
+                - generic [ref=e642]: "\"noEmit\": true"
+                - generic [ref=e643]: "}"
+                - generic [ref=e644]: "}"
+              - list [ref=e275]:
+                - listitem [ref=e276]:
+                  - link "module" [ref=e277] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#module
+                    - code [ref=e278]: module
+                  - text: ":"
+                  - code [ref=e279]: preserve
+                  - text: is the best option because it most closely mimics how bundlers treat modules.
+                  - 'link "moduleResolution: Bundler" [ref=e280] [cursor=pointer]':
+                    - /url: https://www.typescriptlang.org/tsconfig#moduleResolution
+                    - code [ref=e281]: "moduleResolution: Bundler"
+                  - text: is implied from this option.
+                - listitem [ref=e282]:
+                  - link "noEmit" [ref=e283] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#noEmit
+                    - code [ref=e284]: noEmit
+                  - text: ": Tells TypeScript not to emit any files. This is important when you're using a bundler so you don't emit useless"
+                  - code [ref=e285]: .js
+                  - text: files.
+              - generic [ref=e286]:
+                - link [ref=e287] [cursor=pointer]:
+                  - /url: "#running-in-the-dom"
+                  - text: "#"
+                - heading "Running in the DOM" [level=3] [ref=e645] [cursor=pointer]
+              - paragraph [ref=e289]: If your code runs in the DOM, you'll want these options.
+              - code [ref=e647]:
+                - generic [ref=e648]: "{"
+                - generic [ref=e649]: "\"compilerOptions\": {"
+                - generic [ref=e650]: "\"lib\": [\"es2022\", \"dom\", \"dom.iterable\"]"
+                - generic [ref=e651]: "}"
+                - generic [ref=e652]: "}"
+              - list [ref=e298]:
+                - listitem [ref=e299]:
+                  - link "lib" [ref=e300] [cursor=pointer]:
+                    - /url: https://www.typescriptlang.org/tsconfig#lib
+                    - code [ref=e301]: lib
+                  - text: ": Tells TypeScript what built-in types to include."
+                  - code [ref=e302]: es2022
+                  - text: is the best option for stability.
+                  - code [ref=e303]: dom
+                  - text: and
+                  - code [ref=e304]: dom.iterable
+                  - text: give you types for
+                  - code [ref=e305]: window
+                  - text: ","
+                  - code [ref=e306]: document
+                  - text: etc.
+              - generic [ref=e307]:
+                - link [ref=e308] [cursor=pointer]:
+                  - /url: "#not-running-in-the-dom"
+                  - text: "#"
+                - heading "Not Running in the DOM" [level=3] [ref=e653] [cursor=pointer]
+              - paragraph [ref=e310]:
+                - text: If your code
+                - emphasis [ref=e311]: doesn't
+                - text: run in the DOM, you'll want
+                - code [ref=e312]: "lib: [\"es2022\"]"
+                - text: .
+              - code [ref=e655]:
+                - generic [ref=e656]: "{"
+                - generic [ref=e657]: "\"compilerOptions\": {"
+                - generic [ref=e658]: "\"lib\": [\"es2022\"]"
+                - generic [ref=e659]: "}"
+                - generic [ref=e660]: "}"
+              - paragraph [ref=e321]:
+                - text: These are the same as above, but without the
+                - code [ref=e322]: dom
+                - text: and
+                - code [ref=e323]: dom.iterable
+                - text: typings.
+              - generic [ref=e324]:
+                - link [ref=e325] [cursor=pointer]:
+                  - /url: "#changelog"
+                  - text: "#"
+                - heading "Changelog" [level=2] [ref=e661] [cursor=pointer]
+              - paragraph [ref=e327]:
+                - text: I've been updating this cheatsheet as TypeScript evolves, and as I refine my view of what belongs in a reusable
+                - code [ref=e328]: tsconfig.json
+                - text: ". Here's the changelog:"
+              - list [ref=e329]:
+                - listitem [ref=e330]:
+                  - strong [ref=e331]: 2024-04-23
+                  - text: ": Added"
+                  - code [ref=e332]: verbatimModuleSyntax
+                  - text: to the base options. With the introduction of
+                  - code [ref=e333]: "module: Preserve"
+                  - text: ","
+                  - code [ref=e334]: verbatimModuleSyntax
+                  - text: is much more useful. Many applications do 'fake ESM', where they write imports and exports but transpile to CommonJS. Next.js is a common example. Before
+                  - code [ref=e335]: "module: Preserve"
+                  - text: ","
+                  - code [ref=e336]: verbatimModuleSyntax
+                  - text: would error on every single import or export statement because it was expecting a module. With
+                  - code [ref=e337]: "module: Preserve"
+                  - text: ", its scope is narrowed making sure"
+                  - code [ref=e338]: import/export type
+                  - text: is used correctly.
+                - listitem [ref=e339]:
+                  - strong [ref=e340]: 2024-04-23
+                  - text: ": Added"
+                  - code [ref=e341]: noImplicitOverride
+                  - text: to the strictness options. Never knew about this option, or the
+                  - code [ref=e342]: override
+                  - text: keyword, until I discovered it while researching my book.
+                  - code [ref=e343]: noImplicitOverride
+                  - text: is a very small improvement at no cost, so why not?
+              - generic [ref=e344]:
+                - link [ref=e345] [cursor=pointer]:
+                  - /url: "#what-did-i-miss"
+                  - text: "#"
+                - heading "What Did I Miss?" [level=2] [ref=e662] [cursor=pointer]
+              - paragraph [ref=e347]: Hopefully, I've given you a bit of inspiration for the next time you need to configure TypeScript.
+              - paragraph [ref=e348]: "Did I miss anything? Let me know:"
+              - button "Send Me a Message" [ref=e663] [cursor=pointer]:
+                - img [ref=e664]
+                - text: Send Me a Message
+            - img "Matt's signature" [ref=e353]
+          - complementary [ref=e354]:
+            - generic [ref=e356]:
+              - strong [ref=e357]: On this page
+              - navigation [ref=e358]:
+                - list [ref=e359]:
+                  - listitem [ref=e360]:
+                    - link "The Package" [ref=e361] [cursor=pointer]:
+                      - /url: /tsconfig-cheat-sheet#the-package
+                      - generic [ref=e362]: The Package
+                  - listitem [ref=e363]:
+                    - link "Quickstart" [ref=e364] [cursor=pointer]:
+                      - /url: /tsconfig-cheat-sheet#quickstart
+                      - generic [ref=e365]: Quickstart
+                  - listitem [ref=e366]:
+                    - link "Full Explanation" [ref=e367] [cursor=pointer]:
+                      - /url: /tsconfig-cheat-sheet#full-explanation
+                      - generic [ref=e368]: Full Explanation
+                    - list [ref=e369]:
+                      - listitem [ref=e370]:
+                        - link "Base Options" [ref=e371] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#base-options
+                          - generic [ref=e373]: Base Options
+                      - listitem [ref=e374]:
+                        - link "Strictness" [ref=e375] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#strictness
+                          - generic [ref=e377]: Strictness
+                      - listitem [ref=e378]:
+                        - link "Transpiling with TypeScript" [ref=e379] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#transpiling-with-typescript
+                          - generic [ref=e381]: Transpiling with TypeScript
+                      - listitem [ref=e382]:
+                        - link "Not Transpiling with TypeScript" [ref=e383] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#not-transpiling-with-typescript
+                          - generic [ref=e385]: Not Transpiling with TypeScript
+                      - listitem [ref=e386]:
+                        - link "Running in the DOM" [ref=e387] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#running-in-the-dom
+                          - generic [ref=e389]: Running in the DOM
+                      - listitem [ref=e390]:
+                        - link "Not Running in the DOM" [ref=e391] [cursor=pointer]:
+                          - /url: /tsconfig-cheat-sheet#not-running-in-the-dom
+                          - generic [ref=e393]: Not Running in the DOM
+                  - listitem [ref=e394]:
+                    - link "Changelog" [ref=e395] [cursor=pointer]:
+                      - /url: /tsconfig-cheat-sheet#changelog
+                      - generic [ref=e396]: Changelog
+                  - listitem [ref=e397]:
+                    - link "What Did I Miss?" [ref=e398] [cursor=pointer]:
+                      - /url: /tsconfig-cheat-sheet#what-did-i-miss
+                      - generic [ref=e399]: What Did I Miss?
+        - generic [ref=e401]:
+          - paragraph [ref=e402]: The TSConfig Cheat Sheet
+          - generic [ref=e403]:
+            - link "share on bluesky" [ref=e404] [cursor=pointer]:
+              - /url: https://bsky.app/intent/compose?text=The%20TSConfig%20Cheat%20Sheet%20by%20%40mattpocockuk%0A%0A%20https%3A%2F%2Fwww.totaltypescript.com%2Ftsconfig-cheat-sheet
+              - img [ref=e405]
+              - generic [ref=e407]: share on bluesky
+            - link "share on twitter" [ref=e408] [cursor=pointer]:
+              - /url: https://twitter.com/intent/tweet/?text=The%20TSConfig%20Cheat%20Sheet%20by%20%40mattpocockuk&url=https%3A%2F%2Fwww.totaltypescript.com%2Ftsconfig-cheat-sheet
+              - img [ref=e409]
+              - generic [ref=e411]: share on twitter
+            - link "share on linkedin" [ref=e412] [cursor=pointer]:
+              - /url: https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fwww.totaltypescript.com%2Ftsconfig-cheat-sheet
+              - img [ref=e413]
+              - generic [ref=e416]: share on linkedin
+            - link "share on reddit" [ref=e417] [cursor=pointer]:
+              - /url: https://reddit.com/submit/?url=https%3A%2F%2Fwww.totaltypescript.com%2Ftsconfig-cheat-sheet&title=
+              - img [ref=e418]
+              - generic [ref=e421]: share on reddit
+            - button "copy url to clipboard" [ref=e422] [cursor=pointer]:
+              - img [ref=e423]
+              - generic [ref=e427]: copy url to clipboard
+        - generic [ref=e428]:
+          - article [ref=e429]:
+            - link "Cursor Rules for Better AI Development Finding existing community .cursor/rules for TypeScript lacking, I'm sharing my own set to hopefully kickstart a discussion on what makes effective AI coding guidance. These rules focus purely on TypeScript language features, documentation, structure (like Result types), teaching the AI specific nuances (like noUncheckedIndexedAccess), and practical habits, rather than specific frameworks. I also distinguish between shareable, project-specific Workspace Rules (versioned in Git) and personalized Global Rules (living in your IDE) to tailor the AI to your individual style and workflow. You can download my current ruleset using the link in the original post. Matt Pocock Matt Pocock" [ref=e430] [cursor=pointer]:
+              - /url: /cursor-rules-for-better-ai-development
+              - heading "Cursor Rules for Better AI Development" [level=2] [ref=e431]:
+                - generic [ref=e432]: Cursor Rules for Better AI Development
+              - paragraph [ref=e434]: Finding existing community .cursor/rules for TypeScript lacking, I'm sharing my own set to hopefully kickstart a discussion on what makes effective AI coding guidance. These rules focus purely on TypeScript language features, documentation, structure (like Result types), teaching the AI specific nuances (like noUncheckedIndexedAccess), and practical habits, rather than specific frameworks. I also distinguish between shareable, project-specific Workspace Rules (versioned in Git) and personalized Global Rules (living in your IDE) to tailor the AI to your individual style and workflow. You can download my current ruleset using the link in the original post.
+              - generic [ref=e435]:
+                - img "Matt Pocock" [ref=e437]
+                - generic [ref=e438]: Matt Pocock
+          - article [ref=e439]:
+            - 'link "Should You Declare Return Types? Here''s a quick .cursor/rules addition you can make for handling return types in TypeScript. # Return Types When declaring functions on the top-level of a module, declare their return types. This will help future AI assistants understand the function''s purpose. ```ts const myFunc = (): string => { return \"hello\"; }; ``` One exception to this is components which return JSX. No need to Matt Pocock Matt Pocock" [ref=e440] [cursor=pointer]':
+              - /url: /should-you-declare-return-types
+              - heading "Should You Declare Return Types?" [level=2] [ref=e441]:
+                - generic [ref=e442]: Should You Declare Return Types?
+              - generic [ref=e443]:
+                - paragraph [ref=e444]:
+                  - text: Here's a quick
+                  - code [ref=e445]: .cursor/rules
+                  - text: addition you can make for handling return types in TypeScript.
+                - code [ref=e447]: "# Return Types When declaring functions on the top-level of a module, declare their return types. This will help future AI assistants understand the function's purpose. ```ts const myFunc = (): string => { return \"hello\"; }; ``` One exception to this is components which return JSX. No need to"
+              - generic [ref=e448]:
+                - img "Matt Pocock" [ref=e450]
+                - generic [ref=e451]: Matt Pocock
+          - article [ref=e452]:
+            - link "TypeScript Announces Go Rewrite, Achieves 10x Speedup TypeScript announced a full rewrite of TypeScript in Go. In testing, this rewrite has achieved a 10x speedup in some repositories - and up to 15x in others. Matt Pocock Matt Pocock" [ref=e453] [cursor=pointer]:
+              - /url: /typescript-announces-go-rewrite
+              - heading "TypeScript Announces Go Rewrite, Achieves 10x Speedup" [level=2] [ref=e454]:
+                - generic [ref=e455]: TypeScript Announces Go Rewrite, Achieves 10x Speedup
+              - paragraph [ref=e457]: TypeScript announced a full rewrite of TypeScript in Go. In testing, this rewrite has achieved a 10x speedup in some repositories - and up to 15x in others.
+              - generic [ref=e458]:
+                - img "Matt Pocock" [ref=e460]
+                - generic [ref=e461]: Matt Pocock
+          - article [ref=e462]:
+            - link "TypeScript 5.8 Ships --erasableSyntaxOnly To Disable Enums TypeScript 5.8's new erasableSyntaxOnly flag enforces pure type annotations by disabling enums, namespaces, and parameter properties. Matt Pocock Matt Pocock" [ref=e463] [cursor=pointer]:
+              - /url: /erasable-syntax-only
+              - heading "TypeScript 5.8 Ships --erasableSyntaxOnly To Disable Enums" [level=2] [ref=e464]:
+                - generic [ref=e465]: TypeScript 5.8 Ships --erasableSyntaxOnly To Disable Enums
+              - paragraph [ref=e467]: TypeScript 5.8's new erasableSyntaxOnly flag enforces pure type annotations by disabling enums, namespaces, and parameter properties.
+              - generic [ref=e468]:
+                - img "Matt Pocock" [ref=e470]
+                - generic [ref=e471]: Matt Pocock
+          - article [ref=e472]:
+            - link "Node.js Now Supports TypeScript By Default TypeScript is coming to Node 23. Let's break down what that means. Matt Pocock Matt Pocock" [ref=e473] [cursor=pointer]:
+              - /url: /typescript-is-coming-to-node-23
+              - img [ref=e475]
+              - heading "Node.js Now Supports TypeScript By Default" [level=2] [ref=e476]:
+                - generic [ref=e477]: Node.js Now Supports TypeScript By Default
+              - paragraph [ref=e479]: TypeScript is coming to Node 23. Let's break down what that means.
+              - generic [ref=e480]:
+                - img "Matt Pocock" [ref=e482]
+                - generic [ref=e483]: Matt Pocock
+          - article [ref=e484]:
+            - link "This Crazy Syntax Lets You Get An Array Element's Type Learn how to extract the type of an array element in TypeScript using the powerful Array[number] trick. Matt Pocock Matt Pocock" [ref=e485] [cursor=pointer]:
+              - /url: /get-the-type-of-an-array-element
+              - img [ref=e487]
+              - heading "This Crazy Syntax Lets You Get An Array Element's Type" [level=2] [ref=e488]:
+                - generic [ref=e489]: This Crazy Syntax Lets You Get An Array Element's Type
+              - paragraph [ref=e491]:
+                - text: Learn how to extract the type of an array element in TypeScript using the powerful
+                - code [ref=e492]: Array[number]
+                - text: trick.
+              - generic [ref=e493]:
+                - img "Matt Pocock" [ref=e495]
+                - generic [ref=e496]: Matt Pocock
+    - contentinfo [ref=e497]:
+      - generic [ref=e498]:
+        - navigation "footer" [ref=e499]:
+          - generic [ref=e500]:
+            - strong [ref=e501]: Learn
+            - list [ref=e502]:
+              - listitem [ref=e503]:
+                - link "Total TypeScript Book" [ref=e504] [cursor=pointer]:
+                  - /url: /books/total-typescript-essentials
+              - listitem [ref=e505]:
+                - link "Premium Workshops" [ref=e506] [cursor=pointer]:
+                  - /url: /workshops
+              - listitem [ref=e507]:
+                - link "Free Tutorials" [ref=e508] [cursor=pointer]:
+                  - /url: /tutorials
+              - listitem [ref=e509]:
+                - link "Tips" [ref=e510] [cursor=pointer]:
+                  - /url: /tips
+              - listitem [ref=e511]:
+                - link "Articles" [ref=e512] [cursor=pointer]:
+                  - /url: /articles
+              - listitem [ref=e513]:
+                - link "Concepts" [ref=e514] [cursor=pointer]:
+                  - /url: /concepts
+              - listitem [ref=e515]:
+                - link "Search" [ref=e516] [cursor=pointer]:
+                  - /url: /search
+          - generic [ref=e517]:
+            - strong [ref=e518]: About
+            - list [ref=e519]:
+              - listitem [ref=e520]:
+                - link "All Products" [ref=e521] [cursor=pointer]:
+                  - /url: /products
+              - listitem [ref=e522]:
+                - link "FAQ" [ref=e523] [cursor=pointer]:
+                  - /url: /faq
+              - listitem [ref=e524]:
+                - link "Credits" [ref=e525] [cursor=pointer]:
+                  - /url: /credits
+          - generic [ref=e526]:
+            - strong [ref=e527]: Tools
+            - list [ref=e528]:
+              - listitem [ref=e529]:
+                - link "Learning Path" [ref=e530] [cursor=pointer]:
+                  - /url: /typescript-learning-path
+              - listitem [ref=e531]:
+                - link "VSCode Extension" [ref=e532] [cursor=pointer]:
+                  - /url: /vscode-extension
+              - listitem [ref=e533]:
+                - link "TS Reset" [ref=e534] [cursor=pointer]:
+                  - /url: /ts-reset
+              - listitem [ref=e535]:
+                - link "Discord Server" [ref=e536] [cursor=pointer]:
+                  - /url: https://mattpocock.com/discord
+          - generic [ref=e537]:
+            - strong [ref=e538]: Contact
+            - list [ref=e539]:
+              - listitem [ref=e540]:
+                - link "Contact Us" [ref=e541] [cursor=pointer]:
+                  - /url: /contact
+              - listitem [ref=e542]:
+                - link "Email Support" [ref=e543] [cursor=pointer]:
+                  - /url: mailto:team@totaltypescript.com
+        - img [ref=e544]
+  - alert [ref=e666]

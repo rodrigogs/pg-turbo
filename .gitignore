@@ -1,0 +1,23 @@
+# Dump output
+*.dump
+*.done
+_dump.log
+_schema_ddl.sql
+
+# Test artifacts
+test_dump_input/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment
+.env
+tests/integration/tmp/

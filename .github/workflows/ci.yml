@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shfmt
+        run: |
+          SHFMT_VERSION="3.7.0"
+          curl -sS -Lo shfmt "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64"
+          chmod +x shfmt
+          sudo mv shfmt /usr/local/bin/
+
+      - name: ShellCheck
+        run: make lint
+
+      - name: shfmt (format check)
+        run: make fmt-check
+
+      - name: Run tests
+        run: make test

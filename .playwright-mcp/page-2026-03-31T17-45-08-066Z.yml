@@ -1,0 +1,1014 @@
+- generic [active] [ref=e1]:
+  - navigation [ref=e2]:
+    - link "Haki Benita" [ref=e3] [cursor=pointer]:
+      - /url: https://hakibenita.com/
+    - list [ref=e4]:
+      - listitem [ref=e5]:
+        - link "About" [ref=e6] [cursor=pointer]:
+          - /url: https://hakibenita.com/pages/about
+      - listitem [ref=e7]:
+        - link "Subscribe" [ref=e8] [cursor=pointer]:
+          - /url: https://hakibenita.com/subscribe
+    - button "Switch Theme" [ref=e9] [cursor=pointer]:
+      - img [ref=e10]
+  - main [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - time [ref=e17]: 27 July 2020
+            - text: /
+          - listitem [ref=e18]:
+            - link "SQL" [ref=e19] [cursor=pointer]:
+              - /url: https://hakibenita.com/tag/sql
+            - text: ","
+            - link "Performance" [ref=e20] [cursor=pointer]:
+              - /url: https://hakibenita.com/tag/performance
+            - text: /
+          - listitem [ref=e21]:
+            - link "148 953" [ref=e22] [cursor=pointer]:
+              - /url: https://hakibenita.com/sql-tricks-application-dba#discuss
+              - img [ref=e23]
+              - text: "148"
+              - img [ref=e27]
+              - text: "953"
+        - heading "Some SQL Tricks of an Application DBA" [level=1] [ref=e29]
+        - heading "Non-trivial tips for database development" [level=2] [ref=e30]
+      - article [ref=e31]:
+        - separator [ref=e32]: ...
+        - paragraph [ref=e33]: "When I started my career in development, my first job was a DBA. Back then, before AWS RDS, Azure, Google Cloud and the rest of them cloud services, there were two types of DBAs:"
+        - paragraph [ref=e34]:
+          - strong [ref=e35]: The Infrastructure DBA
+          - text: was in charge of setting up the database, configuring the storage and taking care of backups and replication. After setting up the database, the infrastructure DBA would pop up from time to time and do some "instance tuning", things like sizing caches.
+        - paragraph [ref=e36]:
+          - strong [ref=e37]: The Application DBA
+          - text: "got a clean database from the infrastructure DBA, and was in charge of schema design: creating tables, indexes, constraints, and tuning SQL. The application DBA was also the one who implemented ETL processes and data migrations. In teams that used stored procedures, the application DBA would maintain those as well."
+        - paragraph [ref=e38]: Application DBAs were usually part of the development team. They would possess deep domain knowledge so normally they would work on just one or two projects. Infrastructure DBAs would usually be part of some IT team, and would work on many projects simultaneously.
+        - paragraph [ref=e39]:
+          - strong [ref=e40]: I'm an Application DBA
+        - paragraph [ref=e41]: I never had any desire to fiddle with backups or tune storage (I'm sure it's fascinating!). Until this day I like to say I'm a DBA that knows how to develop applications, and not a developer that knows his way around the database.
+        - paragraph [ref=e42]:
+          - strong [ref=e43]: In this article I share some non-trivial tips about database development I gathered along the way.
+        - figure "Be that guy... Image by CommitStrip" [ref=e44]:
+          - img "Be that guy...<br>Image by <a href=\"https://www.commitstrip.com/en/2014/08/01/when-i-help-a-rookie-coder-fix-his-queries\">CommitStrip</a>" [ref=e45]
+          - generic [ref=e46]:
+            - text: Be that guy...
+            - text: Image by
+            - link "CommitStrip" [ref=e47] [cursor=pointer]:
+              - /url: https://www.commitstrip.com/en/2014/08/01/when-i-help-a-rookie-coder-fix-his-queries
+        - paragraph
+        - group [ref=e48]:
+          - generic "Table of Contents" [ref=e49] [cursor=pointer]
+          - list [ref=e51]:
+            - listitem [ref=e52]:
+              - link "Update Only What Needs Updating" [ref=e53] [cursor=pointer]:
+                - /url: "#update-only-what-needs-updating"
+            - listitem [ref=e54]:
+              - link "Disable Constraints and Indexes During Bulk Loads" [ref=e55] [cursor=pointer]:
+                - /url: "#disable-constraints-and-indexes-during-bulk-loads"
+            - listitem [ref=e56]:
+              - link "Use UNLOGGED Tables for Intermediate Data" [ref=e57] [cursor=pointer]:
+                - /url: "#use-unlogged-tables-for-intermediate-data"
+            - listitem [ref=e58]:
+              - link "Implement Complete Processes Using WITH and RETURNING" [ref=e59] [cursor=pointer]:
+                - /url: "#implement-complete-processes-using-with-and-returning"
+            - listitem [ref=e60]:
+              - link "Avoid Indexes on Columns With Low Selectivity" [ref=e61] [cursor=pointer]:
+                - /url: "#avoid-indexes-on-columns-with-low-selectivity"
+            - listitem [ref=e62]:
+              - link "Use Partial Indexes" [ref=e63] [cursor=pointer]:
+                - /url: "#use-partial-indexes"
+            - listitem [ref=e64]:
+              - link "Always Load Sorted Data" [ref=e65] [cursor=pointer]:
+                - /url: "#always-load-sorted-data"
+            - listitem [ref=e66]:
+              - link "Index Columns With High Correlation Using BRIN" [ref=e67] [cursor=pointer]:
+                - /url: "#index-columns-with-high-correlation-using-brin"
+            - listitem [ref=e68]:
+              - link "Make Indexes \"Invisible\"" [ref=e69] [cursor=pointer]:
+                - /url: "#make-indexes-invisible"
+            - listitem [ref=e70]:
+              - link "Don't Schedule Long Running Processes at Round Hours" [ref=e71] [cursor=pointer]:
+                - /url: "#dont-schedule-long-running-processes-at-round-hours"
+            - listitem [ref=e72]:
+              - link "Conclusion" [ref=e73] [cursor=pointer]:
+                - /url: "#conclusion"
+        - paragraph
+        - separator [ref=e74]: ...
+        - heading "Update Only What Needs Updating" [level=2] [ref=e75]:
+          - link "Update Only What Needs Updating" [ref=e76] [cursor=pointer]:
+            - /url: "#update-only-what-needs-updating"
+        - paragraph [ref=e77]:
+          - code [ref=e78]: UPDATE
+          - text: is a relatively expensive operation. To speed up an
+          - code [ref=e79]: UPDATE
+          - text: command it's best to make sure you only update what needs updating.
+        - paragraph [ref=e80]: "Take this query for example that normalizes an email column:"
+        - generic [ref=e82]: "db=# UPDATE users SET email = lower(email); UPDATE 1010000 Time: 1583.935 ms (00:01.584)"
+        - paragraph [ref=e83]: Looks innocent, right? the query updated emails of 1,010,000 users. But, did all rows really needed to update?
+        - generic [ref=e85]:
+          - text: db=# UPDATE users SET email = lower(email)
+          - generic [ref=e86]: db-# WHERE email != lower(email);
+          - text: "UPDATE 10000 Time: 299.470 ms"
+        - paragraph [ref=e87]: Only 10,000 rows needed to update. By reducing the amount of affected rows, the execution time went down from 1.5 seconds to just less than 300ms. Updating fewer rows also saves the database maintenance later on.
+        - figure "Update Only What Needs Updating" [ref=e88]:
+          - img [ref=e89]
+          - generic [ref=e123]: Update Only What Needs Updating
+        - paragraph [ref=e124]: This type of large updates are very common in data migration scripts. So the next time you write a migration script, make sure to only update what needs updating.
+        - separator [ref=e125]: ...
+        - heading "Disable Constraints and Indexes During Bulk Loads" [level=2] [ref=e126]:
+          - link "Disable Constraints and Indexes During Bulk Loads" [ref=e127] [cursor=pointer]:
+            - /url: "#disable-constraints-and-indexes-during-bulk-loads"
+        - paragraph [ref=e128]: "Constraints are an important part of relational databases: they keep the data consistent and reliable. Their benefits come at a cost though, and it's most noticeable when loading or updating a lot of rows."
+        - paragraph [ref=e129]: "To demonstrate, set up a small schema for a store:"
+        - generic [ref=e131]: DROP TABLE IF EXISTS product CASCADE; CREATE TABLE product ( id serial PRIMARY KEY, name TEXT NOT NULL, price INT NOT NULL ); INSERT INTO product (name, price) SELECT random()::text, (random() * 1000)::int FROM generate_series(0, 10000); DROP TABLE IF EXISTS customer CASCADE; CREATE TABLE customer ( id serial PRIMARY KEY, name TEXT NOT NULL ); INSERT INTO customer (name) SELECT random()::text FROM generate_series(0, 100000); DROP TABLE IF EXISTS sale; CREATE TABLE sale ( id serial PRIMARY KEY, created timestamptz NOT NULL, product_id int NOT NULL, customer_id int NOT NULL );
+        - paragraph [ref=e132]: The schema defines different types of constraints such as "not null" and unique constraints.
+        - paragraph [ref=e133]:
+          - text: To set a baseline, start by adding foreign keys to the
+          - code [ref=e134]: sale
+          - text: "table, and then load some data into it:"
+        - generic [ref=e136]: "db=# ALTER TABLE sale ADD CONSTRAINT sale_product_fk db-# FOREIGN KEY (product_id) REFERENCES product(id); ALTER TABLE Time: 18.413 ms db=# ALTER TABLE sale ADD CONSTRAINT sale_customer_fk db-# FOREIGN KEY (customer_id) REFERENCES customer(id); ALTER TABLE Time: 5.464 ms db=# CREATE INDEX sale_created_ix ON sale(created); CREATE INDEX Time: 12.605 ms db=# INSERT INTO SALE (created, product_id, customer_id) db-# SELECT db-# now() - interval '1 hour' * random() * 1000, db-# (random() * 10000)::int + 1, db-# (random() * 100000)::int + 1 db-# FROM generate_series(1, 1000000); INSERT 0 1000000 Time: 15410.234 ms (00:15.410)"
+        - paragraph [ref=e137]: After defining constraints and indexes, loading a million rows to the table took ~15.4s.
+        - paragraph [ref=e138]: "Next, try to load the data into the table first, and only then add constraints and indexes:"
+        - generic [ref=e140]: "db=# INSERT INTO SALE (created, product_id, customer_id) db-# SELECT db-# now() - interval '1 hour' * random() * 1000, db-# (random() * 10000)::int + 1, db-# (random() * 100000)::int + 1 db-# FROM generate_series(1, 1000000); INSERT 0 1000000 Time: 2277.824 ms (00:02.278) db=# ALTER TABLE sale ADD CONSTRAINT sale_product_fk db-# FOREIGN KEY (product_id) REFERENCES product(id); ALTER TABLE Time: 169.193 ms db=# ALTER TABLE sale ADD CONSTRAINT sale_customer_fk db-# FOREIGN KEY (customer_id) REFERENCES customer(id); ALTER TABLE Time: 185.633 ms db=# CREATE INDEX sale_created_ix ON sale(created); CREATE INDEX Time: 484.244 ms"
+        - paragraph [ref=e141]: Loading data into a table without indexes and constraints was much faster, 2.27s compared to 15.4s before. Creating the indexes and constraints after the data was loaded into the table took a bit longer, but overall the entire process was much faster, 3.1s compared to 15.4s.
+        - paragraph [ref=e142]:
+          - text: Unfortunately, for indexes PostgreSQL does not provide an easy way of doing this other than dropping and re-creating the indexes. In other databases such as Oracle, you can
+          - link "disable and enable indexes" [ref=e143] [cursor=pointer]:
+            - /url: https://docs.oracle.com/en/database/oracle/oracle-database/19/sqlrf/ALTER-INDEX.html#GUID-D8F648E7-8C07-4C89-BB71-862512536558
+          - text: without having to re-create them.
+        - separator [ref=e144]: ...
+        - heading "Use UNLOGGED Tables for Intermediate Data" [level=2] [ref=e145]:
+          - link "Use UNLOGGED Tables for Intermediate Data" [ref=e146] [cursor=pointer]:
+            - /url: "#use-unlogged-tables-for-intermediate-data"
+        - paragraph [ref=e147]:
+          - text: When you modify data in PostgreSQL, the changes are written to the
+          - link "write ahead log (WAL)" [ref=e148] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/wal-intro.html
+          - text: . The WAL is used to maintain integrity, to fast forward the database during recovery and to maintain replication.
+        - paragraph [ref=e149]: Writing to the WAL is often needed, but there are some circumstances where you might be willing to give up some of its uses to make things a bit faster. One example is intermediate tables.
+        - paragraph [ref=e150]: Intermediate tables are disposable tables that stores temporary data used to implement some process. For example, a very common pattern in ETL processes is to load data from a CSV file to an intermediate table, clean the data, and then load it to the target table. In this use-case, the intermediate table is disposable and there is no use for it in backups or replicas.
+        - figure "UNLOGGED table" [ref=e151]:
+          - img [ref=e152]
+          - generic [ref=e171]: UNLOGGED table
+        - paragraph [ref=e172]:
+          - text: Intermediate tables that don't need to be restored in case of disaster, and are not needed in replicas, can be set as
+          - link "UNLOGGED" [ref=e173] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/sql-createtable.html#SQL-CREATETABLE-UNLOGGED
+          - text: ":"
+        - generic [ref=e175]: CREATE UNLOGGED TABLE staging_table ( /* table definition */ );
+        - paragraph [ref=e176]:
+          - strong [ref=e177]: BEWARE
+          - text: ": Before using"
+          - code [ref=e178]: UNLOGGED
+          - text: make sure you understand its full implications.
+        - separator [ref=e179]: ...
+        - heading "Implement Complete Processes Using WITH and RETURNING" [level=2] [ref=e180]:
+          - link "Implement Complete Processes Using WITH and RETURNING" [ref=e181] [cursor=pointer]:
+            - /url: "#implement-complete-processes-using-with-and-returning"
+            - text: Implement Complete Processes Using
+            - code [ref=e182]: WITH
+            - text: and
+            - code [ref=e183]: RETURNING
+        - paragraph [ref=e184]: "Say you have a users table, and you find that you have some duplicates in the table:"
+        - paragraph
+        - group [ref=e185]:
+          - generic "Table setup" [ref=e186]
+        - paragraph
+        - generic [ref=e188]:
+          - text: db=# SELECT u.id, u.email, o.id as order_id FROM orders o JOIN users u ON o.user_id = u.id; id | email | order_id ----+-------------------+---------- 1 | foo@bar.baz | 1 1 | foo@bar.baz | 2
+          - generic [ref=e189]: 2 | me@hakibenita.com | 3
+          - generic [ref=e190]: 3 | ME@hakibenita.com | 4
+          - generic [ref=e191]: 3 | ME@hakibenita.com | 5
+        - paragraph [ref=e192]:
+          - text: The user
+          - emphasis [ref=e193]: haki benita
+          - text: registered twice, once with the email
+          - code [ref=e194]: ME@hakibenita.com
+          - text: and again with
+          - code [ref=e195]: me@hakibenita.com
+          - text: . Because we didn't normalize the emails when we inserted them into the table, we now have to deal with duplication.
+        - paragraph [ref=e196]: "To consolidate the duplicate users, we want to:"
+        - list [ref=e197]:
+          - listitem [ref=e198]: Identify duplicate users by lower case email
+          - listitem [ref=e199]: Update orders to reference one of the duplicate users
+          - listitem [ref=e200]: Remove the duplicate users from the users table
+        - paragraph [ref=e201]: "One way to consolidate duplicate users is to use an intermediate table:"
+        - generic [ref=e203]: "db=# CREATE UNLOGGED TABLE duplicate_users AS db-# SELECT db-# lower(email) AS normalized_email, db-# min(id) AS convert_to_user, db-# array_remove(ARRAY_AGG(id), min(id)) as convert_from_users db-# FROM db-# users db-# GROUP BY db-# normalized_email db-# HAVING db-# count(*) > 1; CREATE TABLE db=# SELECT * FROM duplicate_users; normalized_email | convert_to_user | convert_from_users -------------------+-----------------+-------------------- me@hakibenita.com | 2 | {3}"
+        - paragraph [ref=e204]: The intermediate table holds a mapping of duplicate users. For each user that appears more than once with the same normalized email address, we define the user with the min ID as the user we convert all duplicates to. The other users are kept in an array column, and all the references to these users will be updated.
+        - paragraph [ref=e205]:
+          - text: Using the intermediate table, we update references of duplicate users in the
+          - code [ref=e206]: orders
+          - text: "table:"
+        - generic [ref=e208]: db=# UPDATE db-# orders o db-# SET db-# user_id = du.convert_to_user db-# FROM db-# duplicate_users du db-# WHERE db-# o.user_id = ANY(du.convert_from_users); UPDATE 2
+        - paragraph [ref=e209]:
+          - text: Now that there are no more references, we can safely delete the duplicate users from the
+          - code [ref=e210]: users
+          - text: "table:"
+        - generic [ref=e212]: db=# DELETE FROM db-# users db-# WHERE db-# id IN ( db(# SELECT unnest(convert_from_users) db(# FROM duplicate_users db(# ); DELETE 1
+        - paragraph [ref=e213]:
+          - text: Notice that we used the function
+          - link "unnest" [ref=e214] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/functions-array.html#ARRAY-FUNCTIONS-TABLE
+            - code [ref=e215]: unnest
+          - text: to "transpose" the array, that is, turn each array element into a row.
+        - paragraph [ref=e216]: "This is the result:"
+        - generic [ref=e218]:
+          - text: db=# SELECT u.id, u.email, o.id as order_id db-# FROM orders o JOIN users u ON o.user_id = u.id; id | email | order_id ----+-------------------+---------- 1 | foo@bar.baz | 1 1 | foo@bar.baz | 2
+          - generic [ref=e219]: 2 | me@hakibenita.com | 3
+          - generic [ref=e220]: 2 | me@hakibenita.com | 4
+          - generic [ref=e221]: 2 | me@hakibenita.com | 5
+        - paragraph [ref=e222]: Nice, all occurrences of user 3 (ME@hakibenita.com) are converted to user 2 (me@hakibenita.com).
+        - paragraph [ref=e223]:
+          - text: We can also verify that the duplicate users were deleted from the
+          - code [ref=e224]: users
+          - text: "table:"
+        - generic [ref=e226]: db=# SELECT * FROM users; id | email ----+------------------- 1 | foo@bar.baz 2 | me@hakibenita.com
+        - paragraph [ref=e227]: "Now we can get rid of the intermediate table:"
+        - generic [ref=e229]: db=# DROP TABLE duplicate_users; DROP TABLE
+        - paragraph [ref=e230]: This is fine, but very long and needs cleaning up! Is there a better way?
+        - paragraph [ref=e231]:
+          - strong [ref=e232]: Using Common Table Expressions (CTE)
+        - paragraph [ref=e233]:
+          - text: Using
+          - link "Common Table Expressions" [ref=e234] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/queries-with.html
+          - text: ", also known as the"
+          - code [ref=e235]: WITH
+          - text: "clause, we can perform the entire process with just one SQL statement:"
+        - generic [ref=e237]: WITH duplicate_users AS ( SELECT min(id) AS convert_to_user, array_remove(ARRAY_AGG(id), min(id)) as convert_from_users FROM users GROUP BY lower(email) HAVING count(*) > 1 ), update_orders_of_duplicate_users AS ( UPDATE orders o SET user_id = du.convert_to_user FROM duplicate_users du WHERE o.user_id = ANY(du.convert_from_users) ) DELETE FROM users WHERE id IN ( SELECT unnest(convert_from_users) FROM duplicate_users );
+        - paragraph [ref=e238]: Instead of creating the intermediate table, we create a common table expression and reuse it multiple times.
+        - paragraph [ref=e239]:
+          - strong [ref=e240]: Returning Results From CTE
+        - paragraph [ref=e241]:
+          - text: A nice feature of executing DML inside a
+          - code [ref=e242]: WITH
+          - text: clause, is that you can return data from it using the
+          - link "RETURNING keyword" [ref=e243] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/dml-returning.html
+            - code [ref=e244]: RETURNING
+            - text: keyword
+          - text: ". For example, let's report the number of updated and deleted rows:"
+        - generic [ref=e246]:
+          - text: WITH duplicate_users AS ( SELECT min(id) AS convert_to_user, array_remove(ARRAY_AGG(id), min(id)) as convert_from_users FROM users GROUP BY lower(email) HAVING count(*) > 1 ), update_orders_of_duplicate_users AS ( UPDATE orders o SET user_id = du.convert_to_user FROM duplicate_users du WHERE o.user_id = ANY(du.convert_from_users)
+          - generic [ref=e247]: RETURNING o.id
+          - text: ), delete_duplicate_user AS ( DELETE FROM users WHERE id IN ( SELECT unnest(convert_from_users) FROM duplicate_users )
+          - generic [ref=e248]: RETURNING id
+          - text: ) SELECT
+          - generic [ref=e249]: (SELECT count(*) FROM update_orders_of_duplicate_users) AS orders_updated,
+          - generic [ref=e250]: (SELECT count(*) FROM delete_duplicate_user) AS users_deleted
+          - text: ;
+        - paragraph [ref=e251]: "This is the result:"
+        - generic [ref=e253]: orders_updated | users_deleted ----------------+--------------- 2 | 1
+        - paragraph [ref=e254]: The main appeal of this approach is that the entire process is executed in a single command, so no need to manage a transaction or worry about cleaning up the intermediate table if the process fails.
+        - paragraph [ref=e255]:
+          - strong [ref=e256]: CAUTION
+          - text: ":"
+          - link "A reader on Reddit" [ref=e257] [cursor=pointer]:
+            - /url: https://www.reddit.com/r/programming/comments/hyv0xh/some_sql_tricks_of_an_application_dba/fzhqzw5?utm_source=share&utm_medium=web2x
+          - text: pointed me to a possibly
+          - link "unpredictable behavior of executing DML in common table expressions" [ref=e258] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/queries-with.html#QUERIES-WITH-MODIFYING
+          - text: ":"
+        - blockquote [ref=e259]:
+          - paragraph [ref=e260]: The sub-statements in WITH are executed concurrently with each other and with the main query. Therefore, when using data-modifying statements in WITH, the order in which the specified updates actually happen is unpredictable
+        - paragraph [ref=e261]: This means you cannot rely on the order in which independent sub-statements are executed. It seems that when there is a dependency between sub-statements, like in the example above, you can rely on a dependent sub-statement to execute before it is being used.
+        - separator [ref=e262]: ...
+        - heading "Avoid Indexes on Columns With Low Selectivity" [level=2] [ref=e263]:
+          - link "Avoid Indexes on Columns With Low Selectivity" [ref=e264] [cursor=pointer]:
+            - /url: "#avoid-indexes-on-columns-with-low-selectivity"
+        - paragraph [ref=e265]: "Say you have a registration process where users sign up with an email address. To activate the account, they have to verify their email. Your table can look like this:"
+        - generic [ref=e267]: db=# CREATE TABLE users ( db-# id serial, db-# username text, db-# activated boolean db-#); CREATE TABLE
+        - paragraph [ref=e268]: "Most of your users are good citizens, they sign up with a valid email and immediately activate the account. Let's populate the table with user data, where roughly 90% of the users are activated:"
+        - generic [ref=e270]: db=# INSERT INTO users (username, activated) db-# SELECT db-# md5(random()::text) AS username, db-# random() < 0.9 AS activated db-# FROM db-# generate_series(1, 1000000); INSERT 0 1000000 db=# SELECT activated, count(*) FROM users GROUP BY activated; activated | count -----------+-------- f | 102567 t | 897433 db=# VACUUM ANALYZE users; VACUUM
+        - paragraph [ref=e271]:
+          - text: To query for activated and unactivated users, you might be tempted to create an index on the column
+          - code [ref=e272]: activated
+          - text: ":"
+        - generic [ref=e274]: db=# CREATE INDEX users_activated_ix ON users(activated); CREATE INDEX
+        - paragraph [ref=e275]:
+          - text: When you try to query
+          - emphasis [ref=e276]: unactivated users
+          - text: ", the database is using the index:"
+        - generic [ref=e278]:
+          - text: "db=# EXPLAIN SELECT * FROM users WHERE NOT activated; QUERY PLAN -------------------------------------------------------------------------------------- Bitmap Heap Scan on users (cost=1923.32..11282.99 rows=102567 width=38) Filter: (NOT activated)"
+          - generic [ref=e279]: "-> Bitmap Index Scan on users_activated_ix (cost=0.00..1897.68 rows=102567 width=0)"
+          - text: "Index Cond: (activated = false)"
+        - paragraph [ref=e280]: The database estimated that the filter will result in 102,567 which are roughly 10% of the table. This is consistent with the data we populated, so the database has a good sense of the data.
+        - paragraph [ref=e281]:
+          - text: However, when you try to query for
+          - emphasis [ref=e282]: activated users
+          - text: you find that the database decided
+          - emphasis [ref=e283]: not to use the index
+          - text: ":"
+        - generic [ref=e285]: "db=# EXPLAIN SELECT * FROM users WHERE activated; QUERY PLAN --------------------------------------------------------------- Seq Scan on users (cost=0.00..18334.00 rows=897433 width=38) Filter: activated"
+        - paragraph [ref=e286]:
+          - text: "Many developers are often baffled when the database is not using an index. One way of explaining why an index is not always the best choice is this:"
+          - strong [ref=e287]: if you had to read the entire table, would you use the index?
+        - paragraph [ref=e288]: The answer is probably no, because why would you? Reading from disk is expensive and you want to read as little as possible. If for example, a table is 10MB and the index is 1MB, to read the entire table you would have to read 10MB from disk. To read the table using the index you would have to read 11MB from disk. This is wasteful.
+        - paragraph [ref=e289]: "With this understanding, let's have a look at the statistics PostgreSQL gather on the table:"
+        - generic [ref=e291]: "db=# SELECT attname, n_distinct, most_common_vals, most_common_freqs db-# FROM pg_stats db-# WHERE tablename = 'users' AND attname='activated'; ------------------+------------------------ attname | activated n_distinct | 2 most_common_vals | {t,f} most_common_freqs | {0.89743334,0.10256667}"
+        - paragraph [ref=e292]:
+          - text: When PostgreSQL analyzed the table it found that the column
+          - code [ref=e293]: activated
+          - text: has two distinct values. The value
+          - code [ref=e294]: t
+          - text: in the
+          - code [ref=e295]: most_common_vals
+          - text: column corresponds to the frequency
+          - code [ref=e296]: "0.89743334"
+          - text: in the column
+          - code [ref=e297]: most_common_freqs
+          - text: ", and the value"
+          - code [ref=e298]: f
+          - text: corresponds to the frequency
+          - code [ref=e299]: "0.10256667"
+          - text: . This means that after analyzing the table, the database estimates that 89.74% of the table are activated users, and the rest 10.26% are unactivated users.
+        - paragraph [ref=e300]: With these stats, PostgreSQL decided it's best to scan the entire table if it expects 90% of the rows to satisfy the condition. The threshold after which the database may decide to use or not to use the index depends on many factors, and there is no rule of thumb you can use.
+        - figure "Index for a column with low selectivity vs. high selectivity" [ref=e301]:
+          - img [ref=e302]
+          - generic [ref=e350]: Index for a column with low selectivity vs. high selectivity
+        - separator [ref=e351]: ...
+        - heading "Use Partial Indexes" [level=2] [ref=e352]:
+          - link "Use Partial Indexes" [ref=e353] [cursor=pointer]:
+            - /url: "#use-partial-indexes"
+        - paragraph [ref=e354]: In the previous section we created an index on a boolean column where ~90% of the of the values were true (activated user). When we tried to query for active users, the database did not use the index. However, when we queried unactivated users the database did use the index.
+        - paragraph [ref=e355]: This brings us to the next question.... if the database is not going to use the index to filter active users, why should we index them in the first place?
+        - paragraph [ref=e356]:
+          - text: Before we answer this question let's look at how much the full index on the
+          - code [ref=e357]: activated
+          - text: "column weighs:"
+        - generic [ref=e359]: db=# \di+ users_activated_ix Schema | Name | Type | Owner | Table | Size --------+--------------------+-------+-------+-------+------ public | users_activated_ix | index | haki | users | 21 MB
+        - paragraph [ref=e360]:
+          - text: The index is 21MB. Just for reference, the
+          - code [ref=e361]: users
+          - text: table is 65MB. This means the index weighs ~32% the size of the table. We also know that ~90% of the index is likely not going to be used.
+        - paragraph [ref=e362]:
+          - text: In PostgreSQL, there is a way to create an index on only a part of the table, using whats called a
+          - link "partial index" [ref=e363] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/indexes-partial.html
+          - text: ":"
+        - generic [ref=e365]:
+          - text: db=# CREATE INDEX users_unactivated_partial_ix ON users(id)
+          - generic [ref=e366]: db-# WHERE not activated;
+          - text: CREATE INDEX
+        - paragraph [ref=e367]:
+          - text: Using a
+          - code [ref=e368]: WHERE
+          - text: "clause, we restrict the rows indexed by the index. Let's first make sure it works:"
+        - generic [ref=e370]: db=# EXPLAIN SELECT * FROM users WHERE not activated; QUERY PLAN ------------------------------------------------------------------------------------------------ Index Scan using users_unactivated_partial_ix on users (cost=0.29..3493.60 rows=102567 width=38)
+        - paragraph [ref=e371]: Amazing, the database was smart enough to understand that the predicate we used in the query can be satisfied by the partial index.
+        - paragraph [ref=e372]: "There is another benefit to using partial indexes:"
+        - generic [ref=e374]: db=# \di+ users_unactivated_partial_ix List of relations Schema | Name | Type | Owner | Table | Size --------+------------------------------+-------+-------+-------+--------- public | users_unactivated_partial_ix | index | haki | users | 2216 kB
+        - paragraph [ref=e375]: The partial index weighs only 2.2MB. The full index on the column weighed 21MB. The partial index is exactly 10% the size of the full index, which matches the ratio of inactive users in the table.
+        - separator [ref=e376]: ...
+        - heading "Always Load Sorted Data" [level=2] [ref=e377]:
+          - link "Always Load Sorted Data" [ref=e378] [cursor=pointer]:
+            - /url: "#always-load-sorted-data"
+        - paragraph [ref=e379]: This is one of the things I comment most about in code reviews. It's not as intuitive as the other tips and it can have a huge impact on performance.
+        - paragraph [ref=e380]: "Say you have a large sales fact table:"
+        - generic [ref=e382]: db=# CREATE TABLE sale_fact (id serial, username text, sold_at date); CREATE TABLE
+        - paragraph [ref=e383]: "Every night, during some ETL process, you load data into the table:"
+        - generic [ref=e385]: db=# INSERT INTO sale_fact (username, sold_at) db-# SELECT db-# md5(random()::text) AS username, db-# '2020-01-01'::date + (interval '1 day') * round(random() * 365 * 2) AS sold_at db-# FROM db-# generate_series(1, 100000); INSERT 0 100000 db=# VACUUM ANALYZE sale_fact; VACUUM
+        - paragraph [ref=e386]: To fake a loading process we used random data. We inserted 100K rows with random username, and sale dates from 2020-01-01 to two years forward.
+        - paragraph [ref=e387]:
+          - text: The table is used mostly to produce summary sales reports. Most reports filter by date to get the sales at a specific period. To speed up range scans you create an index on
+          - code [ref=e388]: sold_at
+          - text: ":"
+        - generic [ref=e390]: db=# CREATE INDEX sale_fact_sold_at_ix ON sale_fact(sold_at); CREATE INDEX
+        - paragraph [ref=e391]: "Let's look at the execution plan of a query to fetch all sales made in June 2020:"
+        - generic [ref=e393]: "db=# EXPLAIN (ANALYZE) db-# SELECT * db-# FROM sale_fact db-# WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN ----------------------------------------------------------------------------------------------- Bitmap Heap Scan on sale_fact (cost=108.30..1107.69 rows=4293 width=41) Recheck Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date)) Heap Blocks: exact=927 -> Bitmap Index Scan on sale_fact_sold_at_ix (cost=0.00..107.22 rows=4293 width=0) Index Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date)) Planning Time: 0.191 ms Execution Time: 5.906 ms"
+        - paragraph [ref=e394]: After executing the query several times to warm up the cache, the timing settled at ~6ms.
+        - paragraph [ref=e395]:
+          - strong [ref=e396]: Bitmap Scan
+        - paragraph [ref=e397]: "Looking at the execution plan, we can see that the database used a bitmap scan. A bitmap scan works in two stages:"
+        - list [ref=e398]:
+          - listitem [ref=e399]:
+            - code [ref=e400]: Bitmap Index Scan
+            - text: ": Go through the entire index"
+            - code [ref=e401]: sale_fact_sold_at_ix
+            - text: and map all the table pages that contain relevant rows.
+          - listitem [ref=e402]:
+            - code [ref=e403]: Bitmap Heap Scan
+            - text: ": Read the pages that contain relevant rows, and find the rows inside these pages that satisfy the condition."
+        - paragraph [ref=e404]:
+          - text: Pages can contain multiple rows. The first step uses the index to find
+          - emphasis [ref=e405]: pages
+          - text: . The second step check for
+          - emphasis [ref=e406]: rows
+          - text: inside these pages, hence the "Recheck Cond" operation in the execution plan.
+        - paragraph [ref=e407]: At this point many DBAs and developers will call it a day and move on to the next query. BUT, there's a way to make this query better.
+        - paragraph [ref=e408]:
+          - strong [ref=e409]: Index Scan
+        - paragraph [ref=e410]: To make things better, we'll make a small change in how we load the data.
+        - generic [ref=e412]:
+          - text: db=# TRUNCATE sale_fact; TRUNCATE TABLE db=# INSERT INTO sale_fact (username, sold_at) db-# SELECT db-# md5(random()::text) AS username, db-# '2020-01-01'::date + (interval '1 day') * round(random() * 365 * 2) AS sold_at db-# FROM db-# generate_series(1, 100000)
+          - generic [ref=e413]: db-# ORDER BY sold_at;
+          - text: INSERT 0 100000 db=# VACUUM ANALYZE sale_fact; VACUUM
+        - paragraph [ref=e414]:
+          - text: This time, we loaded the data sorted by the
+          - code [ref=e415]: sold_at
+          - text: .
+        - paragraph [ref=e416]: "Let's see what the execution plan for the exact same query looks like now:"
+        - generic [ref=e418]: "db=# EXPLAIN (ANALYZE) db-# SELECT * db-# FROM sale_fact db-# WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN --------------------------------------------------------------------------------------------- Index Scan using sale_fact_sold_at_ix on sale_fact (cost=0.29..184.73 rows=4272 width=41) Index Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date)) Planning Time: 0.145 ms Execution Time: 2.294 ms"
+        - paragraph [ref=e419]: After running the query several times we get a stable timing at round 2.3ms. Compared to the previous query that took ~6ms, we get a consistent saving of ~60%.
+        - paragraph [ref=e420]: Another thing we can see right away, is that the database did not use a bitmap scan this time, but a "regular" index scan. Why is that?
+        - paragraph [ref=e421]:
+          - strong [ref=e422]: Correlation
+        - paragraph [ref=e423]:
+          - text: When the database is analyzing a table it collects all sort of statistics. One of those statistics is
+          - link "correlation" [ref=e424] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/view-pg-stats.html
+            - strong [ref=e425]: correlation
+          - text: ":"
+        - blockquote [ref=e426]:
+          - paragraph [ref=e427]: Statistical correlation between physical row ordering and logical ordering of the column values. This ranges from -1 to +1. When the value is near -1 or +1, an index scan on the column will be estimated to be cheaper than when it is near zero, due to reduction of random access to the disk.
+        - paragraph [ref=e428]: As the official documentation explains, the correlation measures how "sorted" values of a specific column are on disk.
+        - figure "correlation = 1" [ref=e429]:
+          - img [ref=e430]
+          - generic [ref=e470]: correlation = 1
+        - paragraph [ref=e471]: When the correlation is 1, or close to 1, it means the pages in the tables are stored on disk in roughly the same order as the rows in the table. This is actually very common. For example, auto incrementing ID's will usually have a correlation close to 1. Date and timestamp columns that keeps track of when rows were created will also usually have a correlation close to 1.
+        - paragraph [ref=e472]: When the correlation is -1, the pages of the table are sorted in reverse order relative to the column.
+        - figure "correlation ~ 0" [ref=e473]:
+          - img [ref=e474]
+          - generic [ref=e514]: correlation ~ 0
+        - paragraph [ref=e515]: When the correlation is close to 0, it mean the values in the column have no or very little correlation to how the pages of the table are stored.
+        - paragraph [ref=e516]:
+          - text: Going back to our
+          - code [ref=e517]: sale_fact
+          - text: "table, when we loaded the data into the table without sorting it first, these were the correlations:"
+        - generic [ref=e519]:
+          - text: db=# SELECT tablename, attname, correlation db-# FROM pg_stats db=# WHERE tablename = 'sale_fact'; tablename | attname | correlation -----------+----------+-------------- sale | id | 1 sale | username | -0.005344716
+          - generic [ref=e520]: sale | sold_at | -0.011389783
+        - paragraph [ref=e521]:
+          - text: The auto generated column
+          - code [ref=e522]: id
+          - text: has a correlation of 1. The
+          - code [ref=e523]: sold_at
+          - text: "column has a very low correlation: consecutive values are scattered across the entire table."
+        - paragraph [ref=e524]: "When we loaded sorted data into the table, these were the correlations calculated by the database:"
+        - generic [ref=e526]:
+          - text: tablename | attname | correlation -----------+----------+---------------- sale_fact | id | 1 sale_fact | username | -0.00041992788
+          - generic [ref=e527]: sale_fact | sold_at | 1
+        - paragraph [ref=e528]:
+          - text: The correlation for
+          - code [ref=e529]: sold_at
+          - text: is now 1.
+        - paragraph [ref=e530]: So why did the database use a bitmap scan when the correlation was low, and an index scan when the correlation was close to 1?
+        - list [ref=e531]:
+          - listitem [ref=e532]: When the correlation was 1, the database estimated that rows in the requested range are likely to be in consecutive pages. In this case, an index scan is likely to read very few pages.
+          - listitem [ref=e533]: When the correlation was close to 0, the database estimated that rows in the requested range are likely to be scattered across the entire table. In this case, it makes sense to use a bitmap scan to map the table pages in which rows exist, and only then fetch them and apply the condition.
+        - paragraph [ref=e534]: The next time you load data into a table, think about how the data is going to be queried, and make sure you sort it in a way that indexes used for range scan can benefit from.
+        - paragraph [ref=e535]:
+          - strong [ref=e536]:
+            - code [ref=e537]: CLUSTER
+            - text: Command
+        - paragraph [ref=e538]:
+          - text: Another way of "sorting a table on disk" by a specific index is to use the
+          - link "CLUSTER command" [ref=e539] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/sql-cluster.html
+            - code [ref=e540]: CLUSTER
+            - text: command
+          - text: .
+        - paragraph [ref=e541]: "For example:"
+        - generic [ref=e543]:
+          - text: db=# TRUNCATE sale_fact; TRUNCATE TABLE -- Insert rows without sorting db=# INSERT INTO sale_fact (username, sold_at) db-# SELECT db-# md5(random()::text) AS username, db-# '2020-01-01'::date + (interval '1 day') * round(random() * 365 * 2) AS sold_at db-# FROM db-# generate_series(1, 100000) INSERT 0 100000 db=# ANALYZE sale_fact; ANALYZE db=# SELECT tablename, attname, correlation db-# FROM pg_stats db-# WHERE tablename = 'sale_fact'; tablename | attname | correlation -----------+-----------+----------------
+          - generic [ref=e544]: sale_fact | sold_at | -5.9702674e-05
+          - text: sale_fact | id | 1 sale_fact | username | 0.010033822
+        - paragraph [ref=e545]:
+          - text: We loaded data into the table in random order and as a result the correlation of
+          - code [ref=e546]: sold_at
+          - text: is close to zero.
+        - paragraph [ref=e547]:
+          - text: To "rearrange" the table by
+          - code [ref=e548]: sold_at
+          - text: ", we used the"
+          - code [ref=e549]: CLUSTER
+          - text: command to sort the table on disk according to the index
+          - code [ref=e550]: sale_fact_sold_at_ix
+          - text: ":"
+        - generic [ref=e552]:
+          - generic [ref=e553]: db=# CLUSTER sale_fact USING sale_fact_sold_at_ix;
+          - text: CLUSTER db=# ANALYZE sale_fact; ANALYZE db=# SELECT tablename, attname, correlation db-# FROM pg_stats db-# WHERE tablename = 'sale_fact'; tablename | attname | correlation -----------+----------+--------------
+          - generic [ref=e554]: sale_fact | sold_at | 1
+          - text: sale_fact | id | -0.002239401 sale_fact | username | 0.013389298
+        - paragraph [ref=e555]:
+          - text: After the table was clustered we can see that the correlation for
+          - code [ref=e556]: sold_at
+          - text: is 1.
+        - figure "CLUSTER command" [ref=e557]:
+          - img [ref=e558]
+          - generic [ref=e590]: CLUSTER command
+        - paragraph [ref=e591]:
+          - text: Some things to note about the
+          - code [ref=e592]: CLUSTER
+          - text: "command:"
+        - list [ref=e593]:
+          - listitem [ref=e594]:
+            - text: Clustering the table by a specific column may affect the correlation of other column. See for example the correlation of the column
+            - code [ref=e595]: id
+            - text: after we clustered the table by
+            - code [ref=e596]: sold_at
+            - text: .
+          - listitem [ref=e597]:
+            - code [ref=e598]: CLUSTER
+            - text: is a heavy, blocking operation, so make sure you don't execute it on a live table.
+        - paragraph [ref=e599]:
+          - text: For these two reason it's best to insert the data sorted and not rely on
+          - code [ref=e600]: CLUSTER
+          - text: .
+        - separator [ref=e601]: ...
+        - heading "Index Columns With High Correlation Using BRIN" [level=2] [ref=e602]:
+          - link "Index Columns With High Correlation Using BRIN" [ref=e603] [cursor=pointer]:
+            - /url: "#index-columns-with-high-correlation-using-brin"
+        - paragraph [ref=e604]:
+          - text: When talking about indexes, most developers will think about B-Tree indexes. But, PostgreSQL provides other types of indexes such as
+          - link "BRIN" [ref=e605] [cursor=pointer]:
+            - /url: https://www.postgresql.org/docs/current/brin.html
+          - text: ":"
+        - blockquote [ref=e606]:
+          - paragraph [ref=e607]: BRIN is designed for handling very large tables in which certain columns have some natural correlation with their physical location within the table
+        - paragraph [ref=e608]: BRIN stands for Block Range Index. According to the documentation, a BRIN index works best for columns with high correlation. As we've already seen in previous sections, some fields such as auto incrementing IDs and timestamps are naturally correlated with the physical structure of the table, hence they are good candidates for a BRIN index.
+        - paragraph [ref=e609]: Under some circumstances, a BRIN index can provide a better "value for money" in terms of size and performance compared to a similar B-Tree index.
+        - figure "BRIN Index" [ref=e610]:
+          - img [ref=e611]
+          - generic [ref=e660]: BRIN Index
+        - paragraph [ref=e661]: "A BRIN index works by keeping the range of values within a number of adjacent pages in the table. Say we have these values in a column, each is single table page:"
+        - generic [ref=e663]: 1, 2, 3, 4, 5, 6, 7, 8, 9
+        - paragraph [ref=e664]: "A BRIN index works on ranges of adjacent pages in the table. If the number of adjacent pages is set to 3, the index will divide the table into the following ranges:"
+        - generic [ref=e666]: "[1,2,3], [4,5,6], [7,8,9]"
+        - paragraph [ref=e667]:
+          - text: For each range, the BRIN index
+          - strong [ref=e668]: keeps the minimum and maximum value
+          - text: ":"
+        - generic [ref=e670]: "[1–3], [4–6], [7–9]"
+        - paragraph [ref=e671]: "Using the index above, try to search for the value 5:"
+        - list [ref=e672]:
+          - listitem [ref=e673]:
+            - code [ref=e674]: "[1–3]"
+            - text: "- Definitely not here"
+          - listitem [ref=e675]:
+            - code [ref=e676]: "[4–6]"
+            - text: "- Might be here"
+          - listitem [ref=e677]:
+            - code [ref=e678]: "[7–9]"
+            - text: "- Definitely not here"
+        - paragraph [ref=e679]: Using the BRIN index we managed to limit our search to blocks 4–6.
+        - paragraph [ref=e680]:
+          - text: Let's take another example, this time the values in the column will have a correlation close to zero, meaning they are
+          - emphasis [ref=e681]: not
+          - text: "sorted:"
+        - generic [ref=e683]: "[2,9,5], [1,4,7], [3,8,6]"
+        - paragraph [ref=e684]: "Indexing 3 adjacent blocks produces the following ranges:"
+        - generic [ref=e686]: "[2–9], [1–7], [3–8]"
+        - paragraph [ref=e687]: "Let's try to search for the value 5:"
+        - list [ref=e688]:
+          - listitem [ref=e689]:
+            - code [ref=e690]: "[2–9]"
+            - text: "- Might be here"
+          - listitem [ref=e691]:
+            - code [ref=e692]: "[1–7]"
+            - text: "- Might be here"
+          - listitem [ref=e693]:
+            - code [ref=e694]: "[3–8]"
+            - text: "- Might be here"
+        - paragraph [ref=e695]:
+          - text: In this case the index is not limiting the search
+          - emphasis [ref=e696]: at all
+          - text: ", hence it is useless."
+        - paragraph [ref=e697]:
+          - strong [ref=e698]:
+            - text: Understanding
+            - code [ref=e699]: pages_per_range
+        - paragraph [ref=e700]:
+          - text: The number of adjacent pages is determined by the parameter
+          - code [ref=e701]: pages_per_range
+          - text: ". The number of pages per range effects the size and accuracy of the BRIN index:"
+        - list [ref=e702]:
+          - listitem [ref=e703]:
+            - text: A large
+            - code [ref=e704]: pages_per_range
+            - text: will produce a small and less accurate index
+          - listitem [ref=e705]:
+            - text: A small
+            - code [ref=e706]: pages_per_range
+            - text: will produce a bigger and more accurate index
+        - paragraph [ref=e707]:
+          - text: The default
+          - code [ref=e708]: pages_per_range
+          - text: is 128.
+        - 'figure "BRIN index with lower `pages_per_range`" [ref=e709]':
+          - img [ref=e710]
+          - generic [ref=e777]: "BRIN index with lower `pages_per_range`"
+        - paragraph [ref=e778]: "To demonstrate, let's create a BRIN index on ranges of 2 adjacent pages and search for the value 5:"
+        - list [ref=e779]:
+          - listitem [ref=e780]:
+            - code [ref=e781]: "[1–2]"
+            - text: "- Definitely not here"
+          - listitem [ref=e782]:
+            - code [ref=e783]: "[3–4]"
+            - text: "- Definitely not here"
+          - listitem [ref=e784]:
+            - code [ref=e785]: "[5–6]"
+            - text: "- Might be here"
+          - listitem [ref=e786]:
+            - code [ref=e787]: "[7–8]"
+            - text: "- Definitely not here"
+          - listitem [ref=e788]:
+            - code [ref=e789]: "[9]"
+            - text: "- Definitely not here"
+        - paragraph [ref=e790]: Using the index with 2 pages per range we were able to limit the search to blocks 5 and 6. When the range was 3 pages, the index limited the search to blocks 4,5 and 6.
+        - paragraph [ref=e791]: Another difference between the two indexes is that when the range was 3 we only had to keep 3 ranges. When the range was 2 we had to keep 5 ranges so the index was bigger.
+        - paragraph [ref=e792]:
+          - strong [ref=e793]: Creating a BRIN Index
+        - paragraph [ref=e794]:
+          - text: Using the
+          - code [ref=e795]: sales_fact
+          - text: from before, let's create a BRIN index on the column
+          - code [ref=e796]: sold_at
+          - text: ":"
+        - generic [ref=e798]:
+          - text: db=# CREATE INDEX sale_fact_sold_at_bix ON sale_fact
+          - generic [ref=e799]: db-# USING BRIN(sold_at) WITH (pages_per_range = 128);
+          - text: CREATE INDEX
+        - paragraph [ref=e800]:
+          - text: This creates a BRIN index with the default
+          - code [ref=e801]: pages_per_range = 128
+          - text: .
+        - paragraph [ref=e802]: "Let's try to query for a range of sale dates:"
+        - generic [ref=e804]:
+          - text: "db=# EXPLAIN (ANALYZE) db-# SELECT * db-# FROM sale_fact db-# WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN -------------------------------------------------------------------------------------------- Bitmap Heap Scan on sale_fact (cost=13.11..1135.61 rows=4319 width=41) Recheck Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date))"
+          - generic [ref=e805]: "Rows Removed by Index Recheck: 23130"
+          - text: "Heap Blocks: lossy=256 -> Bitmap Index Scan on sale_fact_sold_at_bix (cost=0.00..12.03 rows=12500 width=0) Index Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date)) Execution Time: 8.877 ms"
+        - paragraph [ref=e806]: The database used our BRIN index to get a range of sale dates, but that's not the interesting part...
+        - paragraph [ref=e807]:
+          - strong [ref=e808]:
+            - text: Optimizing
+            - code [ref=e809]: pages_per_range
+        - paragraph [ref=e810]: "According to the execution plan, the database removed 23,130 rows from the pages it found using the index. This may indicate that the range we set for the index it too large for this particular query. Let's try to create an index with less pages per range:"
+        - generic [ref=e812]:
+          - text: db=# CREATE INDEX sale_fact_sold_at_bix64 ON sale_fact
+          - generic [ref=e813]: db-# USING BRIN(sold_at) WITH (pages_per_range = 64);
+          - text: "CREATE INDEX db=# EXPLAIN (ANALYZE) db- SELECT * db- FROM sale_fact db- WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN --------------------------------------------------------------------------------------------- Bitmap Heap Scan on sale_fact (cost=13.10..1048.10 rows=4319 width=41) Recheck Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date))"
+          - generic [ref=e814]: "Rows Removed by Index Recheck: 9434"
+          - text: "Heap Blocks: lossy=128 -> Bitmap Index Scan on sale_fact_sold_at_bix64 (cost=0.00..12.02 rows=6667 width=0) Index Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date)) Execution Time: 5.491 ms"
+        - paragraph [ref=e815]: With 64 pages per range the database removed less rows from the pages it found using the the index, only 9,434 were removed compared with 23,130 when the the range was 128 pages. This means the database had to do less IO and the query was slightly faster, ~5.5ms compared to ~8.9ms.
+        - paragraph [ref=e816]:
+          - text: Testing the index with different values for
+          - code [ref=e817]: pages_per_range
+          - text: "produced the following results:"
+        - table [ref=e818]:
+          - rowgroup [ref=e819]:
+            - row "pages_per_range Rows Removed by Index Recheck" [ref=e820]:
+              - columnheader "pages_per_range" [ref=e821]
+              - columnheader "Rows Removed by Index Recheck" [ref=e822]
+          - rowgroup [ref=e823]:
+            - row "128 23,130" [ref=e824]:
+              - cell "128" [ref=e825]
+              - cell "23,130" [ref=e826]
+            - row "64 9,434" [ref=e827]:
+              - cell "64" [ref=e828]
+              - cell "9,434" [ref=e829]
+            - row "8 874" [ref=e830]:
+              - cell "8" [ref=e831]
+              - cell "874" [ref=e832]
+            - row "4 446" [ref=e833]:
+              - cell "4" [ref=e834]
+              - cell "446" [ref=e835]
+            - row "2 446" [ref=e836]:
+              - cell "2" [ref=e837]
+              - cell "446" [ref=e838]
+        - paragraph [ref=e839]:
+          - text: We can see that as we decrease
+          - code [ref=e840]: pages_per_range
+          - text: ", the index is more accurate and less rows are removed from the pages found using the index."
+        - paragraph [ref=e841]: Note that we optimized the query for a very specific query. This is fine for demonstration purposes, but in real life it's best to use values that meet the needs of most queries.
+        - paragraph [ref=e842]:
+          - strong [ref=e843]: Evaluating Index Size
+        - paragraph [ref=e844]:
+          - text: Another big selling point for BRIN indexes is their size. In previous sections we created a B-Tree index on the
+          - code [ref=e845]: sold_at
+          - text: field. The size of the index was 2224kB. The size a BRIN index with
+          - code [ref=e846]: pages_per_range=128
+          - text: is only 48kb. That's 46 times smaller than the B-Tree index.
+        - generic [ref=e848]: Schema | Name | Type | Owner | Table | Size --------+-----------------------+-------+-------+-----------+------- public | sale_fact_sold_at_bix | index | haki | sale_fact | 48 kB public | sale_fact_sold_at_ix | index | haki | sale_fact | 2224 kB
+        - paragraph [ref=e849]:
+          - text: The size of a BRIN index is also affected by
+          - code [ref=e850]: pages_per_range
+          - text: . For example, a BRIN index with
+          - code [ref=e851]: pages_per_range=2
+          - text: weighs 56kb, which is only slightly bigger than 48kb.
+        - separator [ref=e852]: ...
+        - heading "Make Indexes \"Invisible\"" [level=2] [ref=e853]:
+          - link "Make Indexes \"Invisible\"" [ref=e854] [cursor=pointer]:
+            - /url: "#make-indexes-invisible"
+        - paragraph [ref=e855]:
+          - text: PostgreSQL has a nice feature called
+          - link "transactional DDL" [ref=e856] [cursor=pointer]:
+            - /url: https://wiki.postgresql.org/wiki/Transactional_DDL_in_PostgreSQL:_A_Competitive_Analysis#Transactional_DDL
+          - text: . After years of using Oracle, I got used to DDL commands such as
+          - code [ref=e857]: CREATE
+          - text: ","
+          - code [ref=e858]: DROP
+          - text: and
+          - code [ref=e859]: ALTER
+          - text: ending a transaction. However, in PostgreSQL you can perform DDL commands inside a transaction, and changes will take effect only when the transaction is committed.
+        - paragraph [ref=e860]:
+          - text: As I
+          - link "recently discovered" [ref=e861] [cursor=pointer]:
+            - /url: https://twitter.com/be_haki/status/1282585977668751360?s=20
+          - text: ", using transactional DDL you can make indexes invisible! This comes in handy when you want to see what an execution plan looks like without some index."
+        - paragraph [ref=e862]:
+          - text: For example, in the
+          - code [ref=e863]: sale_fact
+          - text: table from the previous section we created an index on
+          - code [ref=e864]: sold_at
+          - text: ". The execution plan for fetching sales made in July looked like this:"
+        - generic [ref=e866]:
+          - text: db=# EXPLAIN db-# SELECT * db-# FROM sale_fact db-# WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN --------------------------------------------------------------------------------------------
+          - generic [ref=e867]: Index Scan using sale_fact_sold_at_ix on sale_fact (cost=0.42..182.80 rows=4319 width=41)
+          - text: "Index Cond: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date))P"
+        - paragraph [ref=e868]:
+          - text: To see what the execution plan would be if the index
+          - code [ref=e869]: sale_fact_sold_at_ix
+          - text: "did not exist, we can drop the index inside a transaction and immediately rollback:"
+        - generic [ref=e871]:
+          - generic [ref=e872]: db=# BEGIN;
+          - text: BEGIN db=# DROP INDEX sale_fact_sold_at_ix; DROP INDEX db=# EXPLAIN db-# SELECT * db-# FROM sale_fact db-# WHERE sold_at BETWEEN '2020-07-01' AND '2020-07-31'; QUERY PLAN ---------------------------------------------------------------------------------
+          - generic [ref=e873]: Seq Scan on sale_fact (cost=0.00..2435.00 rows=4319 width=41)
+          - text: "Filter: ((sold_at >= '2020-07-01'::date) AND (sold_at <= '2020-07-31'::date))"
+          - generic [ref=e874]: db=# ROLLBACK;
+          - text: ROLLBACK
+        - paragraph [ref=e875]:
+          - text: We first start a transaction using
+          - code [ref=e876]: BEGIN
+          - text: . Then we drop the index and generate an execution plan. Notice that the execution plan now uses a full table scan, as if the index does not exist. At this point the transaction is still in progress, so the index is not dropped yet. To finish the transaction without dropping the index we rollback the transaction using the
+          - code [ref=e877]: ROLLBACK
+          - text: command.
+        - paragraph [ref=e878]: "Now, make sure the index still exists:"
+        - generic [ref=e880]: db=# \di+ sale_fact_sold_at_ix List of relations Schema | Name | Type | Owner | Table | Size --------+----------------------+-------+-------+-----------+--------- public | sale_fact_sold_at_ix | index | haki | sale_fact | 2224 kB
+        - paragraph [ref=e881]:
+          - text: Other database that don't support transactional DDL provide other ways to achieve the same goal. For example, Oracle let's you mark an index as
+          - link "invisible" [ref=e882] [cursor=pointer]:
+            - /url: https://docs.oracle.com/cd/B28359_01/server.111/b28310/indexes003.htm#ADMIN12317
+          - text: ", which will cause the optimizer to ignore it."
+        - paragraph [ref=e883]:
+          - strong [ref=e884]: CAUTION
+          - text: ": Dropping an index inside a transaction will lock out concurrent selects, inserts, updates, and deletes on the table while the transaction is active. Use with caution in test environments, and avoid on production databases."
+        - separator [ref=e885]: ...
+        - heading "Don't Schedule Long Running Processes at Round Hours" [level=2] [ref=e886]:
+          - link "Don't Schedule Long Running Processes at Round Hours" [ref=e887] [cursor=pointer]:
+            - /url: "#dont-schedule-long-running-processes-at-round-hours"
+        - paragraph [ref=e888]:
+          - text: It's a known fact among investors that weird things can happen when a stock's price reaches a nice round number such as 10$, 100$, 1000$. As
+          - link "the following article" [ref=e889] [cursor=pointer]:
+            - /url: https://www.investopedia.com/trading/support-and-resistance-basics/#mntl-sc-block_1-0-38
+          - text: "explains:"
+        - blockquote [ref=e890]:
+          - paragraph [ref=e891]:
+            - text: "[...] asset's price may have a difficult time moving beyond a round number, such as $50 or $100 per share. Most inexperienced"
+            - strong [ref=e892]: traders tend to buy or sell assets when the price is at a whole number
+            - text: because they are more likely to feel that a stock is fairly valued at such levels.
+        - paragraph [ref=e893]: Developers in this sense are not all that different than the investors. When they need to schedule a long running process, they will usually schedule it at a round hour.
+        - figure "Typical load on a system during the night" [ref=e894]:
+          - img [ref=e895]
+          - generic [ref=e946]: Typical load on a system during the night
+        - paragraph [ref=e947]: This tendency to schedule tasks at round hours can cause some unusual loads during these times. So, if you need to schedule some long running process, you have a better chance of finding a system at rest if you schedule at another time.
+        - paragraph [ref=e948]:
+          - text: Another good idea is to apply a random delay to the task's schedule, so it doesn't run at the same time every time. This way, even if another task is scheduled to run at the same time, it won't be a big problem. If you use
+          - code [ref=e949]: systemd
+          - text: timer units to schedule your tasks, you can use the
+          - link "RandomizedDelaySec" [ref=e950] [cursor=pointer]:
+            - /url: https://www.freedesktop.org/software/systemd/man/systemd.timer.html#RandomizedDelaySec=
+          - text: option for this.
+        - separator [ref=e951]: ...
+        - heading "Conclusion" [level=2] [ref=e952]:
+          - link "Conclusion" [ref=e953] [cursor=pointer]:
+            - /url: "#conclusion"
+        - paragraph [ref=e954]: This article covers some trivial and non-trivial tips from my own experience. Some of these tips are easy to implement, and some require a deeper understanding of how the database works. Databases are the backbone of most modern systems, so taking some time to understand how they work is a good investment for any developer!
+        - paragraph [ref=e955]:
+          - emphasis [ref=e956]:
+            - text: This article was reviewed by the great team at
+            - link "pgMustard" [ref=e957] [cursor=pointer]:
+              - /url: https://www.pgmustard.com/
+      - separator [ref=e958]: ...
+      - generic [ref=e959]:
+        - img [ref=e961]
+        - generic [ref=e962]:
+          - heading "Want me to send you an email when I publish something new?" [level=5] [ref=e963]:
+            - text: Want me to send you an email
+            - text: when I publish something new?
+          - button "Yes Please!" [ref=e964] [cursor=pointer]
+      - separator [ref=e965]: ...
+      - generic [ref=e966]:
+        - heading "Share to show you care" [level=5] [ref=e967]
+        - list [ref=e968]:
+          - listitem [ref=e969]:
+            - link "Email" [ref=e970] [cursor=pointer]:
+              - /url: mailto:?subject=Some%20SQL%20Tricks%20of%20an%20Application%20DBA%20by%20Haki%20Benita&body=https%3A//hakibenita.com/sql-tricks-application-dba
+              - img "Email" [ref=e971]
+          - listitem [ref=e974]:
+            - link "share via twitter" [ref=e975] [cursor=pointer]:
+              - /url: https://twitter.com/intent/tweet/?text=Some%20SQL%20Tricks%20of%20an%20Application%20DBA%20by%20Haki%20Benita&url=https%3A//hakibenita.com/sql-tricks-application-dba&via=be_haki&hashtags=SQL,Performance
+              - img "Twitter" [ref=e976]
+          - listitem [ref=e978]:
+            - link "Share on Facebook" [ref=e979] [cursor=pointer]:
+              - /url: https://facebook.com/sharer/sharer.php?u=https%3A//hakibenita.com/sql-tricks-application-dba
+              - img "Facebook" [ref=e980]
+          - listitem [ref=e982]:
+            - link "Submit to Reddit" [ref=e983] [cursor=pointer]:
+              - /url: https://www.reddit.com/submit?url=https%3A//hakibenita.com/sql-tricks-application-dba&title=Some%20SQL%20Tricks%20of%20an%20Application%20DBA%20by%20Haki%20Benita
+              - img "Reddit" [ref=e984]
+          - listitem [ref=e986]:
+            - link "Share" [ref=e987] [cursor=pointer]:
+              - /url: "#"
+              - img "Share" [ref=e988]
+      - separator [ref=e994]: ...
+      - generic [ref=e995]:
+        - heading "Discussions" [level=4] [ref=e996]
+        - list [ref=e997]:
+          - listitem [ref=e998]:
+            - img "Hacker News" [ref=e999]
+            - link "Some SQL Tricks of an Application DBA" [ref=e1001] [cursor=pointer]:
+              - /url: https://news.ycombinator.com/item?id=23986773
+            - img [ref=e1002]
+            - text: "68"
+            - img [ref=e1005]
+            - text: "327"
+          - listitem [ref=e1007]:
+            - img "Reddit" [ref=e1008]
+            - link "Some SQL Tricks of an Application DBA" [ref=e1010] [cursor=pointer]:
+              - /url: https://www.reddit.com/r/programming/comments/hyv0xh/some_sql_tricks_of_an_application_dba/
+            - img [ref=e1011]
+            - text: "42"
+            - img [ref=e1014]
+            - text: "317"
+          - listitem [ref=e1016]:
+            - img "Reddit" [ref=e1017]
+            - link "Some SQL Tricks of an Application DBA" [ref=e1019] [cursor=pointer]:
+              - /url: https://www.reddit.com/r/SQL/comments/i0frbc/some_sql_tricks_of_an_application_dba/
+            - img [ref=e1020]
+            - text: "10"
+            - img [ref=e1023]
+            - text: "88"
+          - listitem [ref=e1025]:
+            - img "Reddit" [ref=e1026]
+            - link "Some SQL Tricks of an Application DBA" [ref=e1028] [cursor=pointer]:
+              - /url: https://www.reddit.com/r/PostgreSQL/comments/hyv0ni/some_sql_tricks_of_an_application_dba/
+            - img [ref=e1029]
+            - text: "4"
+            - img [ref=e1032]
+            - text: "92"
+          - listitem [ref=e1034]:
+            - img "Lobsters" [ref=e1035]
+            - link "Some SQL Tricks of an Application DBA" [ref=e1037] [cursor=pointer]:
+              - /url: https://lobste.rs/s/yqd6bi/some_sql_tricks_application_dba
+            - img [ref=e1038]
+            - text: "11"
+            - img [ref=e1041]
+            - text: "70"
+          - group [ref=e1043]:
+            - generic "Show 10 more discussions..." [ref=e1044] [cursor=pointer]
+      - separator [ref=e1045]: ...
+      - generic [ref=e1046]:
+        - heading "Similar articles" [level=4] [ref=e1047]
+        - list [ref=e1048]:
+          - listitem [ref=e1049]:
+            - list [ref=e1050]:
+              - listitem [ref=e1051]:
+                - time [ref=e1052]: 21 September 2020
+                - text: /
+              - listitem [ref=e1053]:
+                - link "SQL" [ref=e1054] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/sql
+                - text: /
+              - listitem [ref=e1055]:
+                - link "76 840" [ref=e1056] [cursor=pointer]:
+                  - /url: https://hakibenita.com/sql-anomaly-detection#discuss
+                  - img [ref=e1057]
+                  - text: "76"
+                  - img [ref=e1061]
+                  - text: "840"
+            - link "Simple Anomaly Detection Using Plain SQL Identify Problems Before They Become Disasters" [ref=e1063] [cursor=pointer]:
+              - /url: sql-anomaly-detection
+              - heading "Simple Anomaly Detection Using Plain SQL" [level=4] [ref=e1064]
+              - paragraph [ref=e1065]: Identify Problems Before They Become Disasters
+          - listitem [ref=e1066]:
+            - list [ref=e1067]:
+              - listitem [ref=e1068]:
+                - time [ref=e1069]: 20 October 2020
+                - text: /
+              - listitem [ref=e1070]:
+                - link "SQL" [ref=e1071] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/sql
+                - text: ","
+                - link "Performance" [ref=e1072] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/performance
+                - text: ","
+                - link "PostgreSQL" [ref=e1073] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/postgresql
+                - text: /
+              - listitem [ref=e1074]:
+                - link "66 577" [ref=e1075] [cursor=pointer]:
+                  - /url: https://hakibenita.com/sql-medium-text-performance#discuss
+                  - img [ref=e1076]
+                  - text: "66"
+                  - img [ref=e1080]
+                  - text: "577"
+            - link "The Surprising Impact of Medium-Size Texts on PostgreSQL Performance Why TOAST is the best thing since sliced bread" [ref=e1082] [cursor=pointer]:
+              - /url: sql-medium-text-performance
+              - heading "The Surprising Impact of Medium-Size Texts on PostgreSQL Performance" [level=4] [ref=e1083]
+              - paragraph [ref=e1084]: Why TOAST is the best thing since sliced bread
+          - listitem [ref=e1085]:
+            - list [ref=e1086]:
+              - listitem [ref=e1087]:
+                - time [ref=e1088]: 11 January 2021
+                - text: /
+              - listitem [ref=e1089]:
+                - link "PostgreSQL" [ref=e1090] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/postgresql
+                - text: ","
+                - link "Performance" [ref=e1091] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/performance
+                - text: ","
+                - link "SQL" [ref=e1092] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/sql
+                - text: /
+              - listitem [ref=e1093]:
+                - link "5 134" [ref=e1094] [cursor=pointer]:
+                  - /url: https://hakibenita.com/postgresql-hash-index#discuss
+                  - img [ref=e1095]
+                  - text: "5"
+                  - img [ref=e1099]
+                  - text: "134"
+            - link "Re-Introducing Hash Indexes in PostgreSQL The Ugly Duckling of index types" [ref=e1101] [cursor=pointer]:
+              - /url: postgresql-hash-index
+              - heading "Re-Introducing Hash Indexes in PostgreSQL" [level=4] [ref=e1102]
+              - paragraph [ref=e1103]: The Ugly Duckling of index types
+          - listitem [ref=e1104]:
+            - list [ref=e1105]:
+              - listitem [ref=e1106]:
+                - time [ref=e1107]: 21 November 2019
+                - text: /
+              - listitem [ref=e1108]:
+                - link "PostgreSQL" [ref=e1109] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/postgresql
+                - text: ","
+                - link "SQL" [ref=e1110] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/sql
+                - text: ","
+                - link "Performance" [ref=e1111] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/performance
+                - text: /
+              - listitem [ref=e1112]:
+                - link "186 686" [ref=e1113] [cursor=pointer]:
+                  - /url: https://hakibenita.com/sql-dos-and-donts#discuss
+                  - img [ref=e1114]
+                  - text: "186"
+                  - img [ref=e1118]
+                  - text: "686"
+            - link "12 Common Mistakes and Missed Optimization Opportunities in SQL Made by Developers and Non-Developers" [ref=e1120] [cursor=pointer]:
+              - /url: sql-dos-and-donts
+              - heading "12 Common Mistakes and Missed Optimization Opportunities in SQL" [level=4] [ref=e1121]
+              - paragraph [ref=e1122]: Made by Developers and Non-Developers
+          - listitem [ref=e1123]:
+            - list [ref=e1124]:
+              - listitem [ref=e1125]:
+                - time [ref=e1126]: 22 December 2018
+                - text: /
+              - listitem [ref=e1127]:
+                - link "PostgreSQL" [ref=e1128] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/postgresql
+                - text: ","
+                - link "SQL" [ref=e1129] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/sql
+                - text: ","
+                - link "Performance" [ref=e1130] [cursor=pointer]:
+                  - /url: https://hakibenita.com/tag/performance
+                - text: /
+              - listitem [ref=e1131]:
+                - link "75 122" [ref=e1132] [cursor=pointer]:
+                  - /url: https://hakibenita.com/how-we-solved-a-storage-problem-in-postgre-sql-without-adding-a-single-bytes-of-storage#discuss
+                  - img [ref=e1133]
+                  - text: "75"
+                  - img [ref=e1137]
+                  - text: "122"
+            - link "How We Solved a Storage Problem in PostgreSQL Without Adding a Single Byte of Storage A short story about a storage-heavy query and the silver bullet that solved the issue" [ref=e1139] [cursor=pointer]:
+              - /url: how-we-solved-a-storage-problem-in-postgre-sql-without-adding-a-single-bytes-of-storage
+              - heading "How We Solved a Storage Problem in PostgreSQL Without Adding a Single Byte of Storage" [level=4] [ref=e1140]
+              - paragraph [ref=e1141]: A short story about a storage-heavy query and the silver bullet that solved the issue
+  - contentinfo [ref=e1142]:
+    - list [ref=e1143]:
+      - listitem [ref=e1144]: © Haki Benita 2016-2024
+    - list [ref=e1145]:
+      - listitem [ref=e1146]:
+        - link "Credits" [ref=e1147] [cursor=pointer]:
+          - /url: /pages/credits
+      - listitem [ref=e1148]:
+        - link "Appreciate" [ref=e1149] [cursor=pointer]:
+          - /url: /pages/appreciate
+      - listitem [ref=e1150]:
+        - link "Unsubscribe" [ref=e1151] [cursor=pointer]:
+          - /url: /unsubscribe
+  - link:
+    - /url: https://fosstodon.org/@be_haki
