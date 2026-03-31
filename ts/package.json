@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "description": "Resilient PostgreSQL dump & restore with direct COPY protocol",
   "type": "module",
+  "bin": {
+    "pg-resilient": "./bin/pg-resilient.ts"
+  },
   "engines": {
     "node": ">=20"
   },
