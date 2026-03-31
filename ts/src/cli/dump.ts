@@ -1,5 +1,8 @@
 // ts/src/cli/dump.ts
-import { execFileSync } from 'node:child_process'
+import { execFile } from 'node:child_process'
+import { promisify } from 'node:util'
+
+const execFileAsync = promisify(execFile)
 import { join } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
@@ -17,7 +20,7 @@ import {
 } from '../core/connection.js'
 import {
   buildTableDiscoveryQuery, parseTableRows,
-  buildColumnsQuery, buildGeneratedColumnsQuery,
+  buildBatchColumnsQuery,
   buildDdlDumpArgs, buildSequenceQuery, parseSequenceRows,
   quoteIdent,
 } from '../core/schema.js'
@@ -127,12 +130,19 @@ export async function runDump(opts: DumpOptions): Promise<void> {
     if (tables.length === 0) {
       log.warn('No tables found. Only DDL will be dumped.')
     } else {
-      // Fetch columns and generated columns for each table
-      for (const table of tables) {
-        const { rows: colRows } = await discoveryClient.query(buildColumnsQuery(), [table.oid])
-        table.columns = colRows.map((r: { attname: string }) => r.attname)
-        const { rows: genRows } = await discoveryClient.query(buildGeneratedColumnsQuery(), [table.oid])
-        table.generatedColumns = genRows.map((r: { attname: string }) => r.attname)
+      // Batch fetch all columns for all tables in one query
+      const oids = tables.map(t => t.oid)
+      if (oids.length > 0) {
+        const { rows: allCols } = await discoveryClient.query(
+          buildBatchColumnsQuery(), [oids]
+        )
+        // Group by oid
+        for (const table of tables) {
+          const tableCols = (allCols as Array<{ oid: number; attname: string; is_generated: boolean }>)
+            .filter(r => r.oid === table.oid)
+          table.columns = tableCols.filter(r => !r.is_generated).map(r => r.attname)
+          table.generatedColumns = tableCols.filter(r => r.is_generated).map(r => r.attname)
+        }
       }
       log.success(`Found ${tables.length} tables (${humanSize(tables.reduce((s, t) => s + t.actualBytes, 0))})`)
 
@@ -203,19 +213,20 @@ export async function runDump(opts: DumpOptions): Promise<void> {
     const ddlPath = join(opts.output, '_schema_ddl.dump')
     log.step('Step 5/6: Dumping DDL...')
 
+    let ddlPromise: Promise<void> | null = null
     if (opts.dryRun) {
       log.warn('Skipped (dry run)')
     } else {
       await mkdir(opts.output, { recursive: true })
       const ddlArgs = buildDdlDumpArgs(cs, ddlPath, opts.schema, snapshotId, opts.pgDumpArgs)
-      try {
-        execFileSync('pg_dump', ddlArgs, { stdio: 'pipe' })
-      } catch (err: unknown) {
-        const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
-        if (stderr) log.warn(`pg_dump warnings: ${stderr.slice(0, 500)}`)
-        throw err
-      }
-      log.success(`DDL saved -> ${ddlPath}`)
+      // Start DDL dump in background — overlaps with data dump
+      ddlPromise = execFileAsync('pg_dump', ddlArgs)
+        .then(() => { log.success(`DDL saved -> ${ddlPath}`) })
+        .catch((err: unknown) => {
+          const stderr = (err as { stderr?: string })?.stderr ?? ''
+          if (stderr) log.warn(`pg_dump warnings: ${stderr.slice(0, 500)}`)
+          throw err
+        })
     }
     console.log('')
 
@@ -315,6 +326,9 @@ export async function runDump(opts: DumpOptions): Promise<void> {
       const skipped = results.filter(r => r.status === 'skipped').length
 
       console.log('')
+
+      // Wait for DDL dump to finish
+      if (ddlPromise) await ddlPromise
 
       // ── Write manifest ──────────────────────────────────────────────────
       const manifest: DumpManifest = {

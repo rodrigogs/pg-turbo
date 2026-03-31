@@ -15,6 +15,9 @@ export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
   opts: RetryOptions,
 ): Promise<T> {
+  if (opts.maxRetries <= 0) {
+    throw new Error('maxRetries must be at least 1')
+  }
   let lastError: Error | undefined
   for (let attempt = 0; attempt < opts.maxRetries; attempt++) {
     try {

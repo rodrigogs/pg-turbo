@@ -42,6 +42,13 @@ describe('retryWithBackoff', () => {
     ).rejects.toThrow('always fails')
     expect(fn).toHaveBeenCalledTimes(3)
   })
+  it('throws when maxRetries is 0', async () => {
+    const fn = vi.fn().mockResolvedValue('ok')
+    await expect(
+      retryWithBackoff(fn, { maxRetries: 0, baseDelay: 0, maxDelay: 0 })
+    ).rejects.toThrow('maxRetries must be at least 1')
+    expect(fn).not.toHaveBeenCalled()
+  })
   it('calls onRetry callback', async () => {
     const onRetry = vi.fn()
     const fn = vi.fn()

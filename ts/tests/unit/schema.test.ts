@@ -1,6 +1,6 @@
 // ts/tests/unit/schema.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildTableDiscoveryQuery, buildGeneratedColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery, quoteIdent } from '../../src/core/schema.js'
+import { buildTableDiscoveryQuery, buildGeneratedColumnsQuery, buildBatchColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery, quoteIdent } from '../../src/core/schema.js'
 
 describe('quoteIdent', () => {
   it('quotes a simple identifier', () => {
@@ -36,6 +36,15 @@ describe('buildGeneratedColumnsQuery', () => {
     expect(sql).toContain('pg_attribute')
     expect(sql).toContain('attgenerated')
     expect(sql).toContain('$1')
+  })
+})
+
+describe('buildBatchColumnsQuery', () => {
+  it('returns query with array parameter', () => {
+    const sql = buildBatchColumnsQuery()
+    expect(sql).toContain('pg_attribute')
+    expect(sql).toContain('$1::oid[]')
+    expect(sql).toContain('is_generated')
   })
 })
 

@@ -58,6 +58,11 @@ describe('runWorkerPool', () => {
     expect(task).toHaveBeenCalledTimes(2)
   })
 
+  it('throws when workerCount is 0', async () => {
+    await expect(
+      runWorkerPool({ jobs: [makeJob(1)], workerCount: 0, task: vi.fn(), onProgress: vi.fn(), maxRetries: 3, isResumable: () => false })
+    ).rejects.toThrow('workerCount must be at least 1')
+  })
   it('skips resumable jobs', async () => {
     const jobs = [makeJob(1), makeJob(2)]
     const task = vi.fn().mockResolvedValue({ rowCount: 1, bytesWritten: 1 })

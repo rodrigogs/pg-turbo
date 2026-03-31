@@ -168,6 +168,9 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
 
   // ── Step 5: Restore table data via COPY ─────────────────────────────────
   let hadDataFailures = false
+  let succeededCount = 0
+  let failedCount = 0
+  let skippedCount = 0
   log.step('Restoring table data...')
 
   // Build chunk jobs — skip materialized views (restored via REFRESH in post-data DDL)
@@ -270,9 +273,10 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     }
     workerClients.clear()
 
-    const succeeded = results.filter(r => r.status === 'ok').length
+    succeededCount = results.filter(r => r.status === 'ok').length
     const failed = results.filter(r => r.status === 'failed')
-    const skipped = results.filter(r => r.status === 'skipped').length
+    failedCount = failed.length
+    skippedCount = results.filter(r => r.status === 'skipped').length
 
     console.log('')
 
@@ -298,6 +302,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         const args = [
           '--section=post-data', '--no-owner', '--no-privileges',
           '--clean', '--if-exists',
+          '-j', String(opts.jobs),
           '-d', cs,
           ...opts.pgRestoreArgs,
           ddlPath,
@@ -368,7 +373,20 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   }
 
   // ── Final summary ──────────────────────────────────────────────────────
-  if (opts.dryRun) {
+  if (!opts.dryRun) {
+    const durationSecs = Math.round((Date.now() - startTime) / 1000)
+    printSummary({
+      title: 'Restore Summary',
+      database: dbName,
+      schema: opts.schema,
+      tableCount: tables.length,
+      succeeded: succeededCount,
+      failed: failedCount,
+      skipped: skippedCount,
+      durationSecs,
+      dryRun: false,
+    })
+  } else if (opts.dryRun) {
     console.log('')
     const durationSecs = Math.round((Date.now() - startTime) / 1000)
     printSummary({

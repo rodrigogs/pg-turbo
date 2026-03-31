@@ -26,9 +26,9 @@ export async function dumpChunk(
   onData?: (bytes: number) => void,
 ): Promise<DumpChunkResult> {
   await mkdir(dirname(outputPath), { recursive: true })
-  const copyStream = client.query(copyTo(copyQuery))
+  const copyStream = client.query(copyTo(copyQuery, { highWaterMark: 256 * 1024 }))
   const compressor = lz4.createEncoderStream({ blockMaxSize: 4 * 1024 * 1024 })
-  const fileStream = createWriteStream(outputPath)
+  const fileStream = createWriteStream(outputPath, { highWaterMark: 256 * 1024 })
   let bytesWritten = 0
   compressor.on('data', (chunk: Buffer) => { bytesWritten += chunk.length; onData?.(chunk.length) })
   await pipeline(copyStream, compressor, fileStream)
@@ -40,11 +40,12 @@ export async function restoreChunk(
   client: pg.Client, schema: string, table: string, columns: string[], inputPath: string,
   targetDb?: string,
 ): Promise<void> {
+  await client.query('SET synchronous_commit = off')
   await client.query('BEGIN')
   try {
     const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
     const decompressor = lz4.createDecoderStream()
-    const fileStream = createReadStream(inputPath)
+    const fileStream = createReadStream(inputPath, { highWaterMark: 256 * 1024 })
     await pipeline(fileStream, decompressor, copyStream)
     await client.query('COMMIT')
     await writeFile(chunkRestoredMarker(inputPath, targetDb), '', 'utf-8')

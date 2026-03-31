@@ -12,6 +12,9 @@ export interface WorkerPoolOptions {
 }
 
 export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResult[]> {
+  if (opts.workerCount <= 0) {
+    throw new Error('workerCount must be at least 1')
+  }
   const queue = [...opts.jobs].sort((a, b) => (b.table.estimatedBytes ?? 0) - (a.table.estimatedBytes ?? 0))
   const results: ChunkResult[] = []
   let queueIndex = 0

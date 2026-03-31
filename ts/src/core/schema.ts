@@ -63,6 +63,16 @@ export function buildColumnsQuery(): string {
   return `SELECT attname FROM pg_attribute WHERE attrelid = $1 AND NOT attisdropped AND attnum > 0 AND attgenerated = '' ORDER BY attnum`
 }
 
+export function buildBatchColumnsQuery(): string {
+  return `
+    SELECT attrelid::int AS oid, attname, (attgenerated <> '') AS is_generated
+    FROM pg_attribute
+    WHERE attrelid = ANY($1::oid[])
+      AND NOT attisdropped AND attnum > 0
+    ORDER BY attrelid, attnum
+  `
+}
+
 interface TableRow {
   oid: number; schema_name: string; table_name: string; relkind: string
   relpages: number; estimated_rows: number; actual_bytes: string

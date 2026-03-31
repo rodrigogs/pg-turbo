@@ -1,6 +1,5 @@
 import pc from 'picocolors'
 import logUpdate from 'log-update'
-import { createSpinner } from 'nanospinner'
 import { humanSize, elapsedTime, progressBar } from '../core/format.js'
 import type { WorkerState } from '../types/index.js'
 
@@ -18,8 +17,6 @@ export function printBanner(title: string, color: (s: string) => string = pc.cya
   console.log(`${pc.dim(`  ${'─'.repeat(title.length)}`)}`)
   console.log('')
 }
-
-export function spinner(text: string) { return createSpinner(text, { color: 'cyan' }) }
 
 export interface DashboardState {
   totalBytes: number; processedBytes: number; startTime: number; workers: WorkerState[]

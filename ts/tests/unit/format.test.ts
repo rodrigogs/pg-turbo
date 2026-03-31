@@ -50,4 +50,12 @@ describe('progressBar', () => {
   it('shows item counts for small totals', () => {
     expect(progressBar(3, 7, 20)).toContain('3/7')
   })
+  it('handles current > total without crashing', () => {
+    expect(() => progressBar(20, 10, 20)).not.toThrow()
+    expect(progressBar(20, 10, 20)).toContain('100%')
+  })
+  it('handles total = 0', () => {
+    expect(() => progressBar(0, 0, 20)).not.toThrow()
+    expect(progressBar(0, 0, 20)).toContain('0%')
+  })
 })
