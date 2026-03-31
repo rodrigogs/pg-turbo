@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    ports:
+      - "54399:5432"
+    environment:
+      POSTGRES_DB: pg_resilient_test
+      POSTGRES_USER: test_admin
+      POSTGRES_HOST_AUTH_METHOD: trust
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    tmpfs:
+      - /var/lib/postgresql/data
