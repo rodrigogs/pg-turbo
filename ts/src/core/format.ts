@@ -22,7 +22,7 @@ export function elapsedTime(secs: number): string {
 
 export function progressBar(current: number, total: number, width: number = 30): string {
   const pct = total > 0 ? Math.min(Math.floor((current * 100) / total), 100) : 0
-  const filled = total > 0 ? Math.min(Math.floor((current * width) / total), width) : 0
+  const filled = total > 0 ? Math.max(0, Math.min(Math.floor((current * width) / total), width)) : 0
   const empty = width - filled
   const bar = '\u2588'.repeat(filled) + '\u2591'.repeat(empty)
   const status = total > 1024

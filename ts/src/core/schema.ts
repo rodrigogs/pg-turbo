@@ -55,14 +55,6 @@ export function buildTableDiscoveryQuery(schemaFilter: string | undefined): { te
   }
 }
 
-export function buildGeneratedColumnsQuery(): string {
-  return `SELECT attname FROM pg_attribute WHERE attrelid = $1 AND attgenerated <> '' AND NOT attisdropped AND attnum > 0`
-}
-
-export function buildColumnsQuery(): string {
-  return `SELECT attname FROM pg_attribute WHERE attrelid = $1 AND NOT attisdropped AND attnum > 0 AND attgenerated = '' ORDER BY attnum`
-}
-
 export function buildBatchColumnsQuery(): string {
   return `
     SELECT attrelid::int AS oid, attname, (attgenerated <> '') AS is_generated

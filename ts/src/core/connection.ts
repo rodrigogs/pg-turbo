@@ -23,8 +23,20 @@ export function cleanConnectionString(cs: string): string {
 }
 
 export function appendKeepaliveParams(cs: string): string {
-  const separator = cs.includes('?') ? '&' : '?'
-  return `${cs}${separator}${KEEPALIVE_PARAMS}`
+  const [base, existingQuery] = cs.split('?')
+  const existing = new Set(
+    (existingQuery ?? '').split('&').filter(Boolean).map(p => p.split('=')[0]!)
+  )
+  const newParams = KEEPALIVE_PARAMS.split('&').filter(p => !existing.has(p.split('=')[0]!))
+  if (newParams.length === 0) return cs
+  const sep = existingQuery ? '&' : '?'
+  return `${cs}${sep}${newParams.join('&')}`
+}
+
+export async function createClient(connectionString: string): Promise<InstanceType<typeof Client>> {
+  const client = new Client({ connectionString: appendKeepaliveParams(connectionString) })
+  await client.connect()
+  return client
 }
 
 export async function createSnapshotCoordinator(connectionString: string) {

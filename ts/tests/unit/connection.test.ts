@@ -44,4 +44,12 @@ describe('appendKeepaliveParams', () => {
     expect(result).toContain('sslmode=require')
     expect(result).toContain('keepalives=1')
   })
+  it('does not override existing keepalive params', () => {
+    const result = appendKeepaliveParams('postgresql://u:p@h/db?keepalives_idle=60&connect_timeout=30')
+    expect(result).toContain('keepalives_idle=60')   // preserved
+    expect(result).toContain('connect_timeout=30')    // preserved
+    expect(result).not.toMatch(/keepalives_idle=10/)  // not overridden
+    expect(result).not.toMatch(/connect_timeout=10/)  // not overridden
+    expect(result).toContain('keepalives=1')          // added (wasn't present)
+  })
 })

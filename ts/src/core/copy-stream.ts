@@ -1,8 +1,7 @@
 // ts/src/core/copy-stream.ts
 import { pipeline } from 'node:stream/promises'
 import { createWriteStream, createReadStream } from 'node:fs'
-import { mkdir, writeFile, unlink } from 'node:fs/promises'
-import { dirname } from 'node:path'
+import { writeFile, unlink, stat } from 'node:fs/promises'
 import { to as copyTo, from as copyFrom } from 'pg-copy-streams'
 import lz4 from 'lz4'
 import type pg from 'pg'
@@ -23,17 +22,14 @@ export interface DumpChunkResult { rowCount: number; bytesWritten: number }
 
 export async function dumpChunk(
   client: pg.Client, copyQuery: string, outputPath: string,
-  onData?: (bytes: number) => void,
 ): Promise<DumpChunkResult> {
-  await mkdir(dirname(outputPath), { recursive: true })
   const copyStream = client.query(copyTo(copyQuery, { highWaterMark: 256 * 1024 }))
   const compressor = lz4.createEncoderStream({ blockMaxSize: 4 * 1024 * 1024 })
   const fileStream = createWriteStream(outputPath, { highWaterMark: 256 * 1024 })
-  let bytesWritten = 0
-  compressor.on('data', (chunk: Buffer) => { bytesWritten += chunk.length; onData?.(chunk.length) })
   await pipeline(copyStream, compressor, fileStream)
+  const { size } = await stat(outputPath)
   await writeFile(chunkDoneMarker(outputPath), '', 'utf-8')
-  return { rowCount: copyStream.rowCount, bytesWritten }
+  return { rowCount: copyStream.rowCount, bytesWritten: size }
 }
 
 export async function restoreChunk(

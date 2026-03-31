@@ -3,7 +3,7 @@ import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
 const execFileAsync = promisify(execFile)
-import { join } from 'node:path'
+import { join, dirname } from 'node:path'
 import { mkdir } from 'node:fs/promises'
 import { existsSync } from 'node:fs'
 import pg from 'pg'
@@ -14,8 +14,7 @@ import type {
 } from '../types/index.js'
 import {
   cleanConnectionString, sanitizeConnectionString, extractDbName,
-  testConnection, isReadReplica,
-  createSnapshotCoordinator, createWorkerClient,
+  createClient, createSnapshotCoordinator, createWorkerClient,
   releaseWorkerClient, destroyClient,
 } from '../core/connection.js'
 import {
@@ -75,7 +74,21 @@ export async function runDump(opts: DumpOptions): Promise<void> {
 
   // ── Step 1: Test connection ─────────────────────────────────────────────
   log.step('Step 1/6: Testing connection...')
-  const pgVersion = await testConnection(cs)
+  const discoveryClient = await createClient(cs)
+
+  let pgVersion: string
+  let replica: boolean
+  try {
+    const [versionResult, replicaResult] = await Promise.all([
+      discoveryClient.query('SELECT version() AS version'),
+      discoveryClient.query('SELECT pg_is_in_recovery() AS is_replica'),
+    ])
+    pgVersion = versionResult.rows[0].version as string
+    replica = replicaResult.rows[0].is_replica as boolean
+  } catch (err) {
+    await discoveryClient.end().catch(() => {})
+    throw err
+  }
   const pgMajor = parsePgMajorVersion(pgVersion)
   log.success(`Connected — ${pgVersion.split(',')[0]}`)
   console.log('')
@@ -85,7 +98,6 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   let snapshotId: string | null = null
   let snapshotCoordinator: Awaited<ReturnType<typeof createSnapshotCoordinator>> | null = null
 
-  const replica = await isReadReplica(cs)
   if (opts.dryRun) {
     log.info('Skipped (dry run)')
   } else if (replica) {
@@ -101,8 +113,6 @@ export async function runDump(opts: DumpOptions): Promise<void> {
 
   // ── Step 3: Discover tables ─────────────────────────────────────────────
   log.step('Step 3/6: Discovering tables...')
-  const discoveryClient = new Client({ connectionString: cs })
-  await discoveryClient.connect()
 
   try {
     // Validate schema exists if filter specified
@@ -156,22 +166,31 @@ export async function runDump(opts: DumpOptions): Promise<void> {
 
     // ── Step 4: Plan chunks ───────────────────────────────────────────────
     log.step('Step 4/6: Planning chunks...')
+
+    // Pipeline all min/max PK queries concurrently on the discovery connection
+    const minMaxResults = await Promise.all(
+      tables.filter(t => t.pkColumn).map(async (table) => {
+        const { rows } = await discoveryClient.query(
+          `SELECT min(${quoteIdent(table.pkColumn!)}) AS mn, max(${quoteIdent(table.pkColumn!)}) AS mx
+           FROM ${quoteIdent(table.schemaName)}.${quoteIdent(table.tableName)}`
+        )
+        return { oid: table.oid, rows }
+      })
+    )
+    const minMaxMap = new Map<number, { pkMin: number | null; pkMax: number | null }>()
+    for (const { oid, rows } of minMaxResults) {
+      if (rows.length > 0 && rows[0]!.mn !== null) {
+        minMaxMap.set(oid, { pkMin: parseInt(String(rows[0]!.mn), 10), pkMax: parseInt(String(rows[0]!.mx), 10) })
+      }
+    }
+
     const manifestTables: ManifestTable[] = []
     const allJobs: ChunkJob[] = []
 
     for (const table of tables) {
-      // Fetch PK min/max for chunk planning
-      let pkMin: number | null = null
-      let pkMax: number | null = null
-      if (table.pkColumn) {
-        const { rows: minMaxRows } = await discoveryClient.query(
-          `SELECT min(${quoteIdent(table.pkColumn)}) AS mn, max(${quoteIdent(table.pkColumn)}) AS mx FROM ${quoteIdent(table.schemaName)}.${quoteIdent(table.tableName)}`,
-        )
-        if (minMaxRows.length > 0 && minMaxRows[0]!.mn !== null) {
-          pkMin = parseInt(String(minMaxRows[0]!.mn), 10)
-          pkMax = parseInt(String(minMaxRows[0]!.mx), 10)
-        }
-      }
+      const minMax = minMaxMap.get(table.oid)
+      const pkMin = minMax?.pkMin ?? null
+      const pkMax = minMax?.pkMax ?? null
 
       const planOpts: ChunkPlanOptions = {
         splitThreshold: opts.splitThreshold,
@@ -208,6 +227,12 @@ export async function runDump(opts: DumpOptions): Promise<void> {
 
     log.success(`${allJobs.length} chunks across ${tables.length} tables (strategy mix: ${[...new Set(manifestTables.map(t => t.chunkStrategy))].join(', ')})`)
     console.log('')
+
+    // Pre-create all output directories
+    if (!opts.dryRun && allJobs.length > 0) {
+      const dirs = [...new Set(allJobs.map(j => dirname(j.outputPath)))]
+      await Promise.all(dirs.map(d => mkdir(d, { recursive: true })))
+    }
 
     // ── Step 5: Dump DDL ──────────────────────────────────────────────────
     const ddlPath = join(opts.output, '_schema_ddl.dump')
@@ -328,7 +353,14 @@ export async function runDump(opts: DumpOptions): Promise<void> {
       console.log('')
 
       // Wait for DDL dump to finish
-      if (ddlPromise) await ddlPromise
+      if (ddlPromise) {
+        try {
+          await ddlPromise
+        } catch (err) {
+          log.error(`DDL dump failed: ${(err as Error).message}`)
+          // Still write manifest and summary for data that was dumped
+        }
+      }
 
       // ── Write manifest ──────────────────────────────────────────────────
       const manifest: DumpManifest = {

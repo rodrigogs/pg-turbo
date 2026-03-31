@@ -58,4 +58,7 @@ describe('progressBar', () => {
     expect(() => progressBar(0, 0, 20)).not.toThrow()
     expect(progressBar(0, 0, 20)).toContain('0%')
   })
+  it('handles negative current', () => {
+    expect(() => progressBar(-5, 100, 20)).not.toThrow()
+  })
 })

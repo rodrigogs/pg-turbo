@@ -1,6 +1,6 @@
 // ts/tests/unit/schema.test.ts
 import { describe, it, expect } from 'vitest'
-import { buildTableDiscoveryQuery, buildGeneratedColumnsQuery, buildBatchColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery, quoteIdent } from '../../src/core/schema.js'
+import { buildTableDiscoveryQuery, buildBatchColumnsQuery, parseTableRows, buildDdlDumpArgs, buildSequenceQuery, quoteIdent } from '../../src/core/schema.js'
 
 describe('quoteIdent', () => {
   it('quotes a simple identifier', () => {
@@ -27,15 +27,6 @@ describe('buildTableDiscoveryQuery', () => {
     expect(text).toContain('n.nspname = $1')
     expect(text).not.toContain("'public'")
     expect(values).toEqual(['public'])
-  })
-})
-
-describe('buildGeneratedColumnsQuery', () => {
-  it('returns query with oid parameter', () => {
-    const sql = buildGeneratedColumnsQuery()
-    expect(sql).toContain('pg_attribute')
-    expect(sql).toContain('attgenerated')
-    expect(sql).toContain('$1')
   })
 })
 

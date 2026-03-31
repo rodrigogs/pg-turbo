@@ -11,9 +11,8 @@ import type {
 } from '../types/index.js'
 import {
   cleanConnectionString, sanitizeConnectionString, extractDbName,
-  testConnection, destroyClient,
+  testConnection, createClient, destroyClient,
 } from '../core/connection.js'
-import { appendKeepaliveParams } from '../core/connection.js'
 import { readManifest } from '../core/manifest.js'
 import { restoreChunk, chunkRestoredMarker } from '../core/copy-stream.js'
 import { runWorkerPool } from '../core/queue.js'
@@ -103,8 +102,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       log.warn('Skipped (dry run)')
     } else if (opts.table) {
       // When filtering to a single table, only truncate that table — don't drop the entire schema
-      const client = new Client({ connectionString: appendKeepaliveParams(cs) })
-      await client.connect()
+      const client = await createClient(cs)
       try {
         for (const t of tables) {
           if (t.relkind === 'm') continue
@@ -117,8 +115,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         await client.end()
       }
     } else {
-      const client = new Client({ connectionString: appendKeepaliveParams(cs) })
-      await client.connect()
+      const client = await createClient(cs)
       try {
         const schemas = [...new Set(tables.map(t => t.schema))]
         for (const schema of schemas) {
@@ -193,6 +190,14 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     }
   }
 
+  if (!opts.dryRun) {
+    const missing = allJobs.filter(j => !existsSync(j.outputPath))
+    if (missing.length > 0) {
+      for (const m of missing) log.error(`Missing chunk file: ${m.outputPath}`)
+      throw new Error(`${missing.length} chunk file(s) missing from dump directory`)
+    }
+  }
+
   if (opts.dryRun) {
     log.warn('Skipped (dry run)')
     console.log('')
@@ -246,8 +251,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       task: async (job, workerId) => {
         let client = workerClients.get(workerId)
         if (!client) {
-          client = new Client({ connectionString: appendKeepaliveParams(cs) })
-          await client.connect()
+          client = await createClient(cs)
           workerClients.set(workerId, client)
         }
         try {
@@ -325,8 +329,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   const matViews = tables.filter(t => t.relkind === 'm')
   if (matViews.length > 0 && !opts.dataOnly && !opts.dryRun) {
     log.step('Refreshing materialized views...')
-    const mvClient = new Client({ connectionString: appendKeepaliveParams(cs) })
-    await mvClient.connect()
+    const mvClient = await createClient(cs)
     try {
       for (const mv of matViews) {
         await mvClient.query(`REFRESH MATERIALIZED VIEW ${quoteIdent(mv.schema)}.${quoteIdent(mv.name)}`)
@@ -343,8 +346,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   // ── Reset sequences (runs regardless of whether there were data chunks) ─
   if (manifest.sequences.length > 0 && !opts.dataOnly && !opts.dryRun) {
     log.step('Resetting sequences...')
-    const seqClient = new Client({ connectionString: appendKeepaliveParams(cs) })
-    await seqClient.connect()
+    const seqClient = await createClient(cs)
     let seqOk = 0
     let seqFailed = 0
     try {
@@ -386,7 +388,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       durationSecs,
       dryRun: false,
     })
-  } else if (opts.dryRun) {
+  } else {
     console.log('')
     const durationSecs = Math.round((Date.now() - startTime) / 1000)
     printSummary({
