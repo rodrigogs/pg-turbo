@@ -1,4 +1,5 @@
 import type { ChunkJob, ChunkResult, ProgressEvent } from '../types/index.js'
+import { calculateDelay } from './retry.js'
 
 export interface WorkerPoolOptions {
   jobs: ChunkJob[]
@@ -35,7 +36,8 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         continue
       }
       if (job.attempt > 0 && opts.retryDelayMs) {
-        const delay = Math.min(opts.retryDelayMs * Math.pow(2, job.attempt - 1), 60_000)
+        const baseDelaySec = (opts.retryDelayMs ?? 5000) / 1000
+        const delay = calculateDelay(job.attempt - 1, baseDelaySec, 60)
         await new Promise(r => setTimeout(r, delay))
       }
       const startTime = Date.now()

@@ -7,7 +7,7 @@ import pg from 'pg'
 
 import type {
   RestoreOptions, ChunkJob, ManifestTable,
-  ProgressEvent, WorkerState,
+  WorkerState,
 } from '../types/index.js'
 import {
   cleanConnectionString, sanitizeConnectionString, extractDbName,
@@ -20,6 +20,7 @@ import { humanSize } from '../core/format.js'
 import { quoteIdent } from '../core/schema.js'
 import {
   log, printBanner, startDashboard, printSummary, printFailedTables,
+  createProgressHandler, installSignalHandlers,
 } from './ui.js'
 import type { DashboardState } from './ui.js'
 
@@ -31,15 +32,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   const startTime = Date.now()
 
   let dashboard: ReturnType<typeof startDashboard> | null = null
-  let interrupted = false
-  const cleanup = () => {
-    interrupted = true
-    dashboard?.stop()
-    console.log('')
-    log.warn('Interrupted — cleaning up...')
-  }
-  process.once('SIGINT', cleanup)
-  process.once('SIGTERM', cleanup)
+  const signals = installSignalHandlers(() => dashboard)
 
   // ── Step 1: Read manifest ───────────────────────────────────────────────
   log.step('Reading manifest...')
@@ -179,11 +172,9 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     }
     for (const chunk of table.chunks) {
       const inputPath = join(opts.input, chunk.file)
-      // copyQuery is not used for restore, but we keep it for the ChunkJob type
       allJobs.push({
         table,
         chunk,
-        copyQuery: '',
         outputPath: inputPath,
         attempt: 0,
       })
@@ -226,28 +217,8 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       maxRetries: opts.retries,
       retryDelayMs: opts.retryDelay * 1000,
       isResumable: (job) => existsSync(chunkRestoredMarker(job.outputPath, dbName)),
-      onProgress: (event: ProgressEvent) => {
-        const w = workers[event.workerId]
-        if (!w) return
-        if (event.type === 'started') {
-          w.status = 'working'
-          w.currentJob = event.job
-        } else if (event.type === 'completed') {
-          w.status = 'idle'
-          w.currentJob = undefined
-          // Estimate bytes from table size / chunk count
-          dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
-        } else if (event.type === 'retrying') {
-          w.status = 'retrying'
-        } else if (event.type === 'failed' || event.type === 'skipped') {
-          w.status = 'idle'
-          w.currentJob = undefined
-          if (event.type === 'skipped') {
-            dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
-          }
-        }
-        dashboard?.update()
-      },
+      onProgress: createProgressHandler(workers, dashState, dashboard,
+        (event) => event.job.table.estimatedBytes / event.job.table.chunks.length),
       task: async (job, workerId) => {
         let client = workerClients.get(workerId)
         if (!client) {
@@ -404,8 +375,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     })
   }
 
-  process.removeListener('SIGINT', cleanup)
-  process.removeListener('SIGTERM', cleanup)
-  if (interrupted) process.exit(130)
+  signals.cleanup()
+  if (signals.wasInterrupted()) process.exit(130)
   if (hadDataFailures) process.exit(1)
 }

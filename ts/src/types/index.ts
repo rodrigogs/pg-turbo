@@ -68,7 +68,7 @@ export interface DumpManifest {
 export interface ChunkJob {
   table: ManifestTable
   chunk: ChunkMeta
-  copyQuery: string
+  copyQuery?: string
   outputPath: string
   attempt: number
 }

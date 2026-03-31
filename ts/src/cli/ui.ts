@@ -1,7 +1,7 @@
 import pc from 'picocolors'
 import logUpdate from 'log-update'
 import { humanSize, elapsedTime, progressBar } from '../core/format.js'
-import type { WorkerState } from '../types/index.js'
+import type { ProgressEvent, WorkerState } from '../types/index.js'
 
 export const log = {
   info: (msg: string) => console.log(`${pc.blue('\u2139')}  ${msg}`),
@@ -72,4 +72,54 @@ export function printFailedTables(tables: string[], maxRetries: number): void {
   for (const t of tables) console.log(`    ${pc.red('\u2716')} ${t}`)
   console.log('')
   log.info('Re-run with the same arguments to retry only the failed chunks.')
+}
+
+export function createProgressHandler(
+  workers: WorkerState[],
+  dashState: DashboardState,
+  dashboard: { update: () => void } | null,
+  bytesForCompleted: (event: ProgressEvent) => number,
+): (event: ProgressEvent) => void {
+  return (event: ProgressEvent) => {
+    const w = workers[event.workerId]
+    if (!w) return
+    switch (event.type) {
+      case 'started':
+        w.status = 'working'; w.currentJob = event.job; break
+      case 'completed':
+        w.status = 'idle'; w.currentJob = undefined
+        dashState.processedBytes += bytesForCompleted(event); break
+      case 'retrying':
+        w.status = 'retrying'; break
+      case 'failed':
+      case 'skipped':
+        w.status = 'idle'; w.currentJob = undefined
+        if (event.type === 'skipped') {
+          dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
+        }
+        break
+    }
+    dashboard?.update()
+  }
+}
+
+export function installSignalHandlers(
+  getDashboard: () => ReturnType<typeof startDashboard> | null,
+): { cleanup: () => void; wasInterrupted: () => boolean } {
+  let interrupted = false
+  const handler = () => {
+    interrupted = true
+    getDashboard()?.stop()
+    console.log('')
+    log.warn('Interrupted — cleaning up...')
+  }
+  process.once('SIGINT', handler)
+  process.once('SIGTERM', handler)
+  return {
+    cleanup: () => {
+      process.removeListener('SIGINT', handler)
+      process.removeListener('SIGTERM', handler)
+    },
+    wasInterrupted: () => interrupted,
+  }
 }

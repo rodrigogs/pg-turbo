@@ -10,7 +10,7 @@ import pg from 'pg'
 
 import type {
   DumpOptions, DumpManifest, ManifestTable,
-  ChunkJob, ChunkMeta, ProgressEvent, WorkerState,
+  ChunkJob, ChunkMeta, WorkerState,
 } from '../types/index.js'
 import {
   cleanConnectionString, sanitizeConnectionString, extractDbName,
@@ -31,6 +31,7 @@ import { writeManifest } from '../core/manifest.js'
 import { humanSize } from '../core/format.js'
 import {
   log, printBanner, startDashboard, printSummary, printFailedTables,
+  createProgressHandler, installSignalHandlers,
 } from './ui.js'
 import type { DashboardState } from './ui.js'
 
@@ -47,15 +48,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   const startTime = Date.now()
 
   let dashboard: ReturnType<typeof startDashboard> | null = null
-  let interrupted = false
-  const cleanup = () => {
-    interrupted = true
-    dashboard?.stop()
-    console.log('')
-    log.warn('Interrupted — cleaning up...')
-  }
-  process.once('SIGINT', cleanup)
-  process.once('SIGTERM', cleanup)
+  const signals = installSignalHandlers(() => dashboard)
 
   // ── Banner ──────────────────────────────────────────────────────────────
   printBanner(opts.dryRun ? 'PostgreSQL Resilient Dump (DRY RUN)' : 'PostgreSQL Resilient Dump')
@@ -292,30 +285,8 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         maxRetries: opts.retries,
         retryDelayMs: opts.retryDelay * 1000,
         isResumable: (job) => existsSync(chunkDoneMarker(job.outputPath)),
-        onProgress: (event: ProgressEvent) => {
-          const w = workers[event.workerId]
-          if (!w) return
-          if (event.type === 'started') {
-            w.status = 'working'
-            w.currentJob = event.job
-          } else if (event.type === 'completed') {
-            w.status = 'idle'
-            w.currentJob = undefined
-            if (event.bytesWritten) {
-              dashState.processedBytes += event.bytesWritten
-            }
-          } else if (event.type === 'retrying') {
-            w.status = 'retrying'
-          } else if (event.type === 'failed' || event.type === 'skipped') {
-            w.status = 'idle'
-            w.currentJob = undefined
-            if (event.type === 'skipped') {
-              // Count skipped bytes toward progress
-              dashState.processedBytes += event.job.table.estimatedBytes / event.job.table.chunks.length
-            }
-          }
-          dashboard?.update()
-        },
+        onProgress: createProgressHandler(workers, dashState, dashboard,
+          (event) => event.bytesWritten ?? 0),
         task: async (job, workerId) => {
           let client = workerClients.get(workerId)
           if (!client) {
@@ -323,7 +294,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
             workerClients.set(workerId, client)
           }
           try {
-            return await dumpChunk(client, job.copyQuery, job.outputPath)
+            return await dumpChunk(client, job.copyQuery!, job.outputPath)
           } catch (err) {
             // On error, destroy this worker's client so it gets recreated
             await destroyClient(client)
@@ -430,8 +401,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   } finally {
     await discoveryClient.end().catch(() => {})
     if (snapshotCoordinator) await snapshotCoordinator.close()
-    process.removeListener('SIGINT', cleanup)
-    process.removeListener('SIGTERM', cleanup)
-    if (interrupted) process.exit(130)
+    signals.cleanup()
+    if (signals.wasInterrupted()) process.exit(130)
   }
 }
