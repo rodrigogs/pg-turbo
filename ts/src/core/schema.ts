@@ -60,7 +60,7 @@ export function buildDdlDumpArgs(cs: string, outputPath: string, schemaFilter: s
 
 export function buildSequenceQuery(schemaFilter: string | undefined): string {
   const clause = schemaFilter ? `WHERE schemaname = '${schemaFilter}'` : `WHERE schemaname NOT LIKE 'pg_%' AND schemaname <> 'information_schema'`
-  return `SELECT schemaname, sequencename, last_value, COALESCE(is_called, false) AS is_called FROM pg_sequences ${clause} ORDER BY schemaname, sequencename`
+  return `SELECT schemaname, sequencename, last_value, (last_value IS NOT NULL) AS is_called FROM pg_sequences ${clause} ORDER BY schemaname, sequencename`
 }
 
 export function parseSequenceRows(rows: Array<{ schemaname: string; sequencename: string; last_value: string | null; is_called: boolean }>): SequenceInfo[] {
