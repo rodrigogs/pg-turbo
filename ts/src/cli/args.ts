@@ -29,8 +29,6 @@ export function parseDumpArgs(argv: string[]): DumpOptions {
     .option('--no-snapshot', 'Skip snapshot')
     .option('--dry-run', 'Preview without dumping')
     .allowUnknownOption(false)
-    .exitOverride()
-    .configureOutput({ writeErr: () => {}, writeOut: () => {} })
   cmd.parse(ourArgs, { from: 'user' })
   const opts = cmd.opts()
   return {
@@ -64,8 +62,6 @@ export function parseRestoreArgs(argv: string[]): RestoreOptions {
     .option('--retry-delay <s>', 'Retry delay', '5')
     .option('--dry-run', 'Preview')
     .allowUnknownOption(false)
-    .exitOverride()
-    .configureOutput({ writeErr: () => {}, writeOut: () => {} })
   cmd.parse(ourArgs, { from: 'user' })
   const opts = cmd.opts()
   return {

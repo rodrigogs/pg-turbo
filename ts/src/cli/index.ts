@@ -1,40 +1,37 @@
 // ts/src/cli/index.ts
-import { Command } from 'commander'
 import { parseDumpArgs, parseRestoreArgs } from './args.js'
 import { runDump } from './dump.js'
 import { runRestore } from './restore.js'
 
-export function createProgram(): Command {
-  const program = new Command()
-    .name('pg-resilient')
-    .description('Resilient PostgreSQL dump & restore with direct COPY protocol')
-    .version('0.1.0')
-    .enablePositionalOptions()
+function printHelp(): void {
+  console.log(`pg-resilient — Resilient PostgreSQL dump & restore with direct COPY protocol
 
-  program
-    .command('dump')
-    .description('Dump a PostgreSQL database')
-    .allowUnknownOption()
-    .passThroughOptions()
-    .action(async (_options: unknown, cmd: Command) => {
-      const opts = parseDumpArgs(cmd.parent!.args.slice(1))
-      await runDump(opts)
-    })
+Usage:
+  pg-resilient dump  -d <connection_string> --output <dir> [options]
+  pg-resilient restore -d <connection_string> --input <dir> [options]
 
-  program
-    .command('restore')
-    .description('Restore a PostgreSQL dump')
-    .allowUnknownOption()
-    .passThroughOptions()
-    .action(async (_options: unknown, cmd: Command) => {
-      const opts = parseRestoreArgs(cmd.parent!.args.slice(1))
-      await runRestore(opts)
-    })
+Commands:
+  dump      Dump a PostgreSQL database
+  restore   Restore a PostgreSQL dump
 
-  return program
+Run "pg-resilient dump --help" or "pg-resilient restore --help" for command options.`)
 }
 
 export async function main(): Promise<void> {
-  const program = createProgram()
-  await program.parseAsync(process.argv)
+  // Simple subcommand routing — pass all args after the subcommand to our parsers
+  const args = process.argv.slice(2)
+  const subcommand = args[0]
+  const subArgs = args.slice(1)
+
+  switch (subcommand) {
+    case 'dump':
+      await runDump(parseDumpArgs(subArgs))
+      break
+    case 'restore':
+      await runRestore(parseRestoreArgs(subArgs))
+      break
+    default:
+      printHelp()
+      break
+  }
 }
