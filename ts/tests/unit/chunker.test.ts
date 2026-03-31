@@ -81,11 +81,24 @@ describe('buildCopyQuery', () => {
     expect(sql).toContain('"id", "name"')
     expect(sql).not.toContain('"email"')
   })
+
+  it('uses SELECT form for materialized views', () => {
+    const matView = makeTable({ relkind: 'm' })
+    const chunk: ChunkMeta = { index: 0, file: '...' }
+    const sql = buildCopyQuery(matView, chunk)
+    expect(sql).toBe('COPY (SELECT "id", "name", "email" FROM "public"."users") TO STDOUT')
+    expect(sql).not.toContain('COPY "public"')
+  })
 })
 
 describe('chunkFilePath', () => {
   it('generates correct path', () => {
     expect(chunkFilePath('public', 'users', 0)).toBe('data/public.users/chunk_0000.copy.lz4')
     expect(chunkFilePath('public', 'users', 12)).toBe('data/public.users/chunk_0012.copy.lz4')
+  })
+
+  it('sanitizes filesystem-unsafe characters', () => {
+    expect(chunkFilePath('public', 'table"with"quotes', 0)).toBe('data/public.table_with_quotes/chunk_0000.copy.lz4')
+    expect(chunkFilePath('my/schema', 'my:table', 0)).toBe('data/my_schema.my_table/chunk_0000.copy.lz4')
   })
 })

@@ -9,7 +9,10 @@ import type pg from 'pg'
 import { quoteIdent } from './schema.js'
 
 export function chunkDoneMarker(chunkPath: string): string { return `${chunkPath}.done` }
-export function chunkRestoredMarker(chunkPath: string): string { return `${chunkPath}.restored.done` }
+export function chunkRestoredMarker(chunkPath: string, targetDb?: string): string {
+  const suffix = targetDb ? `.restored.${targetDb}.done` : '.restored.done'
+  return `${chunkPath}${suffix}`
+}
 
 export function buildRestoreCopyQuery(schema: string, table: string, columns: string[]): string {
   const cols = columns.map(c => quoteIdent(c)).join(', ')
@@ -35,6 +38,7 @@ export async function dumpChunk(
 
 export async function restoreChunk(
   client: pg.Client, schema: string, table: string, columns: string[], inputPath: string,
+  targetDb?: string,
 ): Promise<void> {
   await client.query('BEGIN')
   try {
@@ -43,7 +47,7 @@ export async function restoreChunk(
     const fileStream = createReadStream(inputPath)
     await pipeline(fileStream, decompressor, copyStream)
     await client.query('COMMIT')
-    await writeFile(chunkRestoredMarker(inputPath), '', 'utf-8')
+    await writeFile(chunkRestoredMarker(inputPath, targetDb), '', 'utf-8')
   } catch (err) {
     await client.query('ROLLBACK').catch(() => {})
     throw err

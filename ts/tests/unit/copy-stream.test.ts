@@ -18,8 +18,13 @@ describe('marker helpers', () => {
     expect(chunkDoneMarker('/out/data/public.users/chunk_0000.copy.lz4'))
       .toBe('/out/data/public.users/chunk_0000.copy.lz4.done')
   })
-  it('generates restore done marker path', () => {
+  it('generates restore done marker path without target', () => {
     expect(chunkRestoredMarker('/out/data/public.users/chunk_0000.copy.lz4'))
       .toBe('/out/data/public.users/chunk_0000.copy.lz4.restored.done')
+  })
+
+  it('generates restore done marker scoped to target db', () => {
+    expect(chunkRestoredMarker('/out/data/public.users/chunk_0000.copy.lz4', 'mydb'))
+      .toBe('/out/data/public.users/chunk_0000.copy.lz4.restored.mydb.done')
   })
 })

@@ -89,8 +89,9 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   console.log('')
 
   const ddlPath = join(opts.input, '_schema_ddl.dump')
-  const preDataMarker = join(opts.input, '_pre_data.done')
-  const postDataMarker = join(opts.input, '_post_data.done')
+  // Scope resume markers by target database to avoid cross-target pollution
+  const preDataMarker = join(opts.input, `_pre_data.${dbName}.done`)
+  const postDataMarker = join(opts.input, `_post_data.${dbName}.done`)
 
   // ── Step 3: Clean (if requested) ────────────────────────────────────────
   if (opts.clean && !opts.dataOnly) {
@@ -150,9 +151,13 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   // ── Step 5: Restore table data via COPY ─────────────────────────────────
   log.step('Restoring table data...')
 
-  // Build chunk jobs from manifest tables
+  // Build chunk jobs — skip materialized views (restored via REFRESH in post-data DDL)
   const allJobs: ChunkJob[] = []
   for (const table of tables) {
+    if (table.relkind === 'm') {
+      log.info(`Skipping materialized view ${table.schema}.${table.name} (refreshed via post-data DDL)`)
+      continue
+    }
     for (const chunk of table.chunks) {
       const inputPath = join(opts.input, chunk.file)
       // copyQuery is not used for restore, but we keep it for the ChunkJob type
@@ -171,7 +176,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     console.log('')
     log.info('Chunks that would be restored:')
     for (const job of allJobs) {
-      const markerExists = existsSync(chunkRestoredMarker(job.outputPath))
+      const markerExists = existsSync(chunkRestoredMarker(job.outputPath, dbName))
       const status = markerExists ? '(already restored)' : ''
       log.info(`  ${job.table.schema}.${job.table.name} chunk ${job.chunk.index} ${status}`)
     }
@@ -193,7 +198,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       workerCount: opts.jobs,
       maxRetries: opts.retries,
       retryDelayMs: opts.retryDelay * 1000,
-      isResumable: (job) => existsSync(chunkRestoredMarker(job.outputPath)),
+      isResumable: (job) => existsSync(chunkRestoredMarker(job.outputPath, dbName)),
       onProgress: (event: ProgressEvent) => {
         const w = workers[event.workerId]
         if (!w) return
@@ -225,7 +230,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         }
         try {
           const columns = job.table.columns.filter(c => !job.table.generatedColumns.includes(c))
-          await restoreChunk(client, job.table.schema, job.table.name, columns, job.outputPath)
+          await restoreChunk(client, job.table.schema, job.table.name, columns, job.outputPath, dbName)
           return { rowCount: 0, bytesWritten: job.table.estimatedBytes / job.table.chunks.length }
         } catch (err) {
           await destroyClient(client)
@@ -305,6 +310,25 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       log.success('Post-data DDL restored')
     } else {
       log.warn('No DDL file found — skipping post-data')
+    }
+    console.log('')
+  }
+
+  // ── Refresh materialized views ──────────────────────────────────────────
+  const matViews = tables.filter(t => t.relkind === 'm')
+  if (matViews.length > 0 && !opts.dataOnly && !opts.dryRun) {
+    log.step('Refreshing materialized views...')
+    const mvClient = new Client({ connectionString: appendKeepaliveParams(cs) })
+    await mvClient.connect()
+    try {
+      for (const mv of matViews) {
+        await mvClient.query(`REFRESH MATERIALIZED VIEW ${quoteIdent(mv.schema)}.${quoteIdent(mv.name)}`)
+      }
+      log.success(`${matViews.length} materialized view(s) refreshed`)
+    } catch (err) {
+      log.warn(`Failed to refresh materialized views: ${(err as Error).message}`)
+    } finally {
+      await mvClient.end().catch(() => {})
     }
     console.log('')
   }

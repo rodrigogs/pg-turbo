@@ -6,8 +6,13 @@ export interface ChunkPlanOptions {
   pkMin: number | null; pkMax: number | null
 }
 
+/** Sanitize a name for safe use in filesystem paths */
+function safeName(name: string): string {
+  return name.replace(/[/\\<>:"|?*\x00-\x1f]/g, '_')
+}
+
 export function chunkFilePath(schema: string, table: string, index: number): string {
-  return `data/${schema}.${table}/chunk_${index.toString().padStart(4, '0')}.copy.lz4`
+  return `data/${safeName(schema)}.${safeName(table)}/chunk_${index.toString().padStart(4, '0')}.copy.lz4`
 }
 
 export function planChunks(table: TableInfo, opts: ChunkPlanOptions): ChunkMeta[] {
@@ -55,6 +60,10 @@ export function buildCopyQuery(table: TableInfo, chunk: ChunkMeta): string {
     const startClause = `ctid >= '(${chunk.ctidStart},0)'::tid`
     const endClause = chunk.ctidEnd !== undefined ? ` AND ctid < '(${chunk.ctidEnd},0)'::tid` : ''
     return `COPY (SELECT ${cols} FROM ${qualifiedTable} WHERE ${startClause}${endClause}) TO STDOUT`
+  }
+  // Materialized views require COPY (SELECT ...) form — COPY matview TO STDOUT is not supported
+  if (table.relkind === 'm') {
+    return `COPY (SELECT ${cols} FROM ${qualifiedTable}) TO STDOUT`
   }
   return `COPY ${qualifiedTable} (${cols}) TO STDOUT`
 }

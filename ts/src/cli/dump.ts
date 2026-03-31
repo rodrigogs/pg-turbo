@@ -80,7 +80,9 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   let snapshotCoordinator: Awaited<ReturnType<typeof createSnapshotCoordinator>> | null = null
 
   const replica = await isReadReplica(cs)
-  if (replica) {
+  if (opts.dryRun) {
+    log.info('Skipped (dry run)')
+  } else if (replica) {
     log.warn('Read replica detected — skipping snapshot')
   } else if (opts.noSnapshot) {
     log.warn('Snapshot disabled via --no-snapshot')
@@ -97,6 +99,24 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   await discoveryClient.connect()
 
   try {
+    // Validate schema exists if filter specified
+    if (opts.schema) {
+      const { rows: schemaCheck } = await discoveryClient.query(
+        `SELECT 1 FROM pg_catalog.pg_namespace WHERE nspname = $1`, [opts.schema]
+      )
+      if (schemaCheck.length === 0) {
+        const { rows: availableSchemas } = await discoveryClient.query(
+          `SELECT nspname FROM pg_catalog.pg_namespace WHERE nspname NOT LIKE 'pg_%' AND nspname <> 'information_schema' ORDER BY 1`
+        )
+        log.error(`Schema '${opts.schema}' does not exist in database '${dbName}'.`)
+        log.info('Available schemas:')
+        for (const s of availableSchemas) {
+          console.log(`    - ${(s as { nspname: string }).nspname}`)
+        }
+        throw new Error(`Schema '${opts.schema}' not found`)
+      }
+    }
+
     const tableQuery = buildTableDiscoveryQuery(opts.schema)
     const { rows: tableRows } = await discoveryClient.query(tableQuery.text, tableQuery.values)
     const tables = parseTableRows(tableRows as Parameters<typeof parseTableRows>[0])
