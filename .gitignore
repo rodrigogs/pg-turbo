@@ -29,3 +29,8 @@ Thumbs.db
 .env
 
 .dumps
+
+# Dump output directories
+qat_dump*/
+*_dump/
+*.pgr
