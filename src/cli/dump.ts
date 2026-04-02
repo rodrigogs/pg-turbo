@@ -228,6 +228,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         pgMajorVersion: pgMajor,
         pkMin,
         pkMax,
+        compression: opts.compression,
         volumeSamples: volumeSampleMap.get(table.oid),
       }
 

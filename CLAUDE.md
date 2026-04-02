@@ -32,7 +32,7 @@ pg_resilient/
 │   └── types/
 │       └── index.ts             # Shared type definitions
 ├── tests/
-│   ├── unit/                    # Unit tests (vitest) -- 12 test files
+│   ├── unit/                    # Unit tests (vitest) -- 10 test files
 │   └── integration/             # Integration tests (require Docker + PostgreSQL)
 │       ├── docker-compose.yml
 │       ├── fixtures.sql
@@ -65,10 +65,12 @@ pg_resilient/
 
 **Restore flow:**
 1. Read manifest (or extract `.pgr` archive first)
-2. Pre-data DDL via `pg_restore --section=pre-data`
-3. Parallel COPY FROM STDIN workers -- streams file through decompressor into PG
-4. Post-data DDL via `pg_restore --section=post-data -j N` (parallel index creation)
-5. Refresh materialized views, reset sequences
+2. Test connection, create progress tracking table (`_pg_resilient._progress`)
+3. Clean schemas if `--clean` (DROP + CREATE or TRUNCATE for `--table`)
+4. Pre-data DDL via `pg_restore --section=pre-data`
+5. Parallel COPY FROM STDIN workers -- streams file through decompressor into PG (skips materialized views)
+6. Post-data DDL via `pg_restore --section=post-data -j N` (parallel index creation)
+7. Refresh materialized views, reset sequences, drop progress table
 
 **Key design decisions:**
 - **Direct COPY protocol** -- bypasses pg_dump for data, uses `pg-copy-streams` for maximum throughput
@@ -77,7 +79,9 @@ pg_resilient/
 - **Per-chunk retry** -- failed 250MB chunk retries, not entire 500GB table
 - **Resume support** -- `.done` markers for dump, `_pg_resilient._progress` table for restore
 - **Snapshot coordination** -- all workers see identical data via shared snapshot
-- **Streaming compression** -- zstd (default) or lz4, never buffers full table in memory
+- **Streaming compression** -- zstd (default, `.zst`) or lz4 (`.lz4`), never buffers full table in memory
+- **Connection retry** -- initial connection retries 5 times with exponential backoff (2s base, 30s cap)
+- **Materialized view handling** -- dumped via `COPY (SELECT ...)` form, skipped during restore data phase, refreshed explicitly after post-data DDL
 
 ### Output Structure
 
@@ -135,6 +139,9 @@ npm run bench
 
 # Lint
 npm run lint
+
+# Lint + autofix
+npm run lint:fix
 
 # Format
 npm run format

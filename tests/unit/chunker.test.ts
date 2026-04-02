@@ -149,14 +149,18 @@ describe('buildCopyQuery', () => {
 })
 
 describe('chunkFilePath', () => {
-  it('generates correct path', () => {
-    expect(chunkFilePath('public', 'users', 0)).toBe('data/public.users/chunk_0000.copy.lz4')
-    expect(chunkFilePath('public', 'users', 12)).toBe('data/public.users/chunk_0012.copy.lz4')
+  it('generates correct path with default compression (zstd)', () => {
+    expect(chunkFilePath('public', 'users', 0)).toBe('data/public.users/chunk_0000.copy.zst')
+    expect(chunkFilePath('public', 'users', 12)).toBe('data/public.users/chunk_0012.copy.zst')
+  })
+
+  it('generates correct path with lz4 compression', () => {
+    expect(chunkFilePath('public', 'users', 0, 'lz4')).toBe('data/public.users/chunk_0000.copy.lz4')
   })
 
   it('sanitizes filesystem-unsafe characters', () => {
-    expect(chunkFilePath('public', 'table"with"quotes', 0)).toBe('data/public.table_with_quotes/chunk_0000.copy.lz4')
-    expect(chunkFilePath('my/schema', 'my:table', 0)).toBe('data/my_schema.my_table/chunk_0000.copy.lz4')
+    expect(chunkFilePath('public', 'table"with"quotes', 0)).toBe('data/public.table_with_quotes/chunk_0000.copy.zst')
+    expect(chunkFilePath('my/schema', 'my:table', 0)).toBe('data/my_schema.my_table/chunk_0000.copy.zst')
   })
 })
 

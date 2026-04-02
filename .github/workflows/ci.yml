@@ -7,23 +7,22 @@ on:
     branches: [main]
 
 jobs:
-  lint-and-test:
+  typecheck-and-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install shfmt
-        run: |
-          SHFMT_VERSION="3.7.0"
-          curl -sS -Lo shfmt "https://github.com/mvdan/sh/releases/download/v${SHFMT_VERSION}/shfmt_v${SHFMT_VERSION}_linux_amd64"
-          chmod +x shfmt
-          sudo mv shfmt /usr/local/bin/
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
 
-      - name: ShellCheck
-        run: make lint
+      - name: Install dependencies
+        run: npm ci
 
-      - name: shfmt (format check)
-        run: make fmt-check
+      - name: Typecheck
+        run: npm run typecheck
 
       - name: Run tests
-        run: make test
+        run: npm test

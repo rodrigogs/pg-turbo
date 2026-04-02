@@ -12,6 +12,7 @@ export interface ChunkPlanOptions {
   pgMajorVersion: number
   pkMin: number | null
   pkMax: number | null
+  compression?: 'zstd' | 'lz4'
   /** Sampled rows sorted by PK with per-row byte sizes. Enables volume-balanced chunking. */
   volumeSamples?: RowSample[]
 }
@@ -32,14 +33,15 @@ function safeName(name: string): string {
   return name.replace(/[/\\<>:"|?*\x00-\x1f]/g, '_')
 }
 
-export function chunkFilePath(schema: string, table: string, index: number): string {
-  return `data/${safeName(schema)}.${safeName(table)}/chunk_${index.toString().padStart(4, '0')}.copy.lz4`
+export function chunkFilePath(schema: string, table: string, index: number, compression: 'zstd' | 'lz4' = 'zstd'): string {
+  const ext = compression === 'lz4' ? 'lz4' : 'zst'
+  return `data/${safeName(schema)}.${safeName(table)}/chunk_${index.toString().padStart(4, '0')}.copy.${ext}`
 }
 
 export function planChunks(table: TableInfo, opts: ChunkPlanOptions): ChunkMeta[] {
   const singleChunk: ChunkMeta = {
     index: 0,
-    file: chunkFilePath(table.schemaName, table.tableName, 0),
+    file: chunkFilePath(table.schemaName, table.tableName, 0, opts.compression),
     estimatedBytes: table.actualBytes,
     estimatedRows: table.estimatedRows,
   }
@@ -53,11 +55,12 @@ export function planChunks(table: TableInfo, opts: ChunkPlanOptions): ChunkMeta[
         opts.volumeSamples,
         opts.splitThreshold,
         opts.maxChunks,
+        opts.compression,
       )
     }
-    return planPkRangeChunks(table, opts.pkMin, opts.pkMax, opts.splitThreshold, opts.maxChunks)
+    return planPkRangeChunks(table, opts.pkMin, opts.pkMax, opts.splitThreshold, opts.maxChunks, opts.compression)
   }
-  if (opts.pgMajorVersion >= 14 && table.relpages > 0) return planCtidChunks(table, opts.splitThreshold, opts.maxChunks)
+  if (opts.pgMajorVersion >= 14 && table.relpages > 0) return planCtidChunks(table, opts.splitThreshold, opts.maxChunks, opts.compression)
   return [singleChunk]
 }
 
@@ -67,6 +70,7 @@ function planPkRangeChunks(
   pkMax: number,
   splitThreshold: number,
   maxChunks: number,
+  compression?: 'zstd' | 'lz4',
 ): ChunkMeta[] {
   const numChunks = Math.min(Math.ceil(table.actualBytes / splitThreshold), maxChunks)
   const range = pkMax - pkMin + 1
@@ -80,7 +84,7 @@ function planPkRangeChunks(
     const isLast = i === numChunks - 1
     chunks.push({
       index: i,
-      file: chunkFilePath(table.schemaName, table.tableName, i),
+      file: chunkFilePath(table.schemaName, table.tableName, i, compression),
       rangeStart: start,
       rangeEnd: end,
       estimatedBytes: isLast ? Math.max(0, table.actualBytes - bytesPerChunk * (numChunks - 1)) : bytesPerChunk,
@@ -98,13 +102,14 @@ function planVolumeBalancedChunks(
   samples: RowSample[],
   splitThreshold: number,
   maxChunks: number,
+  compression?: 'zstd' | 'lz4',
 ): ChunkMeta[] {
   const numChunks = Math.min(Math.ceil(table.actualBytes / splitThreshold), maxChunks)
   if (numChunks <= 1)
     return [
       {
         index: 0,
-        file: chunkFilePath(table.schemaName, table.tableName, 0),
+        file: chunkFilePath(table.schemaName, table.tableName, 0, compression),
         rangeStart: pkMin,
         rangeEnd: pkMax,
         estimatedBytes: table.actualBytes,
@@ -134,7 +139,7 @@ function planVolumeBalancedChunks(
     if (cumBytes >= targetBoundary && chunks.length < numChunks - 1) {
       chunks.push({
         index: chunks.length,
-        file: chunkFilePath(table.schemaName, table.tableName, chunks.length),
+        file: chunkFilePath(table.schemaName, table.tableName, chunks.length, compression),
         rangeStart: chunkStart,
         rangeEnd: sample.pk,
         estimatedBytes: Math.round(chunkSampleBytes * byteScale),
@@ -151,7 +156,7 @@ function planVolumeBalancedChunks(
   const accountedRows = chunks.reduce((s, c) => s + (c.estimatedRows ?? 0), 0)
   chunks.push({
     index: chunks.length,
-    file: chunkFilePath(table.schemaName, table.tableName, chunks.length),
+    file: chunkFilePath(table.schemaName, table.tableName, chunks.length, compression),
     rangeStart: chunkStart,
     rangeEnd: pkMax,
     estimatedBytes: Math.max(0, table.actualBytes - accountedBytes),
@@ -161,7 +166,7 @@ function planVolumeBalancedChunks(
   return chunks
 }
 
-function planCtidChunks(table: TableInfo, splitThreshold: number, maxChunks: number): ChunkMeta[] {
+function planCtidChunks(table: TableInfo, splitThreshold: number, maxChunks: number, compression?: 'zstd' | 'lz4'): ChunkMeta[] {
   const blockSize = 8192
   const pagesPerChunk = Math.ceil(splitThreshold / blockSize)
   const numChunks = Math.min(Math.ceil(table.relpages / pagesPerChunk), maxChunks)
@@ -179,7 +184,7 @@ function planCtidChunks(table: TableInfo, splitThreshold: number, maxChunks: num
     accountedRows += chunkRows
     chunks.push({
       index: i,
-      file: chunkFilePath(table.schemaName, table.tableName, i),
+      file: chunkFilePath(table.schemaName, table.tableName, i, compression),
       ctidStart: start,
       ...(isLast ? {} : { ctidEnd: start + pagesPerChunk }),
       estimatedBytes: chunkBytes,

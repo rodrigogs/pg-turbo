@@ -1,11 +1,18 @@
+# Dependencies
+node_modules/
+
+# Build
+dist/
+*.tsbuildinfo
+
+# Test
+coverage/
+tests/integration/tmp/
+
 # Dump output
 *.dump
 *.done
 _dump.log
-_schema_ddl.sql
-
-# Test artifacts
-test_dump_input/
 
 # OS files
 .DS_Store
@@ -20,4 +27,5 @@ Thumbs.db
 
 # Environment
 .env
-tests/integration/tmp/
+
+.dumps
