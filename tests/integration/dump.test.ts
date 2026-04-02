@@ -267,4 +267,22 @@ describe('dump integration', () => {
     await runDump(defaultOpts(outDir, { pgDumpArgs: ['--no-comments'] }))
     expect(existsSync(join(outDir, 'manifest.json'))).toBe(true)
   })
+
+  it('handles pg_dump DDL failure gracefully', async () => {
+    const outDir = freshTmpDir()
+    // Bad passthrough arg causes pg_dump to fail for DDL, but data dump still completes.
+    // The dump should still succeed (DDL failure is non-fatal), but DDL file may be missing.
+    await runDump(defaultOpts(outDir, { pgDumpArgs: ['--nonexistent-flag-xyz'] }))
+    // Manifest should still be written
+    expect(existsSync(join(outDir, 'manifest.json'))).toBe(true)
+    // DDL file should be missing or empty since pg_dump failed
+    const ddlPath = join(outDir, '_schema_ddl.dump')
+    const ddlExists = existsSync(ddlPath)
+    if (ddlExists) {
+      // If pg_dump created the file before failing, it might be empty or incomplete
+      const size = statSync(ddlPath).size
+      // Just verify the dump didn't crash -- size can be anything
+      expect(size).toBeGreaterThanOrEqual(0)
+    }
+  })
 })

@@ -326,4 +326,132 @@ describe('restore integration', () => {
     const count = await query('SELECT count(*) FROM public.users', RESTORE)
     expect(parseInt(count, 10)).toBeGreaterThan(0)
   })
+
+  it('restores from .pgr archive', async () => {
+    // Dump WITH archive enabled
+    const archiveDumpDir = freshTmpDir()
+    await runDump(defaultDumpOpts(archiveDumpDir, { noArchive: false }))
+    const archivePath = `${archiveDumpDir}.pgr`
+    if (!existsSync(archivePath)) return // Skip if archive not created
+
+    await recreateRestoreDb()
+    await runRestore(defaultRestoreOpts(archivePath))
+    const count = await query('SELECT count(*) FROM public.users', RESTORE)
+    expect(parseInt(count, 10)).toBeGreaterThan(0)
+    // Clean up archive file
+    rmSync(archivePath, { force: true })
+  })
+
+  it('clean with --table truncates instead of dropping schema', async () => {
+    // Full restore first
+    await runRestore(defaultRestoreOpts(dumpDir))
+    clearResumeMarkers(dumpDir)
+    // Clean restore of just one table -- should TRUNCATE, not DROP SCHEMA
+    // Uses clean: true WITHOUT dataOnly so the clean block on line 131-148 runs
+    await runRestore(defaultRestoreOpts(dumpDir, { clean: true, table: 'public.users' }))
+    const userCount = await query('SELECT count(*) FROM public.users', RESTORE)
+    expect(parseInt(userCount, 10)).toBeGreaterThan(0)
+    // Other tables should still have data (schema not dropped)
+    const logCount = await query('SELECT count(*) FROM public.logs', RESTORE)
+    expect(parseInt(logCount, 10)).toBeGreaterThan(0)
+  })
+
+  it('skips DDL when file is missing and data-only restore works', async () => {
+    // First full restore to get schema in place
+    await runRestore(defaultRestoreOpts(dumpDir))
+
+    // Truncate ALL tables and reset progress so chunks are re-processed
+    await query('TRUNCATE public.users, public.logs, public.config, public.products CASCADE', RESTORE)
+    await query('TRUNCATE analytics.events CASCADE', RESTORE)
+    const resetClient = new Client({ connectionString: RESTORE })
+    await resetClient.connect()
+    await resetClient.query('TRUNCATE _pgr._progress').catch(() => {})
+    await resetClient.end()
+
+    // Copy dump dir and remove DDL file
+    const tmpDump = freshTmpDir()
+    execSync(`cp -r ${dumpDir}/* ${tmpDump}/`)
+    const ddlPath = join(tmpDump, '_schema_ddl.dump')
+    if (existsSync(ddlPath)) rmSync(ddlPath)
+    clearResumeMarkers(tmpDump)
+
+    // data-only restore should work since schema already exists
+    await runRestore(defaultRestoreOpts(tmpDump, { dataOnly: true }))
+    const count = await query('SELECT count(*) FROM public.users', RESTORE)
+    expect(parseInt(count, 10)).toBeGreaterThan(0)
+  })
+
+  it('handles restore with materialized views', async () => {
+    const mvConn = 'postgresql://test_admin@localhost:54399/pg_resilient_mvonly'
+    const client = new Client({ connectionString: ADMIN })
+    await client.connect()
+    await client.query('DROP DATABASE IF EXISTS pg_resilient_mvonly')
+    await client.query('CREATE DATABASE pg_resilient_mvonly')
+    await client.end()
+
+    const mvClient = new Client({ connectionString: mvConn })
+    await mvClient.connect()
+    await mvClient.query('CREATE TABLE public.base (id SERIAL PRIMARY KEY, val TEXT)')
+    await mvClient.query("INSERT INTO public.base (val) SELECT 'r' || i FROM generate_series(1,10) AS i")
+    await mvClient.query('CREATE MATERIALIZED VIEW public.mv AS SELECT * FROM public.base')
+    await mvClient.end()
+
+    // Dump it
+    const mvDump = freshTmpDir()
+    await runDump(defaultDumpOpts(mvDump, { dbname: mvConn }))
+
+    // Restore
+    await recreateRestoreDb()
+    await runRestore(defaultRestoreOpts(mvDump))
+
+    // base table should have data
+    const count = await query('SELECT count(*) FROM public.base', RESTORE)
+    expect(parseInt(count, 10)).toBe(10)
+
+    // Cleanup
+    const cleanClient = new Client({ connectionString: ADMIN })
+    await cleanClient.connect()
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_mvonly')
+    await cleanClient.end()
+  })
+
+  it('filters sequences by schema', async () => {
+    // Full restore first to get all DDL in place
+    await runRestore(defaultRestoreOpts(dumpDir))
+    // Truncate analytics events
+    await query('TRUNCATE analytics.events CASCADE', RESTORE)
+    clearResumeMarkers(dumpDir)
+    // Restore only analytics schema -- public sequences should be skipped
+    await runRestore(defaultRestoreOpts(dumpDir, { schema: 'analytics', dataOnly: true }))
+    const count = await query('SELECT count(*) FROM analytics.events', RESTORE)
+    expect(parseInt(count, 10)).toBeGreaterThan(0)
+  })
+
+  it('handles restore with no data chunks (empty tables)', async () => {
+    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_resilient_empty2'
+    const client = new Client({ connectionString: ADMIN })
+    await client.connect()
+    await client.query('DROP DATABASE IF EXISTS pg_resilient_empty2')
+    await client.query('CREATE DATABASE pg_resilient_empty2')
+    await client.end()
+
+    const emptyClient = new Client({ connectionString: emptyConn })
+    await emptyClient.connect()
+    await emptyClient.query('CREATE TABLE public.empty_table (id SERIAL PRIMARY KEY)')
+    await emptyClient.end()
+
+    // Dump it
+    const emptyDump = freshTmpDir()
+    await runDump(defaultDumpOpts(emptyDump, { dbname: emptyConn }))
+
+    // Restore -- should complete even with no/minimal data chunks
+    await recreateRestoreDb()
+    await runRestore(defaultRestoreOpts(emptyDump))
+
+    // Cleanup
+    const cleanClient = new Client({ connectionString: ADMIN })
+    await cleanClient.connect()
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_empty2')
+    await cleanClient.end()
+  })
 })

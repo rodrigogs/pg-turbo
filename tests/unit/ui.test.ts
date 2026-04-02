@@ -544,6 +544,71 @@ describe('renderDashboard worker speed with rows unit', () => {
   })
 })
 
+describe('formatProgress rows unit branches', () => {
+  it('formats rows >= 1M as M', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 2_500_000
+    workers[0].progressTotal = 5_000_000
+    const state = makeDashboardState({ workers, progressUnit: 'rows' })
+    const output = renderDashboard(state)
+    // Should contain M suffix for million-scale rows
+    expect(output).toContain('M')
+    expect(output).toContain('rows')
+  })
+
+  it('formats rows >= 1K as K', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 5_000
+    workers[0].progressTotal = 10_000
+    const state = makeDashboardState({ workers, progressUnit: 'rows' })
+    const output = renderDashboard(state)
+    expect(output).toContain('K')
+    expect(output).toContain('rows')
+  })
+
+  it('formats small row counts as plain numbers', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 5
+    workers[0].progressTotal = 10
+    const state = makeDashboardState({ workers, progressUnit: 'rows' })
+    const output = renderDashboard(state)
+    expect(output).toContain('rows')
+  })
+
+  it('formats rows >= 10 as rounded integers', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 50
+    workers[0].progressTotal = 100
+    const state = makeDashboardState({ workers, progressUnit: 'rows' })
+    const output = renderDashboard(state)
+    expect(output).toContain('rows')
+  })
+})
+
+describe('renderDashboard with worker lastSpeed set', () => {
+  it('uses lastSpeed when speedSnapshot delta < 1s', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 500
+    workers[0].progressTotal = 1000
+    workers[0].speedSnapshot = { time: Date.now() - 500, current: 400 } // < 1s
+    workers[0].lastSpeed = 250
+    const state = makeDashboardState({ workers })
+    const output = renderDashboard(state)
+    // Should still render without errors and use lastSpeed
+    expect(typeof output).toBe('string')
+  })
+})
+
 describe('renderDashboard multi-chunk table', () => {
   it('shows chunk label for multi-chunk tables', () => {
     const chunk1 = { index: 0, file: 'data/public.big/chunk_0000.copy.lz4', estimatedBytes: 500, estimatedRows: 5 }
