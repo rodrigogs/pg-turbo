@@ -2,223 +2,237 @@
 
 ## Project Overview
 
-**pg_utils** — Resilient PostgreSQL dump & restore CLI tools for large databases.
+**pg-resilient** -- Resilient PostgreSQL dump & restore CLI tool for large databases.
 
-Designed for scenarios with flaky connections (RDS over VPN, remote servers) where standard `pg_dump`/`pg_restore` fail on large schemas.
+Designed for scenarios with flaky connections (RDS over VPN, remote servers) where standard `pg_dump`/`pg_restore` fail on large schemas. Uses the PostgreSQL COPY protocol directly with chunked streaming, compression, and per-chunk retry -- NOT a wrapper around pg_dump for data transfer.
 
 ## Architecture
 
 ```
-pg_utils/
-├── dump.sh                    # Export: table-by-table dump with retry & resume
-├── restore.sh                 # Import: restore from dump with retry & resume
-├── lib/                       # Shared modules (sourced by both scripts)
-│   ├── common.sh              # Loader + require_commands + source guard
-│   ├── colors.sh              # ANSI color codes & SYSTEM_SCHEMAS constant
-│   ├── log.sh                 # log_info, log_success, log_warn, log_error, log_step
-│   ├── args.sh                # check_blocked_flag (passthrough arg validation)
-│   ├── format.sh              # human_size, elapsed_time, progress_bar, file_size
-│   ├── connection.sh          # sanitize_cs, extract_db_name, clean_connection_string, replace_db_in_cs, test_connection
-│   ├── ui.sh                  # print_banner, print_failed_tables
-│   ├── retry.sh               # run_with_retry
-│   └── queue.sh               # Shared parallel queue (queue_init, queue_start_worker, etc.)
-├── tests/                     # Unit tests
-│   ├── test_helper.sh         # Shared test harness (assert_eq, assert_contains, etc.)
-│   ├── test_format.sh         # Tests for human_size, elapsed_time, progress_bar, file_size
-│   ├── test_connection.sh     # Tests for connection string helpers
-│   ├── test_retry.sh          # Tests for run_with_retry
-│   ├── test_ui.sh             # Tests for print_banner, print_failed_tables
-│   ├── test_args.sh           # Tests for check_blocked_flag + blocked flag integration
-│   └── integration/           # Integration tests (require Docker)
-│       ├── run.sh             # Orchestrator: Docker up → fixtures → tests → down
-│       ├── fixtures.sql       # Schema + data setup (test_alpha, test_beta)
-│       ├── test_dump.sh       # Tests for dump.sh against real PG
-│       └── test_restore.sh    # Tests for restore.sh against real PG
-├── docker-compose.yml         # PG 16 Alpine for integration tests (port 54399)
-├── .github/workflows/ci.yml   # CI pipeline (shellcheck + shfmt + tests)
-├── Makefile                   # Build targets: lint, fmt, test, integration-test, test-all, check
-├── .editorconfig              # Editor settings (indent, charset, newlines)
-├── .shellcheckrc              # ShellCheck configuration
-├── .gitignore                 # Git ignore rules
-├── LICENSE                    # MIT License
-├── README.md                  # Project documentation
-└── CLAUDE.md                  # This file
+pg_resilient/
+├── bin/
+│   └── pg-resilient.ts          # CLI entrypoint (shebang)
+├── src/
+│   ├── cli/
+│   │   ├── index.ts             # Subcommand routing (dump / restore / help)
+│   │   ├── args.ts              # Argument parsing (commander) + size parsing
+│   │   ├── dump.ts              # Dump orchestrator (7-step workflow)
+│   │   ├── restore.ts           # Restore orchestrator
+│   │   └── ui.ts                # Terminal UI (live dashboard, banners, progress handler, signal handling)
+│   ├── core/
+│   │   ├── archive.ts           # .pgr archive creation/extraction (tar + zstd)
+│   │   ├── chunker.ts           # Table chunking strategies (PK range, ctid range, volume-balanced)
+│   │   ├── connection.ts        # Connection string helpers, snapshot coordination, keepalive tuning
+│   │   ├── copy-stream.ts       # COPY TO/FROM streaming with compression (zstd/lz4)
+│   │   ├── format.ts            # Human-readable formatting (sizes, durations, progress bars)
+│   │   ├── manifest.ts          # Dump manifest (JSON) read/write with path traversal protection
+│   │   ├── queue.ts             # Parallel worker pool with retry + jitter
+│   │   ├── retry.ts             # Exponential backoff with jitter (calculateDelay)
+│   │   └── schema.ts            # pg_catalog introspection (tables, columns, sequences, quoteIdent)
+│   └── types/
+│       └── index.ts             # Shared type definitions
+├── tests/
+│   ├── unit/                    # Unit tests (vitest) -- 12 test files
+│   └── integration/             # Integration tests (require Docker + PostgreSQL)
+│       ├── docker-compose.yml
+│       ├── fixtures.sql
+│       ├── dump.test.ts
+│       └── restore.test.ts
+├── bench/
+│   └── benchmark.ts             # Performance benchmarks (pg-resilient vs pg_dump)
+├── package.json
+├── tsconfig.json
+├── vitest.config.ts
+├── vitest.integration.config.ts
+├── biome.json                   # Linter + formatter config
+├── .github/workflows/ci.yml    # CI: typecheck + unit tests
+├── .gitignore
+├── LICENSE
+├── README.md
+└── CLAUDE.md                    # This file
 ```
 
-Both scripts share the same design philosophy:
-- **Table-by-table** operations for granular retry
-- **Resume support** via `.done` marker files
-- **Connection resilience** with configurable retries + backoff
-- **Progress reporting** with colored output and progress bars
-- **Connection string cleaning** (strips GUI params like statusColor, env, etc.)
+### How It Works
+
+**Dump flow:**
+1. Test connection, detect PG version and read replica status
+2. Export snapshot for consistency (REPEATABLE READ + `pg_export_snapshot()`)
+3. Discover tables via `pg_catalog` (single batch query for columns)
+4. Plan chunks -- split large tables by PK ranges (volume-balanced) or ctid ranges
+5. Dump DDL via `pg_dump --schema-only` (runs async, overlaps with data dump)
+6. Parallel COPY TO STDOUT workers -- each chunk streams through compressor to file
+7. Write manifest.json, optionally package as `.pgr` archive
+
+**Restore flow:**
+1. Read manifest (or extract `.pgr` archive first)
+2. Pre-data DDL via `pg_restore --section=pre-data`
+3. Parallel COPY FROM STDIN workers -- streams file through decompressor into PG
+4. Post-data DDL via `pg_restore --section=post-data -j N` (parallel index creation)
+5. Refresh materialized views, reset sequences
+
+**Key design decisions:**
+- **Direct COPY protocol** -- bypasses pg_dump for data, uses `pg-copy-streams` for maximum throughput
+- **Sub-table chunking** -- splits large tables across workers (pg_dump can't do this)
+- **Volume-balanced chunks** -- samples row sizes to create equal-byte chunks, not equal-row
+- **Per-chunk retry** -- failed 250MB chunk retries, not entire 500GB table
+- **Resume support** -- `.done` markers for dump, `_pg_resilient._progress` table for restore
+- **Snapshot coordination** -- all workers see identical data via shared snapshot
+- **Streaming compression** -- zstd (default) or lz4, never buffers full table in memory
+
+### Output Structure
+
+```
+<output_dir>/
+├── manifest.json                      # Metadata: tables, chunks, sequences, options
+├── _schema_ddl.dump                   # pg_dump custom format (DDL only)
+└── data/
+    ├── <schema>.<table>/
+    │   ├── chunk_0000.copy.zst        # COPY text format, zstd compressed
+    │   ├── chunk_0000.copy.zst.done   # Resume marker
+    │   ├── chunk_0001.copy.zst
+    │   └── ...
+    └── ...
+```
 
 ## Tech Stack
 
 | Tool | Purpose |
-|------|------------|
-| Bash | Shell scripting (set -euo pipefail) |
-| pg_dump | PostgreSQL native export |
-| pg_restore | PostgreSQL native import |
-| psql | Connection testing, schema queries |
-| bc | Size calculations |
+|------|---------|
+| TypeScript 6.x | Primary language (ESM, strict mode) |
+| Node.js >= 20 | Runtime |
+| tsx | TypeScript execution (dev & bin) |
+| vitest | Test runner + coverage |
+| biome | Linter + formatter |
+| pg | PostgreSQL client (node-postgres, pure JS -- NOT pg-native) |
+| pg-copy-streams | COPY protocol streaming |
+| zstd-napi | Zstandard compression (default) |
+| lz4 | LZ4 compression (alternative, faster decompression) |
+| tar | Archive packaging (.pgr format) |
+| commander | CLI argument parsing |
+| picocolors | Terminal colors (zero deps) |
+| log-update | Live terminal UI updates |
 
 ## Commands
 
 ```bash
-# Run all tests
-make test
+# Install dependencies
+npm install
+
+# Typecheck
+npm run typecheck
+
+# Run unit tests
+npm test
+
+# Run unit tests in watch mode
+npm run test:watch
 
 # Run integration tests (requires Docker)
-make integration-test
+npm run test:integration
 
-# Run all tests (unit + integration)
-make test-all
+# Run benchmarks (requires Docker)
+npm run bench
 
-# Lint (shellcheck)
-make lint
+# Lint
+npm run lint
 
-# Format check (shfmt)
-make fmt-check
+# Format
+npm run format
 
-# Lint + tests
-make check
-
-# Dump (see --help for all options)
-./dump.sh -d "postgresql://user:pass@host/db" --output "./dump_dir"
-
-# Restore (see --help for all options)
-./restore.sh -d "postgresql://user:pass@host/db" --input "./dump_dir"
+# Run CLI in dev mode
+npm run dev -- dump -d "postgresql://user:pass@host/db" --output "./dump_dir"
+npm run dev -- restore -d "postgresql://user:pass@host/db" --input "./dump_dir"
 ```
+
+## CLI Usage
+
+```bash
+# Dump
+pg-resilient dump -d <connection_string> --output <dir> [options]
+
+# Restore
+pg-resilient restore -d <connection_string> --input <dir|file.pgr> [options]
+```
+
+### Dump Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-d, --dbname` | PostgreSQL connection string (required) | -- |
+| `--output` | Output directory (required) | -- |
+| `-n, --schema` | Filter to specific schema | all user schemas |
+| `-j, --jobs` | Parallel workers | 4 |
+| `--split-threshold` | Chunk tables larger than this (e.g. "512MB", "1GB") | 1GB |
+| `--max-chunks-per-table` | Cap chunks per table | 32 |
+| `--retries` | Max retries per chunk | 5 |
+| `--retry-delay` | Base retry delay in seconds | 5 |
+| `--compression` | zstd or lz4 | zstd |
+| `--no-snapshot` | Skip synchronized snapshot (for read replicas) | -- |
+| `--no-archive` | Skip .pgr archive packaging | -- |
+| `--dry-run` | Preview without writing | -- |
+
+### Restore Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `-d, --dbname` | PostgreSQL connection string (required) | -- |
+| `--input` | Input directory or .pgr file (required) | -- |
+| `-n, --schema` | Restore only tables in this schema | all |
+| `-t, --table` | Restore a single table | all |
+| `-j, --jobs` | Parallel workers | 4 |
+| `-c, --clean` | DROP + CREATE schema before restore | -- |
+| `-a, --data-only` | Skip DDL, restore only data | -- |
+| `--retries` | Max retries per chunk | 5 |
+| `--retry-delay` | Base retry delay in seconds | 5 |
+| `--dry-run` | Preview without writing | -- |
+
+Passthrough args after `--` are forwarded to pg_dump (dump) or pg_restore (restore) for DDL operations only.
+
+## External Dependencies
+
+System binaries required:
+- `pg_dump` -- for DDL extraction only (`--schema-only`)
+- `pg_restore` -- for DDL restoration only (`--section=pre-data`, `--section=post-data`)
+
+Data transfer uses direct COPY protocol via `pg-copy-streams`. No external binaries needed for data.
 
 ## Development Rules
 
-### Shared Library (`lib/`)
+### Module Organization
 
-All common code lives in `lib/`. Both scripts load it via:
-```bash
-source "$(dirname "$0")/lib/common.sh"
-```
+- `src/cli/` -- CLI concerns (arg parsing, orchestration, terminal UI)
+- `src/core/` -- Reusable core logic (connection, streaming, chunking, schema introspection)
+- `src/types/` -- Shared type definitions
 
-Module dependency order (maintained by `common.sh`):
-1. `colors.sh` — no dependencies
-2. `log.sh` — depends on `colors.sh`
-3. `args.sh` — depends on `log.sh`
-4. `format.sh` — depends on `colors.sh`
-5. `connection.sh` — depends on `log.sh` (for `test_connection`)
-6. `ui.sh` — depends on `colors.sh`, `log.sh`
-7. `retry.sh` — depends on `log.sh`
-8. `queue.sh` — no dependencies (standalone parallel queue infrastructure)
-9. `common.sh` — sources all modules + provides `require_commands()`
-
-> [!CAUTION]
-> When adding new shared functions, add them to the appropriate `lib/` module (or create a new one). **DO NOT** duplicate code between `dump.sh` and `restore.sh`.
-
-### Shared Patterns
-
-Both scripts MUST follow these patterns consistently:
-
-1. **Connection string handling** (via `lib/connection.sh`)
-   - `clean_connection_string()` — strip GUI query params, keep only sslmode
-   - `sanitize_cs()` — mask password for display
-   - `extract_db_name()` — parse DB name from URI
-   - `replace_db_in_cs()` — override database name
-
-2. **Argument interface**
-   - `-d`/`--dbname` (required) — PostgreSQL connection string
-   - `--output` (required for dump) / `--input` (required for restore)
-   - `-n`/`--schema` (optional) — filter to specific schema
-   - `-j`/`--jobs` (optional) — parallel workers (dump and restore)
-   - `--dry-run` — preview without side effects
-   - `--help` — usage info (no `-h` shortcut — conflicts with pg_dump's `--host`)
-   - Unrecognized flags pass through to pg_dump/pg_restore
-   - `--` separator for explicit passthrough
-
-3. **Output structure** (dump creates, restore reads)
-   ```
-   <output_dir>/
-   ├── _schema_ddl.dump          # Custom-format DDL (supports --section for split restore)
-   ├── _dump.log                 # Verbose pg_dump/pg_restore log
-   └── tables/
-       ├── <table_name>.dump      # Custom-format table data
-       ├── <table_name>.dump.done # Resume marker (empty file)
-       └── ...
-   ```
-
-4. **Logging** — consistent colored output (via `lib/log.sh`):
-   - `log_info` (ℹ blue), `log_success` (✔ green), `log_warn` (⚠ yellow), `log_error` (✖ red), `log_step` (▸ cyan)
-
-5. **Error handling**
-   - `set -euo pipefail`
-   - `run_with_retry()` wrapper for all pg_dump/pg_restore calls
-   - Individual table failures don't abort the whole process
-   - Exit code 1 if any table failed
-
-6. **DRY code** (via `lib/` modules)
-   - `SYSTEM_SCHEMAS` constant (no hardcoding `'pg_catalog','information_schema','pg_toast'`)
-   - `print_banner()` for header/summary boxes
-   - `table_label()` for qualified vs unqualified table names
-   - `human_size()` and `elapsed_time()` for formatting
+Shared patterns live in `src/cli/ui.ts` (progress handler, signal handlers) and `src/core/` modules. Do not duplicate logic between dump and restore.
 
 ### Code Style
 
-- **Language**: Bash with `set -euo pipefail`
-- **Variables**: UPPER_SNAKE_CASE for globals, lower_snake_case for locals
-- **Functions**: snake_case, declared before use
-- **Comments**: Section headers with `# ── Section ─────` or `# ═══ Step ═══`
+- **Language**: TypeScript with strict mode, ESM modules
+- **Linter/formatter**: biome (configured in `biome.json`)
+- **Variables**: camelCase for locals, UPPER_SNAKE_CASE for constants
+- **Functions**: camelCase
+- **Types**: PascalCase for interfaces and type aliases
 - **Indentation**: 2 spaces
-- **Quoting**: Always quote variables: `"$VAR"`, `"${ARRAY[@]}"`
+- **Semicolons**: as needed (omitted when possible)
 
 ### Testing
 
 Run unit tests before committing:
 ```bash
-make test
-# or individually:
-bash tests/test_format.sh && bash tests/test_connection.sh && bash tests/test_retry.sh && bash tests/test_args.sh
+npm test
 ```
 
-Test against local Docker PostgreSQL before remote:
+Integration tests require Docker with PostgreSQL:
 ```bash
-# Local Docker PostgreSQL (trust auth, no password)
--d "postgresql://postgres@localhost:5432/postgres"
-
-# Create test schema quickly
-psql "postgresql://postgres@localhost:5432/postgres" -c "
-  CREATE SCHEMA IF NOT EXISTS test_dump;
-  CREATE TABLE IF NOT EXISTS test_dump.t1 (id serial, data text);
-  INSERT INTO test_dump.t1 (data) SELECT md5(random()::text) FROM generate_series(1,100);
-"
+npm run test:integration
 ```
 
-## dump.sh ✅
+### Security
 
-Dumps a database table-by-table. See `--help` for usage.
-
-Key features:
-- Table-by-table custom-format dumps with per-table retry
-- Compression cascade: lz4 → zstd → gzip (fastest available)
-- DDL dumped in custom format (`_schema_ddl.dump`) for section-based restore
-- Resume support (skips tables with `.done` markers)
-- `-n`/`--schema` filter for specific schema
-- `-j`/`--jobs` for parallel table dumps
-- `--dry-run` for preview
-- DB/schema existence validation with helpful error messages
-- Passthrough of unrecognized flags to pg_dump (blocked: `-f`, `-F`)
-
-## restore.sh ✅
-
-Restores a dump created by `dump.sh`. See `--help` for usage.
-
-Key features:
-- **Section-based DDL**: pre-data (tables, types) → data → post-data (indexes, constraints)
-  - Data loads into bare tables without index overhead
-  - Indexes built in a single fast pass after all data is loaded
-- Reads dump directory auto-discovering `_schema_ddl.dump` and `tables/*.dump`
-- `-j`/`--jobs` for parallel table restores with dashboard
-- Per-table retry with configurable retries + backoff
-- Resume support via `.restored.done`, `_pre_data.done`, `_post_data.done` markers
-- `-c`/`--clean` flag — DROP + CREATE schema before restore
-- `-a`/`--data-only` flag — skip DDL, restore only table data
-- `-t`/`--table` flag — restore a single specific table
-- `--dry-run` for preview
-- Passthrough of unrecognized flags to pg_restore (blocked: `-f`, `-1`, `--exit-on-error`)
+- All SQL identifiers go through `quoteIdent()` (doubles embedded `"` chars)
+- Schema filters use parameterized queries (`$1`)
+- External processes use `execFileSync`/`execFile` (array args, no shell)
+- Manifest chunk paths validated against path traversal
+- Snapshot IDs validated by regex before interpolation
+- Connection keepalive params respect user's existing values

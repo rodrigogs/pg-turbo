@@ -1,202 +1,258 @@
-# pg_utils
+# pg-resilient
 
-[![ShellCheck](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml)
+[![CI](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-Resilient PostgreSQL dump & restore CLI tools for large databases.
+Resilient PostgreSQL dump & restore CLI for large databases over flaky connections.
 
-Designed for scenarios with flaky connections (RDS over VPN, remote servers) where standard `pg_dump`/`pg_restore` fail on large schemas.
+Uses the PostgreSQL **COPY protocol directly** with chunked streaming, parallel workers, and per-chunk retry. Designed for RDS over VPN, remote servers, and other scenarios where standard `pg_dump`/`pg_restore` fail on large schemas.
 
-## Features
+## Why pg-resilient?
 
-- **Table-by-table** operations for granular retry — a single table failure doesn't abort the entire dump/restore
-- **Resume support** — skip already-completed tables via `.done` marker files
-- **Connection resilience** — configurable retries with backoff for each table
-- **Progress reporting** — colored output with progress bars and size formatting
-- **Connection string cleaning** — strips GUI params (statusColor, env, etc.), keeps only sslmode
-- **Passthrough arguments** — unrecognized flags pass directly to pg_dump/pg_restore
+| Problem with pg_dump | pg-resilient solution |
+|---------------------|----------------------|
+| One large table fails = restart entire dump | Per-chunk retry -- only the failed 250MB chunk retries |
+| Can't parallelize within a single table | Sub-table chunking splits large tables across workers |
+| No resume after interruption | `.done` markers let you pick up where you left off |
+| Connection drops after hours of dumping | TCP keepalive tuning detects drops in ~60s, auto-retry |
+| Slow on remote databases | Direct COPY protocol, no pg_dump process overhead per table |
+
+## Quick Start
+
+```bash
+# Install
+git clone https://github.com/rodrigo.gomes/pg_resilient.git
+cd pg_resilient
+npm install
+
+# Dump a database
+npx tsx bin/pg-resilient.ts dump \
+    -d "postgresql://user:pass@host:5432/mydb" \
+    --output ./mydb_dump \
+    -j 4
+
+# Restore to another database
+npx tsx bin/pg-resilient.ts restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump \
+    -j 4
+```
 
 ## Requirements
 
-- **Bash** (4.0+)
-- **PostgreSQL client tools** — `pg_dump`, `pg_restore`, `psql`
-- **bc** — for size calculations
+- **Node.js >= 20**
+- **pg_dump** and **pg_restore** (for DDL only -- data uses direct COPY)
 
-## Installation
+## Features
 
-```bash
-git clone https://github.com/rodrigo.gomes/pg_resilient.git
-cd pg_resilient
-chmod +x dump.sh restore.sh
-```
+- **Chunked COPY streaming** -- large tables split by PK range or ctid range for parallel transfer
+- **Volume-balanced chunks** -- samples row sizes to create equal-byte chunks (handles skewed data)
+- **Per-chunk retry** with exponential backoff + jitter
+- **Resume support** -- skip completed chunks on re-run
+- **Snapshot consistency** -- all workers see identical data via `pg_export_snapshot()`
+- **Streaming compression** -- zstd (default) or lz4, never buffers full table in memory
+- **Live progress dashboard** -- per-worker status, overall speed, ETA
+- **Connection resilience** -- TCP keepalive tuning, auto-reconnect on failure
+- **Archive packaging** -- optional `.pgr` single-file format (tar + zstd)
+- **Connection string cleaning** -- strips GUI params (statusColor, env, etc.) from tools like TablePlus
 
 ## Usage
 
 ### Dump
 
-Export a database table-by-table with retry and resume:
-
 ```bash
-# Dump entire database
-./dump.sh \
+# Dump entire database with 4 parallel workers
+pg-resilient dump \
     -d "postgresql://user:pass@host:5432/mydb" \
-    --output "./mydb_dump"
+    --output ./mydb_dump \
+    -j 4
 
-# Dump a specific schema
-./dump.sh \
+# Dump specific schema, force chunking at 256MB
+pg-resilient dump \
     -d "postgresql://user:pass@host:5432/mydb" \
-    -n "public" \
-    --output "./public_dump"
+    --output ./mydb_dump \
+    -n public \
+    -j 4 \
+    --split-threshold 256MB
 
-# Preview without dumping
-./dump.sh \
+# Dump from read replica (skip snapshot)
+pg-resilient dump \
+    -d "postgresql://readonly:pass@replica:5432/mydb" \
+    --output ./mydb_dump \
+    -j 8 \
+    --no-snapshot
+
+# Preview what would be dumped
+pg-resilient dump \
     -d "postgresql://user:pass@host:5432/mydb" \
-    --output "./mydb_dump" \
+    --output ./mydb_dump \
     --dry-run
 ```
 
 ### Restore
 
-Restore a dump created by `dump.sh`:
-
 ```bash
-# Restore entire dump
-./restore.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --input "./mydb_dump"
+# Restore to target database
+pg-resilient restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump \
+    -j 4
+
+# Clean restore (drop + recreate schemas first)
+pg-resilient restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump \
+    -j 4 -c
 
 # Restore only data (schema already exists)
-./restore.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --input "./mydb_dump" \
-    -a
-
-# Clean restore (DROP + CREATE schema first)
-./restore.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --input "./mydb_dump" \
-    -c
+pg-resilient restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump \
+    -j 4 -a
 
 # Restore a single table
-./restore.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --input "./mydb_dump" \
-    -t "users"
+pg-resilient restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump \
+    -t users
+
+# Restore from .pgr archive
+pg-resilient restore \
+    -d "postgresql://user:pass@host:5432/target_db" \
+    --input ./mydb_dump.pgr \
+    -j 4
 ```
 
 ## Options
 
-### dump.sh
+### dump
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-d`, `--dbname` | PostgreSQL connection string (required) | — |
-| `--output` | Output directory (required) | — |
-| `-n`, `--schema` | Dump only this schema | all user schemas |
-| `--retries` | Max retries per table on failure | 5 |
-| `--retry-delay` | Seconds between retries | 10 |
-| `--dry-run` | Preview what would be dumped | — |
-| `--help` | Show help message | — |
+| `-d, --dbname` | PostgreSQL connection string | required |
+| `--output` | Output directory | required |
+| `-n, --schema` | Dump only this schema | all user schemas |
+| `-j, --jobs` | Parallel workers | 4 |
+| `--split-threshold` | Chunk tables larger than this | 1GB |
+| `--max-chunks-per-table` | Max chunks per table | 32 |
+| `--retries` | Max retries per chunk | 5 |
+| `--retry-delay` | Base retry delay (seconds) | 5 |
+| `--compression` | zstd or lz4 | zstd |
+| `--no-snapshot` | Skip snapshot (for read replicas) | |
+| `--no-archive` | Skip .pgr archive packaging | |
+| `--dry-run` | Preview without dumping | |
 
-### restore.sh
+### restore
 
 | Option | Description | Default |
 |--------|-------------|---------|
-| `-d`, `--dbname` | PostgreSQL connection string (required) | — |
-| `--input` | Input directory from dump.sh (required) | — |
-| `-n`, `--schema` | Restore only tables matching this schema | — |
-| `-t`, `--table` | Restore a single specific table | — |
-| `-c`, `--clean` | DROP and re-CREATE schema before restoring | — |
-| `-a`, `--data-only` | Skip DDL, restore only table data | — |
-| `--retries` | Max retries per table on failure | 5 |
-| `--retry-delay` | Seconds between retries | 10 |
-| `--dry-run` | Preview what would be restored | — |
-| `--help` | Show help message | — |
+| `-d, --dbname` | PostgreSQL connection string | required |
+| `--input` | Input directory or .pgr file | required |
+| `-n, --schema` | Restore only this schema | all |
+| `-t, --table` | Restore a single table | all |
+| `-j, --jobs` | Parallel workers | 4 |
+| `-c, --clean` | Drop + recreate schemas first | |
+| `-a, --data-only` | Skip DDL, restore only data | |
+| `--retries` | Max retries per chunk | 5 |
+| `--retry-delay` | Base retry delay (seconds) | 5 |
+| `--dry-run` | Preview without restoring | |
 
-## Passthrough Arguments
+Passthrough: args after `--` are forwarded to pg_dump/pg_restore for DDL operations.
 
-Any unrecognized flags are passed directly to `pg_dump` (for dump.sh) or `pg_restore` (for restore.sh). Use `--` to separate pg_utils flags from pg_dump/pg_restore flags.
+## How It Works
+
+### Architecture
+
+```
+Coordinator Connection
+  BEGIN REPEATABLE READ
+  pg_export_snapshot() --> snapshot_id
+  (holds transaction open for consistency)
+       |
+       +-- Worker 1: SET TRANSACTION SNAPSHOT
+       |   COPY (SELECT * FROM big_table WHERE id BETWEEN 0 AND 25000) TO STDOUT
+       |     --> zstd compress --> chunk_0000.copy.zst
+       |
+       +-- Worker 2: SET TRANSACTION SNAPSHOT
+       |   COPY (SELECT * FROM big_table WHERE id BETWEEN 25001 AND 50000) TO STDOUT
+       |     --> zstd compress --> chunk_0001.copy.zst
+       |
+       +-- Worker 3: SET TRANSACTION SNAPSHOT
+       |   COPY small_table TO STDOUT
+       |     --> zstd compress --> chunk_0000.copy.zst
+       |
+       +-- Worker 4: ...
+```
+
+### Chunking Strategies
+
+| Strategy | When | How |
+|----------|------|-----|
+| **pk_range** | Table > threshold, has integer PK | `WHERE id BETWEEN start AND end` |
+| **ctid_range** | Table > threshold, no integer PK, PG 14+ | `WHERE ctid >= '(page,0)'::tid` |
+| **none** | Table < threshold | Single `COPY table TO STDOUT` |
+
+Large tables are split into volume-balanced chunks by sampling row sizes at evenly-spaced PK points. This handles skewed data distributions where some rows are much larger than others.
+
+### Resume
+
+**Dump**: Each completed chunk writes a `.done` marker file. Re-running the dump skips chunks that already have markers.
+
+**Restore**: Completed chunks are tracked in a `_pg_resilient._progress` table in the target database, committed atomically with the data. Survives crashes.
+
+### Output Format
+
+```
+dump_dir/
+  manifest.json                    # Metadata: tables, chunks, sequences, options
+  _schema_ddl.dump                 # pg_dump custom format (DDL only)
+  data/
+    public.users/
+      chunk_0000.copy.zst          # COPY text format, zstd compressed
+      chunk_0000.copy.zst.done     # Resume marker
+      chunk_0001.copy.zst
+      chunk_0001.copy.zst.done
+    public.orders/
+      chunk_0000.copy.zst
+      chunk_0000.copy.zst.done
+```
+
+## Benchmarks
+
+On a 144MB test database (500K rows, local Docker):
+
+| Method | Time | vs pg_dump |
+|--------|------|-----------|
+| pg_dump -Fc (single) | 2.1s | baseline |
+| pg_dump -Fd -j4 | 1.6s | 1.3x |
+| **pg-resilient -j1** | **1.0s** | **2.1x** |
+| **pg-resilient -j4** | **0.8s** | **2.6x** |
+
+The speed advantage comes from direct COPY protocol (no per-table pg_dump process spawning) and overlapping DDL dump with data dump. On remote databases over VPN, the advantage is larger due to connection reuse and chunked retry.
+
+## Development
 
 ```bash
-# Pass lock timeout and disable comments
-./dump.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --output "./mydb_dump" \
-    --lock-wait-timeout=300 --no-comments
-
-# Override default compression (default: -Z 6)
-./dump.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --output "./mydb_dump" \
-    -- -Z 9
-
-# Pass disable-triggers to pg_restore
-./restore.sh \
-    -d "postgresql://user:pass@host:5432/mydb" \
-    --input "./mydb_dump" \
-    --disable-triggers
+npm install          # Install dependencies
+npm run typecheck    # TypeScript strict mode check
+npm test             # Unit tests (vitest)
+npm run test:integration  # Integration tests (requires Docker)
+npm run bench        # Performance benchmarks
+npm run lint         # Lint (biome)
+npm run format       # Format (biome)
 ```
 
-### Blocked flags
-
-Some pg_dump/pg_restore flags conflict with the table-by-table operation model and are rejected:
-
-| Flag | Script | Reason |
-|------|--------|--------|
-| `-f`, `--file` | dump, restore | Output/input file paths are controlled internally |
-| `-F`, `--format` | dump | Must be custom format for table-by-table dumps |
-| `-1`, `--single-transaction` | restore | Breaks per-table retry |
-| `--exit-on-error` | restore | Breaks resilience (failures are handled per-table) |
-
-## Output Structure
-
-`dump.sh` creates the following directory structure, which `restore.sh` reads:
+### Project Structure
 
 ```
-<output_dir>/
-├── _schema_ddl.sql           # Schema structure (CREATE TABLE, indexes, etc.)
-├── _dump.log                 # Verbose pg_dump log
-└── tables/
-    ├── <table_name>.dump      # Custom-format table data
-    ├── <table_name>.dump.done # Resume marker (empty file)
-    └── ...
-```
-
-## Architecture
-
-```
-pg_utils/
-├── dump.sh              # Table-by-table dump with retry & resume
-├── restore.sh           # Restore from dump with retry & resume
-└── lib/                 # Shared modules (sourced by both scripts)
-    ├── common.sh        # Module loader + require_commands
-    ├── colors.sh        # ANSI color codes & constants
-    ├── log.sh           # Logging functions (info, success, warn, error)
-    ├── args.sh          # Blocked flag validation for passthrough
-    ├── format.sh        # Size/time formatting, progress bars
-    ├── connection.sh    # Connection string parsing & validation
-    ├── ui.sh            # Banner and summary display
-    └── retry.sh         # Retry wrapper with backoff
-```
-
-## Testing
-
-```bash
-# Run all tests
-make test
-
-# Or run individually
-bash tests/test_format.sh
-bash tests/test_connection.sh
-bash tests/test_retry.sh
-bash tests/test_ui.sh
-bash tests/test_args.sh
-
-# Lint with shellcheck
-make lint
-
-# Run everything
-make check
+src/
+  cli/          # CLI concerns (args, orchestration, terminal UI)
+  core/         # Reusable logic (connection, streaming, chunking, schema)
+  types/        # Shared TypeScript type definitions
+tests/
+  unit/         # Vitest unit tests
+  integration/  # Docker-based end-to-end tests
+bench/          # Performance benchmarks
 ```
 
 ## License
