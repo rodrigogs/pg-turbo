@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { mkdtempSync, readdirSync, rmSync, statSync, unlinkSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pg from 'pg'
@@ -272,5 +272,58 @@ describe('restore integration', () => {
     const sourceUsers = await query('SELECT count(*) FROM public.users')
     const count2 = await query('SELECT count(*) FROM public.users', RESTORE)
     expect(parseInt(count2, 10)).toBe(parseInt(sourceUsers, 10))
+  })
+
+  it('dry run shows preview without restoring', async () => {
+    // Exercises dry-run path in restore
+    await runRestore(defaultRestoreOpts(dumpDir, { dryRun: true }))
+    // No tables should exist in restore DB (it was just recreated in beforeEach)
+    const count = await query(
+      "SELECT count(*) FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema')",
+      RESTORE,
+    )
+    expect(parseInt(count, 10)).toBe(0)
+  })
+
+  it('restores with schema filter', async () => {
+    // Exercises schema filter path
+    // First full restore to get DDL
+    await runRestore(defaultRestoreOpts(dumpDir))
+    // Truncate analytics events
+    await query('TRUNCATE analytics.events CASCADE', RESTORE)
+    // Clear markers
+    clearResumeMarkers(dumpDir)
+    // Restore only analytics schema, data-only
+    await runRestore(defaultRestoreOpts(dumpDir, { schema: 'analytics', dataOnly: true }))
+    const eventCount = await query('SELECT count(*) FROM analytics.events', RESTORE)
+    expect(parseInt(eventCount, 10)).toBeGreaterThan(0)
+  })
+
+  it('handles missing chunk file gracefully', async () => {
+    // Exercises the missing chunk pre-flight check
+    // Copy the dump to a temporary directory and delete a chunk file
+    const corruptDir = freshTmpDir()
+    execSync(`cp -r ${dumpDir}/* ${corruptDir}/`)
+    // Find and delete one chunk file
+    const manifest = JSON.parse(readFileSync(join(corruptDir, 'manifest.json'), 'utf-8'))
+    const firstTable = manifest.tables.find((t: { chunks: unknown[] }) => t.chunks.length > 0)
+    const firstChunk = firstTable?.chunks[0]?.file
+    if (firstChunk) {
+      const chunkPath = join(corruptDir, firstChunk)
+      if (existsSync(chunkPath)) rmSync(chunkPath)
+      // Also remove its .done marker
+      if (existsSync(`${chunkPath}.done`)) rmSync(`${chunkPath}.done`)
+    }
+    // Clear resume markers so it doesn't skip
+    clearResumeMarkers(corruptDir)
+    await expect(runRestore(defaultRestoreOpts(corruptDir))).rejects.toThrow(/missing/)
+  })
+
+  it('passes pg_restore extra args', async () => {
+    // Exercises pgRestoreArgs path
+    clearResumeMarkers(dumpDir)
+    await runRestore(defaultRestoreOpts(dumpDir, { pgRestoreArgs: ['--no-comments'] }))
+    const count = await query('SELECT count(*) FROM public.users', RESTORE)
+    expect(parseInt(count, 10)).toBeGreaterThan(0)
   })
 })

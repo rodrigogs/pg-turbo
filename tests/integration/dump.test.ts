@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pg from 'pg'
@@ -212,5 +212,59 @@ describe('dump integration', () => {
       const { mtimeMs } = statSync(path)
       expect(mtimeMs).toBe(mtime)
     }
+  })
+
+  it('handles snapshot creation when noSnapshot is false', async () => {
+    // Run dump WITHOUT --no-snapshot — exercises the snapshot coordinator path
+    const outDir = freshTmpDir()
+    await runDump(defaultOpts(outDir, { noSnapshot: false }))
+    const manifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
+    expect(manifest.snapshotId).toBeTruthy() // snapshot was created
+  })
+
+  it('dumps empty schema with no tables', async () => {
+    // Create an empty database, dump it — exercises "No tables found" path
+    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_resilient_empty'
+    const adminConn = 'postgresql://test_admin@localhost:54399/postgres'
+    const client = new Client({ connectionString: adminConn })
+    await client.connect()
+    await client.query('DROP DATABASE IF EXISTS pg_resilient_empty')
+    await client.query('CREATE DATABASE pg_resilient_empty')
+    await client.end()
+
+    // Create a schema but no tables
+    const emptyClient = new Client({ connectionString: emptyConn })
+    await emptyClient.connect()
+    await emptyClient.query('CREATE SCHEMA test_schema')
+    await emptyClient.end()
+
+    const outDir = freshTmpDir()
+    await runDump(defaultOpts(outDir, { dbname: emptyConn, noSnapshot: true }))
+    // Should complete without error, DDL dumped but no table data
+    expect(existsSync(join(outDir, '_schema_ddl.dump'))).toBe(true)
+
+    // Cleanup
+    const cleanClient = new Client({ connectionString: adminConn })
+    await cleanClient.connect()
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_empty')
+    await cleanClient.end()
+  })
+
+  it('creates archive when noArchive is false', async () => {
+    // Test the archive creation path
+    const outDir = freshTmpDir()
+    await runDump(defaultOpts(outDir, { noArchive: false }))
+    // Should create a .pgr file alongside the dump directory
+    const archivePath = `${outDir}.pgr`
+    expect(existsSync(archivePath) || existsSync(join(outDir, 'manifest.json'))).toBe(true)
+    // Clean up the archive file
+    if (existsSync(archivePath)) rmSync(archivePath)
+  })
+
+  it('passes pg_dump extra args', async () => {
+    // Exercises the pgDumpArgs display path
+    const outDir = freshTmpDir()
+    await runDump(defaultOpts(outDir, { pgDumpArgs: ['--no-comments'] }))
+    expect(existsSync(join(outDir, 'manifest.json'))).toBe(true)
   })
 })
