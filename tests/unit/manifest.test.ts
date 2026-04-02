@@ -7,7 +7,7 @@ import type { DumpManifest } from '../../src/types/index.js'
 
 const SAMPLE_MANIFEST: DumpManifest = {
   version: 1,
-  tool: 'pg-resilient',
+  tool: 'pg-turbo',
   createdAt: '2026-03-31T05:00:00.000Z',
   pgVersion: '16.2',
   database: 'testdb',

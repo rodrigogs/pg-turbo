@@ -2,16 +2,16 @@
 
 ## Project Overview
 
-**pg-resilient** -- Resilient PostgreSQL dump & restore CLI tool for large databases.
+**pg-turbo** -- Resilient PostgreSQL dump & restore CLI tool for large databases.
 
 Designed for scenarios with flaky connections (RDS over VPN, remote servers) where standard `pg_dump`/`pg_restore` fail on large schemas. Uses the PostgreSQL COPY protocol directly with chunked streaming, compression, and per-chunk retry -- NOT a wrapper around pg_dump for data transfer.
 
 ## Architecture
 
 ```
-pg_resilient/
+pg_turbo/
 ├── bin/
-│   └── pg-resilient.ts          # CLI entrypoint (shebang)
+│   └── pg-turbo.ts          # CLI entrypoint (shebang)
 ├── src/
 │   ├── cli/
 │   │   ├── index.ts             # Subcommand routing (dump / restore / help)
@@ -20,7 +20,7 @@ pg_resilient/
 │   │   ├── restore.ts           # Restore orchestrator
 │   │   └── ui.ts                # Terminal UI (live dashboard, banners, progress handler, signal handling)
 │   ├── core/
-│   │   ├── archive.ts           # .pgr archive creation/extraction (tar + zstd)
+│   │   ├── archive.ts           # .pgt archive creation/extraction (tar + zstd)
 │   │   ├── chunker.ts           # Table chunking strategies (PK range, ctid range, volume-balanced)
 │   │   ├── connection.ts        # Connection string helpers, snapshot coordination, keepalive tuning
 │   │   ├── copy-stream.ts       # COPY TO/FROM streaming with compression (zstd/lz4)
@@ -39,7 +39,7 @@ pg_resilient/
 │       ├── dump.test.ts
 │       └── restore.test.ts
 ├── bench/
-│   └── benchmark.ts             # Performance benchmarks (pg-resilient vs pg_dump)
+│   └── benchmark.ts             # Performance benchmarks (pg-turbo vs pg_dump)
 ├── package.json
 ├── tsconfig.json
 ├── vitest.config.ts
@@ -61,11 +61,11 @@ pg_resilient/
 4. Plan chunks -- split large tables by PK ranges (volume-balanced) or ctid ranges
 5. Dump DDL via `pg_dump --schema-only` (runs async, overlaps with data dump)
 6. Parallel COPY TO STDOUT workers -- each chunk streams through compressor to file
-7. Write manifest.json, optionally package as `.pgr` archive
+7. Write manifest.json, optionally package as `.pgt` archive
 
 **Restore flow:**
-1. Read manifest (or extract `.pgr` archive first)
-2. Test connection, create progress tracking table (`_pg_resilient._progress`)
+1. Read manifest (or extract `.pgt` archive first)
+2. Test connection, create progress tracking table (`_pg_turbo._progress`)
 3. Clean schemas if `--clean` (DROP + CREATE or TRUNCATE for `--table`)
 4. Pre-data DDL via `pg_restore --section=pre-data`
 5. Parallel COPY FROM STDIN workers -- streams file through decompressor into PG (skips materialized views)
@@ -77,7 +77,7 @@ pg_resilient/
 - **Sub-table chunking** -- splits large tables across workers (pg_dump can't do this)
 - **Volume-balanced chunks** -- samples row sizes to create equal-byte chunks, not equal-row
 - **Per-chunk retry** -- failed 250MB chunk retries, not entire 500GB table
-- **Resume support** -- `.done` markers for dump, `_pg_resilient._progress` table for restore
+- **Resume support** -- `.done` markers for dump, `_pg_turbo._progress` table for restore
 - **Snapshot coordination** -- all workers see identical data via shared snapshot
 - **Streaming compression** -- zstd (default, `.zst`) or lz4 (`.lz4`), never buffers full table in memory
 - **Connection retry** -- initial connection retries 5 times with exponential backoff (2s base, 30s cap)
@@ -111,7 +111,7 @@ pg_resilient/
 | pg-copy-streams | COPY protocol streaming |
 | zstd-napi | Zstandard compression (default) |
 | lz4 | LZ4 compression (alternative, faster decompression) |
-| tar | Archive packaging (.pgr format) |
+| tar | Archive packaging (.pgt format) |
 | commander | CLI argument parsing |
 | picocolors | Terminal colors (zero deps) |
 | log-update | Live terminal UI updates |
@@ -155,10 +155,10 @@ npm run dev -- restore -d "postgresql://user:pass@host/db" --input "./dump_dir"
 
 ```bash
 # Dump
-pg-resilient dump -d <connection_string> --output <dir> [options]
+pg-turbo dump -d <connection_string> --output <dir> [options]
 
 # Restore
-pg-resilient restore -d <connection_string> --input <dir|file.pgr> [options]
+pg-turbo restore -d <connection_string> --input <dir|file.pgt> [options]
 ```
 
 ### Dump Options
@@ -175,7 +175,7 @@ pg-resilient restore -d <connection_string> --input <dir|file.pgr> [options]
 | `--retry-delay` | Base retry delay in seconds | 5 |
 | `--compression` | zstd or lz4 | zstd |
 | `--no-snapshot` | Skip synchronized snapshot (for read replicas) | -- |
-| `--no-archive` | Skip .pgr archive packaging | -- |
+| `--no-archive` | Skip .pgt archive packaging | -- |
 | `--dry-run` | Preview without writing | -- |
 
 ### Restore Options
@@ -183,7 +183,7 @@ pg-resilient restore -d <connection_string> --input <dir|file.pgr> [options]
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-d, --dbname` | PostgreSQL connection string (required) | -- |
-| `--input` | Input directory or .pgr file (required) | -- |
+| `--input` | Input directory or .pgt file (required) | -- |
 | `-n, --schema` | Restore only tables in this schema | all |
 | `-t, --table` | Restore a single table | all |
 | `-j, --jobs` | Parallel workers | 4 |

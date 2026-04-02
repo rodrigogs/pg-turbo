@@ -10,7 +10,7 @@ import type { DumpManifest, DumpOptions } from '../../src/types/index.js'
 const { Client } = pg
 const COMPOSE = join(__dirname, 'docker-compose.yml')
 const FIXTURES = join(__dirname, 'fixtures.sql')
-const CONN = 'postgresql://test_admin@localhost:54399/pg_resilient_test'
+const CONN = 'postgresql://test_admin@localhost:54399/pg_turbo_test'
 
 function compose(cmd: string) {
   execSync(`docker-compose -f "${COMPOSE}" ${cmd}`, { stdio: 'pipe', timeout: 60_000 })
@@ -91,8 +91,8 @@ describe('dump integration', () => {
     expect(existsSync(manifestPath)).toBe(true)
     const manifest: DumpManifest = JSON.parse(readFileSync(manifestPath, 'utf-8'))
     expect(manifest.version).toBe(1)
-    expect(manifest.tool).toBe('pg-resilient')
-    expect(manifest.database).toBe('pg_resilient_test')
+    expect(manifest.tool).toBe('pg-turbo')
+    expect(manifest.database).toBe('pg_turbo_test')
     expect(manifest.tables.length).toBeGreaterThanOrEqual(5)
 
     // DDL file exists
@@ -222,12 +222,12 @@ describe('dump integration', () => {
 
   it('dumps empty schema with no tables', async () => {
     // Create an empty database, dump it — exercises "No tables found" path
-    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_resilient_empty'
+    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_turbo_empty'
     const adminConn = 'postgresql://test_admin@localhost:54399/postgres'
     const client = new Client({ connectionString: adminConn })
     await client.connect()
-    await client.query('DROP DATABASE IF EXISTS pg_resilient_empty')
-    await client.query('CREATE DATABASE pg_resilient_empty')
+    await client.query('DROP DATABASE IF EXISTS pg_turbo_empty')
+    await client.query('CREATE DATABASE pg_turbo_empty')
     await client.end()
 
     // Create a schema but no tables
@@ -244,7 +244,7 @@ describe('dump integration', () => {
     // Cleanup
     const cleanClient = new Client({ connectionString: adminConn })
     await cleanClient.connect()
-    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_empty')
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_turbo_empty')
     await cleanClient.end()
   })
 
@@ -252,8 +252,8 @@ describe('dump integration', () => {
     // Test the archive creation path
     const outDir = freshTmpDir()
     await runDump(defaultOpts(outDir, { noArchive: false }))
-    // Should create a .pgr file alongside the dump directory
-    const archivePath = `${outDir}.pgr`
+    // Should create a .pgt file alongside the dump directory
+    const archivePath = `${outDir}.pgt`
     expect(existsSync(archivePath) || existsSync(join(outDir, 'manifest.json'))).toBe(true)
     // Clean up the archive file
     if (existsSync(archivePath)) rmSync(archivePath)

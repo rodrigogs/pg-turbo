@@ -3,18 +3,18 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { createArchive, extractArchive, isPgrArchive } from '../../src/core/archive.js'
+import { createArchive, extractArchive, isPgtArchive } from '../../src/core/archive.js'
 
-describe('isPgrArchive', () => {
-  it('returns true for .pgr extension', () => {
-    expect(isPgrArchive('/path/to/dump.pgr')).toBe(true)
-    expect(isPgrArchive('dump.pgr')).toBe(true)
+describe('isPgtArchive', () => {
+  it('returns true for .pgt extension', () => {
+    expect(isPgtArchive('/path/to/dump.pgt')).toBe(true)
+    expect(isPgtArchive('dump.pgt')).toBe(true)
   })
 
   it('returns false for directories and other extensions', () => {
-    expect(isPgrArchive('/path/to/dump')).toBe(false)
-    expect(isPgrArchive('/path/to/dump.tar')).toBe(false)
-    expect(isPgrArchive('/path/to/dump.pgr.bak')).toBe(false)
+    expect(isPgtArchive('/path/to/dump')).toBe(false)
+    expect(isPgtArchive('/path/to/dump.tar')).toBe(false)
+    expect(isPgtArchive('/path/to/dump.pgt.bak')).toBe(false)
   })
 })
 
@@ -26,7 +26,7 @@ describe('archive round-trip', () => {
   beforeEach(async () => {
     sourceDir = await mkdtemp(join(tmpdir(), 'pgr-test-src-'))
     extractDir = await mkdtemp(join(tmpdir(), 'pgr-test-ext-'))
-    archivePath = join(sourceDir, '..', 'test-dump.pgr')
+    archivePath = join(sourceDir, '..', 'test-dump.pgt')
   })
 
   afterEach(async () => {

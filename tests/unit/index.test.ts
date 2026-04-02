@@ -28,31 +28,31 @@ describe('CLI index routing', () => {
   })
 
   it('prints help when no subcommand given', async () => {
-    process.argv = ['node', 'pg-resilient']
+    process.argv = ['node', 'pg-turbo']
     await main()
     const output = logSpy.mock.calls.map((c) => c[0]).join('\n')
-    expect(output).toContain('pg-resilient')
+    expect(output).toContain('pg-turbo')
     expect(output).toContain('dump')
     expect(output).toContain('restore')
   })
 
   it('prints help for unknown subcommand', async () => {
-    process.argv = ['node', 'pg-resilient', 'garbage']
+    process.argv = ['node', 'pg-turbo', 'garbage']
     await main()
     const output = logSpy.mock.calls.map((c) => c[0]).join('\n')
-    expect(output).toContain('pg-resilient')
+    expect(output).toContain('pg-turbo')
   })
 
   it('routes dump subcommand to runDump', async () => {
     const { runDump } = await import('../../src/cli/dump.js')
-    process.argv = ['node', 'pg-resilient', 'dump', '-d', 'postgresql://localhost/test']
+    process.argv = ['node', 'pg-turbo', 'dump', '-d', 'postgresql://localhost/test']
     await main()
     expect(runDump).toHaveBeenCalled()
   })
 
   it('routes restore subcommand to runRestore', async () => {
     const { runRestore } = await import('../../src/cli/restore.js')
-    process.argv = ['node', 'pg-resilient', 'restore', '-d', 'postgresql://localhost/test']
+    process.argv = ['node', 'pg-turbo', 'restore', '-d', 'postgresql://localhost/test']
     await main()
     expect(runRestore).toHaveBeenCalled()
   })

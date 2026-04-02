@@ -4,7 +4,7 @@ services:
     ports:
       - "54399:5432"
     environment:
-      POSTGRES_DB: pg_resilient_test
+      POSTGRES_DB: pg_turbo_test
       POSTGRES_USER: test_admin
       POSTGRES_HOST_AUTH_METHOD: trust
     healthcheck:

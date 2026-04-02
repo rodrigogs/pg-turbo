@@ -87,7 +87,7 @@ export async function dumpChunk(
 // Completion markers live in the target DB so they are atomic with the COPY data.
 // COMMIT persists both the rows AND the progress record, or neither.
 
-const PROGRESS_SCHEMA = '_pg_resilient'
+const PROGRESS_SCHEMA = '_pg_turbo'
 const PROGRESS_TABLE = `${PROGRESS_SCHEMA}._progress`
 
 export async function ensureProgressTable(client: pg.Client): Promise<void> {

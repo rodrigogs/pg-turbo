@@ -52,7 +52,7 @@ export interface SequenceInfo {
 
 export interface DumpManifest {
   version: 1
-  tool: 'pg-resilient'
+  tool: 'pg-turbo'
   createdAt: string
   pgVersion: string
   database: string

@@ -1,15 +1,15 @@
-# pg-resilient
+# pg-turbo
 
-[![CI](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigo.gomes/pg_resilient/actions/workflows/ci.yml)
+[![CI](https://github.com/rodrigo.gomes/pg_turbo/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigo.gomes/pg_turbo/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Resilient PostgreSQL dump & restore CLI for large databases over flaky connections.
 
 Uses the PostgreSQL **COPY protocol directly** with chunked streaming, parallel workers, and per-chunk retry. Designed for RDS over VPN, remote servers, and other scenarios where standard `pg_dump`/`pg_restore` fail on large schemas.
 
-## Why pg-resilient?
+## Why pg-turbo?
 
-| Problem with pg_dump | pg-resilient solution |
+| Problem with pg_dump | pg-turbo solution |
 |---------------------|----------------------|
 | One large table fails = restart entire dump | Per-chunk retry -- only the failed 250MB chunk retries |
 | Can't parallelize within a single table | Sub-table chunking splits large tables across workers |
@@ -21,18 +21,18 @@ Uses the PostgreSQL **COPY protocol directly** with chunked streaming, parallel 
 
 ```bash
 # Install
-git clone https://github.com/rodrigo.gomes/pg_resilient.git
-cd pg_resilient
+git clone https://github.com/rodrigo.gomes/pg_turbo.git
+cd pg_turbo
 npm install
 
 # Dump a database
-npx tsx bin/pg-resilient.ts dump \
+npx tsx bin/pg-turbo.ts dump \
     -d "postgresql://user:pass@host:5432/mydb" \
     --output ./mydb_dump \
     -j 4
 
 # Restore to another database
-npx tsx bin/pg-resilient.ts restore \
+npx tsx bin/pg-turbo.ts restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -j 4
@@ -53,7 +53,7 @@ npx tsx bin/pg-resilient.ts restore \
 - **Streaming compression** -- zstd (default) or lz4, never buffers full table in memory
 - **Live progress dashboard** -- per-worker status, overall speed, ETA
 - **Connection resilience** -- TCP keepalive tuning, auto-reconnect on failure
-- **Archive packaging** -- optional `.pgr` single-file format (tar + zstd)
+- **Archive packaging** -- optional `.pgt` single-file format (tar + zstd)
 - **Connection string cleaning** -- strips GUI params (statusColor, env, etc.) from tools like TablePlus
 
 ## Usage
@@ -62,13 +62,13 @@ npx tsx bin/pg-resilient.ts restore \
 
 ```bash
 # Dump entire database with 4 parallel workers
-pg-resilient dump \
+pg-turbo dump \
     -d "postgresql://user:pass@host:5432/mydb" \
     --output ./mydb_dump \
     -j 4
 
 # Dump specific schema, force chunking at 256MB
-pg-resilient dump \
+pg-turbo dump \
     -d "postgresql://user:pass@host:5432/mydb" \
     --output ./mydb_dump \
     -n public \
@@ -76,14 +76,14 @@ pg-resilient dump \
     --split-threshold 256MB
 
 # Dump from read replica (skip snapshot)
-pg-resilient dump \
+pg-turbo dump \
     -d "postgresql://readonly:pass@replica:5432/mydb" \
     --output ./mydb_dump \
     -j 8 \
     --no-snapshot
 
 # Preview what would be dumped
-pg-resilient dump \
+pg-turbo dump \
     -d "postgresql://user:pass@host:5432/mydb" \
     --output ./mydb_dump \
     --dry-run
@@ -93,33 +93,33 @@ pg-resilient dump \
 
 ```bash
 # Restore to target database
-pg-resilient restore \
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -j 4
 
 # Clean restore (drop + recreate schemas first)
-pg-resilient restore \
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -j 4 -c
 
 # Restore only data (schema already exists)
-pg-resilient restore \
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -j 4 -a
 
 # Restore a single table
-pg-resilient restore \
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -t users
 
-# Restore from .pgr archive
-pg-resilient restore \
+# Restore from .pgt archive
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
-    --input ./mydb_dump.pgr \
+    --input ./mydb_dump.pgt \
     -j 4
 ```
 
@@ -139,7 +139,7 @@ pg-resilient restore \
 | `--retry-delay` | Base retry delay (seconds) | 5 |
 | `--compression` | zstd or lz4 | zstd |
 | `--no-snapshot` | Skip snapshot (for read replicas) | |
-| `--no-archive` | Skip .pgr archive packaging | |
+| `--no-archive` | Skip .pgt archive packaging | |
 | `--dry-run` | Preview without dumping | |
 
 ### restore
@@ -147,7 +147,7 @@ pg-resilient restore \
 | Option | Description | Default |
 |--------|-------------|---------|
 | `-d, --dbname` | PostgreSQL connection string | required |
-| `--input` | Input directory or .pgr file | required |
+| `--input` | Input directory or .pgt file | required |
 | `-n, --schema` | Restore only this schema | all |
 | `-t, --table` | Restore a single table | all |
 | `-j, --jobs` | Parallel workers | 4 |
@@ -198,7 +198,7 @@ Large tables are split into volume-balanced chunks by sampling row sizes at even
 
 **Dump**: Each completed chunk writes a `.done` marker file. Re-running the dump skips chunks that already have markers.
 
-**Restore**: Completed chunks are tracked in a `_pg_resilient._progress` table in the target database, committed atomically with the data. Survives crashes.
+**Restore**: Completed chunks are tracked in a `_pg_turbo._progress` table in the target database, committed atomically with the data. Survives crashes.
 
 ### Output Format
 
@@ -225,8 +225,8 @@ On a 144MB test database (500K rows, local Docker):
 |--------|------|-----------|
 | pg_dump -Fc (single) | 2.1s | baseline |
 | pg_dump -Fd -j4 | 1.6s | 1.3x |
-| **pg-resilient -j1** | **1.0s** | **2.1x** |
-| **pg-resilient -j4** | **0.8s** | **2.6x** |
+| **pg-turbo -j1** | **1.0s** | **2.1x** |
+| **pg-turbo -j4** | **0.8s** | **2.6x** |
 
 The speed advantage comes from direct COPY protocol (no per-table pg_dump process spawning) and overlapping DDL dump with data dump. On remote databases over VPN, the advantage is larger due to connection reuse and chunked retry.
 

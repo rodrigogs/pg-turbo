@@ -33,7 +33,7 @@ Thumbs.db
 # Dump output directories
 qat_dump*/
 *_dump/
-*.pgr
+*.pgt
 
 # Playwright MCP
 .playwright-mcp/

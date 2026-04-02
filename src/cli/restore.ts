@@ -4,7 +4,7 @@ import { mkdtemp, rm, stat, unlink, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pg from 'pg'
-import { extractArchive, isPgrArchive } from '../core/archive.js'
+import { extractArchive, isPgtArchive } from '../core/archive.js'
 import { chunkEstimatedBytes } from '../core/chunker.js'
 import {
   cleanConnectionString,
@@ -47,11 +47,11 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
   let dashboard: ReturnType<typeof startDashboard> | null = null
   const signals = installSignalHandlers(() => dashboard)
 
-  // ── Extract .pgr archive if needed ─────────────────────────────────────
+  // ── Extract .pgt archive if needed ─────────────────────────────────────
   let inputDir = opts.input
   let tempDir: string | null = null
 
-  if (isPgrArchive(opts.input)) {
+  if (isPgtArchive(opts.input)) {
     log.step('Extracting archive...')
     tempDir = await mkdtemp(join(tmpdir(), 'pgr-restore-'))
     await extractArchive(opts.input, tempDir)
@@ -68,7 +68,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     console.log('')
 
     // ── Banner ──────────────────────────────────────────────────────────────
-    printBanner(opts.dryRun ? 'PostgreSQL Resilient Restore (DRY RUN)' : 'PostgreSQL Resilient Restore')
+    printBanner(opts.dryRun ? 'PostgreSQL Turbo Restore (DRY RUN)' : 'PostgreSQL Turbo Restore')
     log.info(`Connection : ${sanitizeConnectionString(cs)}`)
     log.info(`Database   : ${dbName}`)
     log.info(`Source DB  : ${manifest.database}`)

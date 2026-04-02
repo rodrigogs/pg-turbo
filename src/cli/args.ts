@@ -27,7 +27,7 @@ export function parseDumpArgs(argv: string[]): DumpOptions {
     .option('--retry-delay <s>', 'Base retry delay (seconds)', '5')
     .option('--compression <type>', 'Compression algorithm (zstd, lz4)', 'zstd')
     .option('--no-snapshot', 'Skip snapshot')
-    .option('--no-archive', 'Skip .pgr archive packaging')
+    .option('--no-archive', 'Skip .pgt archive packaging')
     .option('--dry-run', 'Preview without dumping')
     .allowUnknownOption(false)
   cmd.parse(ourArgs, { from: 'user' })
@@ -57,7 +57,7 @@ export function parseRestoreArgs(argv: string[]): RestoreOptions {
 
   const cmd = new Command()
     .requiredOption('-d, --dbname <cs>', 'PostgreSQL connection string')
-    .requiredOption('--input <dir|file.pgr>', 'Input directory or .pgr archive')
+    .requiredOption('--input <dir|file.pgt>', 'Input directory or .pgt archive')
     .option('-n, --schema <name>', 'Filter schema')
     .option('-t, --table <name>', 'Restore single table')
     .option('-j, --jobs <n>', 'Parallel workers', '4')

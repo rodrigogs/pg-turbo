@@ -1,5 +1,5 @@
 #!/usr/bin/env tsx
-// Benchmark: pg-resilient vs raw pg_dump
+// Benchmark: pg-turbo vs raw pg_dump
 
 import { execFileSync, execSync } from 'node:child_process'
 import { mkdtempSync, rmSync } from 'node:fs'
@@ -22,7 +22,7 @@ function dirSize(dir: string): number {
 }
 
 async function main() {
-  console.log('=== pg-resilient vs pg_dump benchmark ===\n')
+  console.log('=== pg-turbo vs pg_dump benchmark ===\n')
 
   // Show DB size
   const dbSize = execSync(`psql "${CS}" -tAc "SELECT pg_database_size(current_database())"`).toString().trim()
@@ -68,10 +68,10 @@ async function main() {
     rmSync(dir, { recursive: true, force: true })
   }
 
-  // Benchmark 3: pg-resilient with 1 worker
+  // Benchmark 3: pg-turbo with 1 worker
   {
     const dir = mkdtempSync(join(tmpdir(), 'bench-resilient-1-'))
-    const ms = await timeIt('pg-resilient -j1', async () => {
+    const ms = await timeIt('pg-turbo -j1', async () => {
       await runDump({
         dbname: CS,
         output: dir,
@@ -86,14 +86,14 @@ async function main() {
       })
     })
     const size = dirSize(dir)
-    results.push({ label: 'pg-resilient -j1', timeMs: ms, sizeBytes: size })
+    results.push({ label: 'pg-turbo -j1', timeMs: ms, sizeBytes: size })
     rmSync(dir, { recursive: true, force: true })
   }
 
-  // Benchmark 4: pg-resilient with 4 workers
+  // Benchmark 4: pg-turbo with 4 workers
   {
     const dir = mkdtempSync(join(tmpdir(), 'bench-resilient-4-'))
-    const ms = await timeIt('pg-resilient -j4', async () => {
+    const ms = await timeIt('pg-turbo -j4', async () => {
       await runDump({
         dbname: CS,
         output: dir,
@@ -108,7 +108,7 @@ async function main() {
       })
     })
     const size = dirSize(dir)
-    results.push({ label: 'pg-resilient -j4', timeMs: ms, sizeBytes: size })
+    results.push({ label: 'pg-turbo -j4', timeMs: ms, sizeBytes: size })
     rmSync(dir, { recursive: true, force: true })
   }
 

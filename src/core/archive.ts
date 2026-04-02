@@ -4,12 +4,12 @@ import { pipeline } from 'node:stream/promises'
 import * as tar from 'tar'
 import { CompressStream, DecompressStream } from 'zstd-napi'
 
-export function isPgrArchive(path: string): boolean {
-  return path.endsWith('.pgr')
+export function isPgtArchive(path: string): boolean {
+  return path.endsWith('.pgt')
 }
 
 /**
- * Package a dump directory into a single .pgr archive (tar + zstd).
+ * Package a dump directory into a single .pgt archive (tar + zstd).
  * Uses low zstd compression level since chunk data is already compressed.
  */
 export async function createArchive(sourceDir: string, outputPath: string): Promise<number> {
@@ -21,7 +21,7 @@ export async function createArchive(sourceDir: string, outputPath: string): Prom
   return size
 }
 
-/** Extract a .pgr archive into a target directory. */
+/** Extract a .pgt archive into a target directory. */
 export async function extractArchive(archivePath: string, targetDir: string): Promise<void> {
   const fileStream = createReadStream(archivePath)
   const decompressor = new DecompressStream()

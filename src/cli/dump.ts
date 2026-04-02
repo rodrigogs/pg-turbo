@@ -63,7 +63,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
   const signals = installSignalHandlers(() => dashboard)
 
   // ── Banner ──────────────────────────────────────────────────────────────
-  printBanner(opts.dryRun ? 'PostgreSQL Resilient Dump (DRY RUN)' : 'PostgreSQL Resilient Dump')
+  printBanner(opts.dryRun ? 'PostgreSQL Turbo Dump (DRY RUN)' : 'PostgreSQL Turbo Dump')
   log.info(`Connection : ${sanitizeConnectionString(cs)}`)
   log.info(`Database   : ${dbName}`)
   log.info(`Schema     : ${opts.schema ?? 'all user schemas'}`)
@@ -419,7 +419,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
     if (!opts.dryRun) {
       const manifest: DumpManifest = {
         version: 1,
-        tool: 'pg-resilient',
+        tool: 'pg-turbo',
         createdAt: new Date().toISOString(),
         pgVersion,
         database: dbName,
@@ -439,7 +439,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
 
     // ── Step 7: Package archive ──────────────────────────────────────────
     if (!opts.dryRun && !opts.noArchive && failed.length === 0) {
-      const archivePath = `${opts.output}.pgr`
+      const archivePath = `${opts.output}.pgt`
       log.step('Step 7/7: Packaging archive...')
       const archiveSize = await createArchive(opts.output, archivePath)
       log.success(`Archive created: ${archivePath} (${humanSize(archiveSize)})`)

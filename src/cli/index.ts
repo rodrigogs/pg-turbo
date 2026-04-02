@@ -3,17 +3,17 @@ import { runDump } from './dump.js'
 import { runRestore } from './restore.js'
 
 function printHelp(): void {
-  console.log(`pg-resilient — Resilient PostgreSQL dump & restore with direct COPY protocol
+  console.log(`pg-turbo — Resilient PostgreSQL dump & restore with direct COPY protocol
 
 Usage:
-  pg-resilient dump  -d <connection_string> --output <dir> [options]
-  pg-resilient restore -d <connection_string> --input <dir> [options]
+  pg-turbo dump  -d <connection_string> --output <dir> [options]
+  pg-turbo restore -d <connection_string> --input <dir> [options]
 
 Commands:
   dump      Dump a PostgreSQL database
   restore   Restore a PostgreSQL dump
 
-Run "pg-resilient dump --help" or "pg-resilient restore --help" for command options.`)
+Run "pg-turbo dump --help" or "pg-turbo restore --help" for command options.`)
 }
 
 export async function main(): Promise<void> {

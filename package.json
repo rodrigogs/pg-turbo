@@ -1,10 +1,10 @@
 {
-  "name": "pg-resilient",
+  "name": "pg-turbo",
   "version": "0.1.0",
   "description": "Resilient PostgreSQL dump & restore with direct COPY protocol",
   "type": "module",
   "bin": {
-    "pg-resilient": "./bin/pg-resilient.ts"
+    "pg-turbo": "./bin/pg-turbo.ts"
   },
   "engines": {
     "node": ">=20"
@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "dev": "tsx bin/pg-resilient.ts",
+    "dev": "tsx bin/pg-turbo.ts",
     "bench": "tsx bench/benchmark.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",

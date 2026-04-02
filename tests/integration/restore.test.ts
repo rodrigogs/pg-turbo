@@ -11,9 +11,9 @@ import type { DumpOptions, RestoreOptions } from '../../src/types/index.js'
 const { Client } = pg
 const COMPOSE = join(__dirname, 'docker-compose.yml')
 const FIXTURES = join(__dirname, 'fixtures.sql')
-const SOURCE = 'postgresql://test_admin@localhost:54399/pg_resilient_test'
+const SOURCE = 'postgresql://test_admin@localhost:54399/pg_turbo_test'
 const ADMIN = 'postgresql://test_admin@localhost:54399/postgres'
-const RESTORE = 'postgresql://test_admin@localhost:54399/pg_resilient_restore'
+const RESTORE = 'postgresql://test_admin@localhost:54399/pg_turbo_restore'
 
 function compose(cmd: string) {
   execSync(`docker-compose -f "${COMPOSE}" ${cmd}`, { stdio: 'pipe', timeout: 60_000 })
@@ -45,11 +45,11 @@ async function recreateRestoreDb() {
   await client.connect()
   await client
     .query(
-      `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pg_resilient_restore' AND pid <> pg_backend_pid()`,
+      `SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = 'pg_turbo_restore' AND pid <> pg_backend_pid()`,
     )
     .catch(() => {})
-  await client.query('DROP DATABASE IF EXISTS pg_resilient_restore')
-  await client.query('CREATE DATABASE pg_resilient_restore')
+  await client.query('DROP DATABASE IF EXISTS pg_turbo_restore')
+  await client.query('CREATE DATABASE pg_turbo_restore')
   await client.end()
 }
 
@@ -320,11 +320,11 @@ describe('restore integration', () => {
     expect(parseInt(count, 10)).toBeGreaterThan(0)
   })
 
-  it('restores from .pgr archive', async () => {
+  it('restores from .pgt archive', async () => {
     // Dump WITH archive enabled
     const archiveDumpDir = freshTmpDir()
     await runDump(defaultDumpOpts(archiveDumpDir, { noArchive: false }))
-    const archivePath = `${archiveDumpDir}.pgr`
+    const archivePath = `${archiveDumpDir}.pgt`
     if (!existsSync(archivePath)) return // Skip if archive not created
 
     await recreateRestoreDb()
@@ -358,7 +358,7 @@ describe('restore integration', () => {
     await query('TRUNCATE analytics.events CASCADE', RESTORE)
     const resetClient = new Client({ connectionString: RESTORE })
     await resetClient.connect()
-    await resetClient.query('TRUNCATE _pgr._progress').catch(() => {})
+    await resetClient.query('TRUNCATE _pgt._progress').catch(() => {})
     await resetClient.end()
 
     // Copy dump dir and remove DDL file
@@ -375,11 +375,11 @@ describe('restore integration', () => {
   })
 
   it('handles restore with materialized views', async () => {
-    const mvConn = 'postgresql://test_admin@localhost:54399/pg_resilient_mvonly'
+    const mvConn = 'postgresql://test_admin@localhost:54399/pg_turbo_mvonly'
     const client = new Client({ connectionString: ADMIN })
     await client.connect()
-    await client.query('DROP DATABASE IF EXISTS pg_resilient_mvonly')
-    await client.query('CREATE DATABASE pg_resilient_mvonly')
+    await client.query('DROP DATABASE IF EXISTS pg_turbo_mvonly')
+    await client.query('CREATE DATABASE pg_turbo_mvonly')
     await client.end()
 
     const mvClient = new Client({ connectionString: mvConn })
@@ -404,7 +404,7 @@ describe('restore integration', () => {
     // Cleanup
     const cleanClient = new Client({ connectionString: ADMIN })
     await cleanClient.connect()
-    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_mvonly')
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_turbo_mvonly')
     await cleanClient.end()
   })
 
@@ -421,11 +421,11 @@ describe('restore integration', () => {
   })
 
   it('handles restore with no data chunks (empty tables)', async () => {
-    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_resilient_empty2'
+    const emptyConn = 'postgresql://test_admin@localhost:54399/pg_turbo_empty2'
     const client = new Client({ connectionString: ADMIN })
     await client.connect()
-    await client.query('DROP DATABASE IF EXISTS pg_resilient_empty2')
-    await client.query('CREATE DATABASE pg_resilient_empty2')
+    await client.query('DROP DATABASE IF EXISTS pg_turbo_empty2')
+    await client.query('CREATE DATABASE pg_turbo_empty2')
     await client.end()
 
     const emptyClient = new Client({ connectionString: emptyConn })
@@ -444,7 +444,7 @@ describe('restore integration', () => {
     // Cleanup
     const cleanClient = new Client({ connectionString: ADMIN })
     await cleanClient.connect()
-    await cleanClient.query('DROP DATABASE IF EXISTS pg_resilient_empty2')
+    await cleanClient.query('DROP DATABASE IF EXISTS pg_turbo_empty2')
     await cleanClient.end()
   })
 })
