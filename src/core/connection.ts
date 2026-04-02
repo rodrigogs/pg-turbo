@@ -1,4 +1,5 @@
 import pg from 'pg'
+import { isNetworkError } from './errors.js'
 
 const { Client } = pg
 
@@ -52,7 +53,8 @@ function newClient(connectionString: string): InstanceType<typeof Client> {
 const CONNECT_RETRIES = 5
 const CONNECT_BASE_DELAY_MS = 2_000
 
-/** Connect with retries so transient network failures don't consume task retry budget. */
+/** Connect with retries so transient network failures don't consume task retry budget.
+ *  Network errors retry indefinitely; non-network errors give up after CONNECT_RETRIES. */
 async function connectWithRetry(connectionString: string): Promise<InstanceType<typeof Client>> {
   for (let attempt = 0; ; attempt++) {
     const client = newClient(connectionString)
@@ -61,8 +63,10 @@ async function connectWithRetry(connectionString: string): Promise<InstanceType<
       return client
     } catch (err) {
       await client.end().catch(() => {})
-      if (attempt >= CONNECT_RETRIES) throw err
-      const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** attempt, 30_000) + Math.random() * 1_000
+      // Network errors: retry indefinitely
+      // Non-network errors: give up after CONNECT_RETRIES
+      if (!isNetworkError(err) && attempt >= CONNECT_RETRIES) throw err
+      const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** Math.min(attempt, 10), 30_000) + Math.random() * 1_000
       await new Promise((r) => setTimeout(r, delay))
     }
   }

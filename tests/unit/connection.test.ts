@@ -279,7 +279,7 @@ describe('connectWithRetry (via createClient)', () => {
     expect(mockConnect).toHaveBeenCalledTimes(3)
   })
 
-  it('throws after exhausting all connect retries', async () => {
+  it('throws after exhausting all connect retries for non-network errors', async () => {
     // Use real timers with zero delays by mocking setTimeout to fire immediately
     vi.useRealTimers()
     // Mock Math.random to return 0 (no jitter) for deterministic behavior
@@ -290,10 +290,61 @@ describe('connectWithRetry (via createClient)', () => {
       return origSetTimeout(fn, 0)
     })
 
-    mockConnect.mockRejectedValue(new Error('ECONNREFUSED'))
+    mockConnect.mockRejectedValue(new Error('authentication failed'))
     mockEnd.mockResolvedValue(undefined)
 
-    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('ECONNREFUSED')
+    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('authentication failed')
+    // CONNECT_RETRIES=5, attempts 0..5 = 6 total connect calls
+    expect(mockConnect).toHaveBeenCalledTimes(6)
+
+    setTimeoutSpy.mockRestore()
+    randomSpy.mockRestore()
+    vi.useFakeTimers()
+  })
+})
+
+describe('connectWithRetry resilience', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('retries indefinitely on network errors until success', async () => {
+    vi.useFakeTimers()
+
+    // Simulate 10 network failures then success
+    const networkErr = Object.assign(new Error('ECONNREFUSED'), { code: 'ECONNREFUSED' })
+    for (let i = 0; i < 10; i++) {
+      mockConnect.mockRejectedValueOnce(networkErr)
+    }
+    mockConnect.mockResolvedValueOnce(undefined)
+    mockEnd.mockResolvedValue(undefined)
+
+    const promise = createClient('postgresql://u:p@h/db')
+
+    // Advance through all 10 retries
+    for (let i = 0; i < 10; i++) {
+      await vi.advanceTimersByTimeAsync(60_000)
+    }
+
+    const client = await promise
+    expect(client).toBeDefined()
+    expect(mockConnect).toHaveBeenCalledTimes(11) // 10 failures + 1 success
+
+    vi.useRealTimers()
+  })
+
+  it('gives up on non-network errors after retry limit', async () => {
+    vi.useRealTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const origSetTimeout = globalThis.setTimeout
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn: any) => {
+      return origSetTimeout(fn, 0)
+    })
+
+    mockConnect.mockRejectedValue(new Error('authentication failed'))
+    mockEnd.mockResolvedValue(undefined)
+
+    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('authentication failed')
     // CONNECT_RETRIES=5, attempts 0..5 = 6 total connect calls
     expect(mockConnect).toHaveBeenCalledTimes(6)
 

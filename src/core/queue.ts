@@ -1,5 +1,6 @@
 import type { ChunkJob, ChunkResult, ProgressEvent } from '../types/index.js'
 import { chunkEstimatedBytes } from './chunker.js'
+import { isNetworkError } from './errors.js'
 import { calculateDelay } from './retry.js'
 
 export interface WorkerPoolOptions {
@@ -51,13 +52,21 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         opts.onProgress({ type: 'completed', workerId, job, bytesWritten })
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
-        job.attempt++
-        if (job.attempt < opts.maxRetries) {
+
+        if (isNetworkError(error)) {
+          // Network errors: don't count against retry limit, just re-queue
           opts.onProgress({ type: 'retrying', workerId, job, error })
           retryQueue.push(job)
         } else {
-          results.push({ job, status: 'failed', error, durationMs: Date.now() - startTime })
-          opts.onProgress({ type: 'failed', workerId, job, error })
+          // Data errors: count against retry limit
+          job.attempt++
+          if (job.attempt < opts.maxRetries) {
+            opts.onProgress({ type: 'retrying', workerId, job, error })
+            retryQueue.push(job)
+          } else {
+            results.push({ job, status: 'failed', error, durationMs: Date.now() - startTime })
+            opts.onProgress({ type: 'failed', workerId, job, error })
+          }
         }
         opts.onWorkerError?.(workerId, error)
       }
