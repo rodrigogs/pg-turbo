@@ -280,7 +280,10 @@ export async function runDump(opts: DumpOptions): Promise<void> {
       const ddlArgs = buildDdlDumpArgs(cs, ddlPath, opts.schema, snapshotId, opts.pgDumpArgs)
       // Start DDL dump in background — overlaps with data dump.
       // Don't log here — console.log during dashboard breaks logUpdate.
+      // Attach no-op .catch() so Node doesn't report an unhandled rejection
+      // if pg_dump fails before we await it below.
       ddlPromise = execFileAsync('pg_dump', ddlArgs)
+      ddlPromise.catch(() => {})
     }
     console.log('')
 
