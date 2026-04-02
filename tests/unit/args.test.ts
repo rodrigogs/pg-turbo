@@ -27,6 +27,21 @@ describe('parseSize', () => {
   it('throws on invalid input', () => {
     expect(() => parseSize('abc')).toThrow()
   })
+  it('parses case-insensitive units', () => {
+    expect(parseSize('10kb')).toBe(10 * 1024)
+    expect(parseSize('10Kb')).toBe(10 * 1024)
+    expect(parseSize('1gb')).toBe(1024 ** 3)
+  })
+  it('parses size with space before unit', () => {
+    expect(parseSize('10 MB')).toBe(10 * 1024 * 1024)
+    expect(parseSize('1 GB')).toBe(1024 ** 3)
+  })
+  it('throws on negative number', () => {
+    expect(() => parseSize('-5MB')).toThrow()
+  })
+  it('throws on empty string', () => {
+    expect(() => parseSize('')).toThrow()
+  })
 })
 
 describe('parseDumpArgs', () => {

@@ -120,6 +120,33 @@ describe('manifest', () => {
     expect(read.tables[0].chunks[0].estimatedBytes).toBeUndefined()
   })
 
+  it('handles chunks with explicit null estimatedRows/estimatedBytes', async () => {
+    // When JSON serialized, null is preserved. The `!= null` check is false for null,
+    // so null values pass through unchanged (not coerced to 0).
+    const manifestWithNulls = {
+      ...SAMPLE_MANIFEST,
+      tables: [
+        {
+          ...SAMPLE_MANIFEST.tables[0],
+          chunks: [
+            {
+              index: 0,
+              file: 'data/public.users/chunk_0000.copy.lz4',
+              estimatedRows: null as unknown as number | undefined,
+              estimatedBytes: null as unknown as number | undefined,
+            },
+          ],
+        },
+      ],
+    }
+    await writeManifest(tmpDir, manifestWithNulls as unknown as DumpManifest)
+    const read = await readManifest(tmpDir)
+    // null != null is false, so the coercion code does NOT run for null values.
+    // They remain null after JSON round-trip.
+    expect(read.tables[0].chunks[0].estimatedRows).toBeNull()
+    expect(read.tables[0].chunks[0].estimatedBytes).toBeNull()
+  })
+
   it('rejects manifest with path traversal in chunk file', async () => {
     const manifestWithTraversal = {
       ...SAMPLE_MANIFEST,

@@ -265,6 +265,31 @@ describe('planChunks with volumeSamples', () => {
     expect(chunks[chunks.length - 1].rangeEnd).toBe(10_000_000)
   })
 
+  it('handles case where accounted estimates exceed table totals in remainder chunk', () => {
+    // Create samples where rounding causes accounted values to overshoot table estimates.
+    // With extreme skew, rounding each chunk's scaled estimates can sum > table total.
+    const table = makeTable({ actualBytes: 2_200_000_000, estimatedRows: 1000 })
+    // All samples have same bytes so each chunk gets roughly equal volume,
+    // but with 3 chunks the remainder might go negative without Math.max(0, ...)
+    const samples: RowSample[] = []
+    for (let pk = 1; pk <= 100; pk++) {
+      samples.push({ pk: pk * 100_000, bytes: 100 })
+    }
+    const chunks = planChunks(table, {
+      splitThreshold: 1_000_000_000,
+      maxChunks: 32,
+      pgMajorVersion: 16,
+      pkMin: 1,
+      pkMax: 10_000_000,
+      volumeSamples: samples,
+    })
+    expect(chunks.length).toBeGreaterThanOrEqual(2)
+    // Last chunk estimates should never be negative
+    const lastChunk = chunks[chunks.length - 1]
+    expect(lastChunk.estimatedBytes).toBeGreaterThanOrEqual(0)
+    expect(lastChunk.estimatedRows).toBeGreaterThanOrEqual(0)
+  })
+
   it('returns single chunk when volume-balanced numChunks <= 1', () => {
     // actualBytes just slightly above splitThreshold so ceil gives 1
     const table = makeTable({ actualBytes: 1_073_741_824, estimatedRows: 5000 })

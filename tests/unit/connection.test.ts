@@ -58,6 +58,11 @@ describe('extractDbName', () => {
   it('handles port', () => {
     expect(extractDbName('postgresql://user:pass@host:5432/mydb')).toBe('mydb')
   })
+  it('returns empty string when no database name found', () => {
+    // The regex /\/([^/?]+)(?:\?.*)?$/ matches the last path segment after a /
+    // A URL without a trailing path has no match
+    expect(extractDbName('')).toBe('')
+  })
 })
 
 describe('cleanConnectionString', () => {
@@ -93,6 +98,12 @@ describe('appendKeepaliveParams', () => {
     expect(result).not.toMatch(/keepalives_idle=10/) // not overridden
     expect(result).not.toMatch(/connect_timeout=10/) // not overridden
     expect(result).toContain('keepalives=1') // added (wasn't present)
+  })
+  it('returns URL unchanged when all keepalive params already exist', () => {
+    const allParams = 'keepalives=1&keepalives_idle=10&keepalives_interval=10&keepalives_count=5&tcp_user_timeout=30000&connect_timeout=10'
+    const url = `postgresql://u:p@h/db?${allParams}`
+    const result = appendKeepaliveParams(url)
+    expect(result).toBe(url)
   })
 })
 
@@ -132,6 +143,14 @@ describe('createSnapshotCoordinator', () => {
       .mockResolvedValueOnce(undefined) // ROLLBACK
     mockEnd.mockResolvedValue(undefined)
     await expect(createSnapshotCoordinator('postgresql://u:p@h/db')).rejects.toThrow('Invalid snapshot ID format')
+  })
+
+  it('accepts 3-part snapshot ID format', async () => {
+    mockQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockResolvedValueOnce({ rows: [{ snapshot_id: '00000003-1B-5' }] })
+    const coord = await createSnapshotCoordinator('postgresql://u:p@h/db')
+    expect(coord.snapshotId).toBe('00000003-1B-5')
   })
 
   it('close commits and ends client', async () => {
@@ -259,5 +278,28 @@ describe('connectWithRetry (via createClient)', () => {
     expect(client).toBeDefined()
     // 2 failed + 1 success = 3 connect calls
     expect(mockConnect).toHaveBeenCalledTimes(3)
+  })
+
+  it('throws after exhausting all connect retries', async () => {
+    // Use real timers with zero delays by mocking setTimeout to fire immediately
+    vi.useRealTimers()
+    // Mock Math.random to return 0 (no jitter) for deterministic behavior
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    // Mock setTimeout to fire callbacks immediately
+    const origSetTimeout = globalThis.setTimeout
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn: any) => {
+      return origSetTimeout(fn, 0)
+    })
+
+    mockConnect.mockRejectedValue(new Error('ECONNREFUSED'))
+    mockEnd.mockResolvedValue(undefined)
+
+    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('ECONNREFUSED')
+    // CONNECT_RETRIES=5, attempts 0..5 = 6 total connect calls
+    expect(mockConnect).toHaveBeenCalledTimes(6)
+
+    setTimeoutSpy.mockRestore()
+    randomSpy.mockRestore()
+    vi.useFakeTimers()
   })
 })

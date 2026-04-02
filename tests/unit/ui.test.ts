@@ -1,6 +1,15 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import type { ChunkJob, ManifestTable, ProgressEvent, WorkerState } from '../../src/types/index.js'
-import { createProgressHandler, installSignalHandlers, renderDashboard } from '../../src/cli/ui.js'
+import {
+  createProgressHandler,
+  installSignalHandlers,
+  log,
+  printBanner,
+  printFailedTables,
+  printSummary,
+  renderDashboard,
+  startDashboard,
+} from '../../src/cli/ui.js'
 import type { DashboardState } from '../../src/cli/ui.js'
 
 function makeWorker(id: number): WorkerState {
@@ -208,6 +217,22 @@ describe('createProgressHandler', () => {
 })
 
 describe('renderDashboard edge cases', () => {
+  it('trims old speed samples from the ring buffer', () => {
+    const now = Date.now()
+    const state = makeDashboardState({
+      speedSamples: [
+        { time: now - 20_000, bytes: 100 },
+        { time: now - 15_000, bytes: 200 },
+        { time: now - 5_000, bytes: 400 },
+      ],
+    })
+    renderDashboard(state)
+    // Old samples (>10s) should have been trimmed
+    expect(state.speedSamples.length).toBeLessThanOrEqual(3) // at most the recent one + new one
+    // The newest surviving sample should be recent
+    expect(state.speedSamples[0].time).toBeGreaterThan(now - 11_000)
+  })
+
   it('handles zero totalBytes', () => {
     const state = makeDashboardState({ totalBytes: 0, processedBytes: 0 })
     const output = renderDashboard(state)
@@ -258,5 +283,293 @@ describe('installSignalHandlers', () => {
     expect(typeof wasInterrupted).toBe('function')
     expect(wasInterrupted()).toBe(false)
     cleanup()
+  })
+
+  it('sets interrupted flag and calls dashboard stop on SIGINT', () => {
+    const stopFn = vi.fn()
+    const mockDashboard = { update: vi.fn(), stop: stopFn }
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const { cleanup, wasInterrupted } = installSignalHandlers(() => mockDashboard)
+
+    // Simulate SIGINT
+    process.emit('SIGINT', 'SIGINT')
+
+    expect(wasInterrupted()).toBe(true)
+    expect(stopFn).toHaveBeenCalled()
+    cleanup()
+    logSpy.mockRestore()
+  })
+
+  it('handles SIGINT when dashboard is null', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const { cleanup, wasInterrupted } = installSignalHandlers(() => null)
+    process.emit('SIGINT', 'SIGINT')
+    expect(wasInterrupted()).toBe(true)
+    cleanup()
+    logSpy.mockRestore()
+  })
+})
+
+describe('log helpers', () => {
+  it('log.info writes to console.log', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    log.info('test info')
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toContain('test info')
+    spy.mockRestore()
+  })
+
+  it('log.success writes to console.log', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    log.success('test success')
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toContain('test success')
+    spy.mockRestore()
+  })
+
+  it('log.warn writes to console.log', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    log.warn('test warn')
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toContain('test warn')
+    spy.mockRestore()
+  })
+
+  it('log.error writes to console.error', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    log.error('test error')
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toContain('test error')
+    spy.mockRestore()
+  })
+
+  it('log.step writes to console.log', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    log.step('test step')
+    expect(spy).toHaveBeenCalledTimes(1)
+    expect(spy.mock.calls[0][0]).toContain('test step')
+    spy.mockRestore()
+  })
+})
+
+describe('printBanner', () => {
+  it('prints a formatted banner', () => {
+    const spy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    printBanner('Test Banner')
+    expect(spy).toHaveBeenCalledTimes(4) // empty, title, separator, empty
+    expect(spy.mock.calls[1][0]).toContain('Test Banner')
+    spy.mockRestore()
+  })
+})
+
+describe('printSummary', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'log').mockImplementation(() => {})
+  })
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  it('prints basic summary', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Dump Complete',
+      database: 'testdb',
+      tableCount: 10,
+      succeeded: 8,
+      failed: 0,
+      skipped: 0,
+      durationSecs: 120,
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('testdb')
+    expect(allOutput).toContain('10 total')
+  })
+
+  it('prints dry run summary with different banner', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Dump Complete',
+      database: 'testdb',
+      tableCount: 5,
+      succeeded: 5,
+      failed: 0,
+      skipped: 0,
+      durationSecs: 30,
+      dryRun: true,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('Dry Run Summary')
+  })
+
+  it('prints schema filter when provided', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Dump',
+      database: 'db',
+      schema: 'public',
+      tableCount: 5,
+      succeeded: 5,
+      failed: 0,
+      skipped: 0,
+      durationSecs: 10,
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('public')
+  })
+
+  it('prints skipped count when > 0', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Restore',
+      database: 'db',
+      tableCount: 10,
+      succeeded: 7,
+      failed: 0,
+      skipped: 3,
+      durationSecs: 60,
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('3 skipped')
+  })
+
+  it('prints failed count when > 0', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Restore',
+      database: 'db',
+      tableCount: 10,
+      succeeded: 8,
+      failed: 2,
+      skipped: 0,
+      durationSecs: 60,
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('2')
+  })
+
+  it('prints output dir and size when provided', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Dump',
+      database: 'db',
+      tableCount: 5,
+      succeeded: 5,
+      failed: 0,
+      skipped: 0,
+      durationSecs: 60,
+      outputDir: '/tmp/dump',
+      outputSize: '1.5 GB',
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('/tmp/dump')
+    expect(allOutput).toContain('1.5 GB')
+  })
+
+  it('prints output dir without size', () => {
+    const spy = console.log as ReturnType<typeof vi.fn>
+    printSummary({
+      title: 'Dump',
+      database: 'db',
+      tableCount: 5,
+      succeeded: 5,
+      failed: 0,
+      skipped: 0,
+      durationSecs: 60,
+      outputDir: '/tmp/dump',
+      dryRun: false,
+    })
+    const allOutput = spy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('/tmp/dump')
+  })
+})
+
+describe('printFailedTables', () => {
+  it('prints failed table labels and errors', () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    printFailedTables(
+      [
+        { label: 'public.users chunk 0', error: 'connection timeout' },
+        { label: 'public.orders chunk 1' },
+      ],
+      5,
+    )
+    const allOutput = logSpy.mock.calls.map((c: any[]) => c[0]).join('\n')
+    expect(allOutput).toContain('public.users chunk 0')
+    expect(allOutput).toContain('connection timeout')
+    expect(allOutput).toContain('public.orders chunk 1')
+    logSpy.mockRestore()
+    warnSpy.mockRestore()
+  })
+})
+
+describe('startDashboard', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('starts an interval that renders the dashboard and stops cleanly', () => {
+    const state = makeDashboardState()
+    const { update, stop } = startDashboard(state)
+    expect(typeof update).toBe('function')
+    expect(typeof stop).toBe('function')
+    // Advance time to trigger the interval
+    vi.advanceTimersByTime(250)
+    // Should not throw
+    update()
+    stop()
+  })
+})
+
+describe('renderDashboard worker speed with rows unit', () => {
+  it('formats speed with rows/s suffix', () => {
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = makeJob(1)
+    workers[0].progressCurrent = 5000
+    workers[0].progressTotal = 10000
+    workers[0].speedSnapshot = { time: Date.now() - 2000, current: 1000 }
+    const state = makeDashboardState({ workers, progressUnit: 'rows' })
+    const output = renderDashboard(state)
+    expect(output).toContain('rows/s')
+  })
+})
+
+describe('renderDashboard multi-chunk table', () => {
+  it('shows chunk label for multi-chunk tables', () => {
+    const chunk1 = { index: 0, file: 'data/public.big/chunk_0000.copy.lz4', estimatedBytes: 500, estimatedRows: 5 }
+    const chunk2 = { index: 1, file: 'data/public.big/chunk_0001.copy.lz4', estimatedBytes: 500, estimatedRows: 5 }
+    const table: ManifestTable = {
+      schema: 'public',
+      name: 'big',
+      oid: 1,
+      relkind: 'r',
+      estimatedBytes: 1000,
+      estimatedRows: 10,
+      pkColumn: 'id',
+      pkType: 'int8',
+      chunkStrategy: 'pk_range',
+      columns: ['id'],
+      generatedColumns: [],
+      chunks: [chunk1, chunk2],
+    }
+    const job: ChunkJob = { table, chunk: chunk1, outputPath: '/tmp/test', attempt: 0 }
+    const workers = [makeWorker(0)]
+    workers[0].status = 'working'
+    workers[0].currentJob = job
+    workers[0].progressCurrent = 200
+    workers[0].progressTotal = 500
+    const state = makeDashboardState({ workers })
+    const output = renderDashboard(state)
+    expect(output).toContain('1/2')
   })
 })

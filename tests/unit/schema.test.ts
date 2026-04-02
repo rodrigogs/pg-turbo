@@ -96,6 +96,23 @@ describe('parseTableRows', () => {
     const tables = parseTableRows(rows)
     expect(tables[0]?.pkColumn).toBeNull()
   })
+  it('coerces NaN estimatedRows to 0', () => {
+    const rows = [
+      {
+        oid: 16390,
+        schema_name: 'public',
+        table_name: 'config',
+        relkind: 'r',
+        relpages: 1,
+        estimated_rows: NaN,
+        actual_bytes: '8192',
+        pk_column: null,
+        pk_type: null,
+      },
+    ]
+    const tables = parseTableRows(rows)
+    expect(tables[0].estimatedRows).toBe(0)
+  })
 })
 
 describe('buildDdlDumpArgs', () => {
@@ -112,6 +129,11 @@ describe('buildDdlDumpArgs', () => {
   it('adds snapshot', () => {
     const args = buildDdlDumpArgs('pg://h/db', '/out/ddl.dump', undefined, 'snap-123', [])
     expect(args).toContain('--snapshot=snap-123')
+  })
+  it('appends extra args', () => {
+    const args = buildDdlDumpArgs('pg://h/db', '/out/ddl.dump', undefined, null, ['--no-comments', '--verbose'])
+    expect(args).toContain('--no-comments')
+    expect(args).toContain('--verbose')
   })
 })
 
@@ -166,6 +188,14 @@ describe('parseSequenceRows', () => {
       { schemaname: 'public', sequencename: 'unused_seq', last_value: null, is_called: false },
     ]
     expect(parseSequenceRows(rows)).toEqual([])
+  })
+
+  it('parses sequence with zero last_value', () => {
+    const rows = [
+      { schemaname: 'public', sequencename: 'zero_seq', last_value: '0', is_called: false },
+    ]
+    const result = parseSequenceRows(rows)
+    expect(result).toEqual([{ schema: 'public', name: 'zero_seq', lastValue: 0, isCalled: false }])
   })
 
   it('handles mixed rows with null and non-null last_value', () => {
