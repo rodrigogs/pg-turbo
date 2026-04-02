@@ -1,13 +1,14 @@
+/** Node.js system error codes that indicate a transient network/connection issue. */
 const NETWORK_ERROR_CODES = new Set([
-  'ECONNREFUSED',
-  'ECONNRESET',
-  'EPIPE',
-  'ETIMEDOUT',
-  'ENOTFOUND',
-  'ENETUNREACH',
-  'EHOSTUNREACH',
-  'ECONNABORTED',
-  'EAI_AGAIN',
+  'ECONNREFUSED',  // Server refused connection (down or restarting)
+  'ECONNRESET',    // Connection reset by peer (network interruption)
+  'EPIPE',         // Broken pipe (connection closed unexpectedly)
+  'ETIMEDOUT',     // Operation timed out
+  'ENOTFOUND',     // DNS resolution failed
+  'ENETUNREACH',   // Network unreachable (VPN down)
+  'EHOSTUNREACH',  // Host unreachable
+  'ECONNABORTED',  // Connection aborted
+  'EAI_AGAIN',     // DNS lookup timeout (transient)
 ])
 
 const CONNECTION_TERMINATED_PATTERNS = [
