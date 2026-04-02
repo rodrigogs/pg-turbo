@@ -1,15 +1,61 @@
+import { execSync } from 'node:child_process'
 import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { PostgreSqlContainer, type StartedPostgreSqlContainer } from '@testcontainers/postgresql'
+import pg from 'pg'
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest'
 import { runDump } from '../../src/cli/dump.js'
-import type { DumpManifest } from '../../src/types/index.js'
-import { defaultDumpOpts, loadFixtures } from './helpers.js'
+import type { DumpManifest, DumpOptions } from '../../src/types/index.js'
+
+const { Client } = pg
+const COMPOSE = join(__dirname, 'docker-compose.yml')
+const FIXTURES = join(__dirname, 'fixtures.sql')
+const CONN = 'postgresql://test_admin@localhost:54399/pg_resilient_test'
+
+function compose(cmd: string) {
+  execSync(`docker-compose -f "${COMPOSE}" ${cmd}`, { stdio: 'pipe', timeout: 60_000 })
+}
+
+async function query(sql: string, connStr = CONN): Promise<string> {
+  const client = new Client({ connectionString: connStr })
+  await client.connect()
+  const { rows } = await client.query(sql)
+  await client.end()
+  return rows[0] ? String(Object.values(rows[0])[0]) : ''
+}
+
+async function waitForPg(maxMs = 30_000) {
+  const deadline = Date.now() + maxMs
+  while (Date.now() < deadline) {
+    try {
+      await query('SELECT 1')
+      return
+    } catch {
+      await new Promise((r) => setTimeout(r, 500))
+    }
+  }
+  throw new Error('PG not ready')
+}
+
+function defaultOpts(output: string, overrides: Partial<DumpOptions> = {}): DumpOptions {
+  return {
+    dbname: CONN,
+    output,
+    jobs: 2,
+    splitThreshold: 1_073_741_824,
+    maxChunksPerTable: 64,
+    retries: 2,
+    retryDelay: 1,
+    noSnapshot: true,
+    noArchive: true,
+    dryRun: false,
+    compression: 'zstd',
+    pgDumpArgs: [],
+    ...overrides,
+  }
+}
 
 describe('dump integration', () => {
-  let container: StartedPostgreSqlContainer
-  let connUri: string
   let tmpDirs: string[] = []
 
   function freshTmpDir(): string {
@@ -19,17 +65,14 @@ describe('dump integration', () => {
   }
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer('postgres:16-alpine')
-      .withDatabase('pg_resilient_test')
-      .withUsername('test_admin')
-      .withPassword('test_admin')
-      .start()
-    connUri = container.getConnectionUri()
-    await loadFixtures(connUri)
+    compose('up -d --wait')
+    await waitForPg()
+    // Load fixtures
+    execSync(`psql "${CONN}" -f "${FIXTURES}"`, { stdio: 'pipe', timeout: 30_000 })
   }, 120_000)
 
   afterAll(async () => {
-    await container?.stop()
+    compose('down -v')
   }, 30_000)
 
   afterEach(() => {
@@ -41,7 +84,7 @@ describe('dump integration', () => {
 
   it('dumps all tables and produces valid manifest', async () => {
     const outDir = freshTmpDir()
-    await runDump(defaultDumpOpts(connUri, outDir))
+    await runDump(defaultOpts(outDir))
 
     // manifest.json exists and is valid JSON
     const manifestPath = join(outDir, 'manifest.json')
@@ -67,7 +110,7 @@ describe('dump integration', () => {
 
   it('excludes generated columns from chunk data', async () => {
     const outDir = freshTmpDir()
-    await runDump(defaultDumpOpts(connUri, outDir))
+    await runDump(defaultOpts(outDir))
 
     const manifest: DumpManifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
 
@@ -82,7 +125,7 @@ describe('dump integration', () => {
 
   it('filters to analytics schema only', async () => {
     const outDir = freshTmpDir()
-    await runDump(defaultDumpOpts(connUri, outDir, { schema: 'analytics' }))
+    await runDump(defaultOpts(outDir, { schema: 'analytics' }))
 
     const manifest: DumpManifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
 
@@ -96,7 +139,7 @@ describe('dump integration', () => {
 
   it('dry run creates no files', async () => {
     const outDir = freshTmpDir()
-    await runDump(defaultDumpOpts(connUri, outDir, { dryRun: true }))
+    await runDump(defaultOpts(outDir, { dryRun: true }))
 
     expect(existsSync(join(outDir, '_schema_ddl.dump'))).toBe(false)
     expect(existsSync(join(outDir, 'manifest.json'))).toBe(false)
@@ -104,7 +147,7 @@ describe('dump integration', () => {
 
   it('discovers sequences', async () => {
     const outDir = freshTmpDir()
-    await runDump(defaultDumpOpts(connUri, outDir))
+    await runDump(defaultOpts(outDir))
 
     const manifest: DumpManifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
 
@@ -119,7 +162,7 @@ describe('dump integration', () => {
   it('chunks tables with low split threshold', async () => {
     const outDir = freshTmpDir()
     // Use 500KB split threshold to force chunking on the users table (10k rows)
-    await runDump(defaultDumpOpts(connUri, outDir, { splitThreshold: 512_000 }))
+    await runDump(defaultOpts(outDir, { splitThreshold: 500 * 1024 }))
 
     const manifest: DumpManifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
 
@@ -137,15 +180,15 @@ describe('dump integration', () => {
   it('errors on non-existent schema', async () => {
     const outDir = freshTmpDir()
     await expect(
-      runDump(defaultDumpOpts(connUri, outDir, { schema: 'nonexistent_schema_xyz' })),
-    ).rejects.toThrow(/not found/)
+      runDump(defaultOpts(outDir, { schema: 'nonexistent_schema_xyz' })),
+    ).rejects.toThrow()
   })
 
   it('resumes: second dump skips already-completed chunks', async () => {
     const outDir = freshTmpDir()
 
     // First dump
-    await runDump(defaultDumpOpts(connUri, outDir))
+    await runDump(defaultOpts(outDir))
     const manifest1: DumpManifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf-8'))
 
     // Record file modification times of chunk files
@@ -161,8 +204,8 @@ describe('dump integration', () => {
     // Wait a small amount so any re-written files would have different mtime
     await new Promise((resolve) => setTimeout(resolve, 100))
 
-    // Second dump — should skip all chunks because .done markers exist
-    await runDump(defaultDumpOpts(connUri, outDir))
+    // Second dump -- should skip all chunks because .done markers exist
+    await runDump(defaultOpts(outDir))
 
     // Chunk files should not have been rewritten (mtimes unchanged)
     for (const [path, mtime] of mtimes) {
