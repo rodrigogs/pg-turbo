@@ -94,6 +94,15 @@ export function renderDashboard(state: DashboardState): string {
 
   const header = `${spinner} ${bar}  ${pc.dim(chunkStatus)}`
 
+  // Compute max label width across all active workers for alignment
+  const maxLabelWidth = state.workers.reduce((max, w) => {
+    if (!w.currentJob) return max
+    const { table, chunk } = w.currentJob
+    const label = `${table.schema}.${table.name}`
+    const chunkSuffix = table.chunks.length > 1 ? ` [${chunk.index + 1}/${table.chunks.length}]` : ''
+    return Math.max(max, label.length + chunkSuffix.length)
+  }, 20)
+
   // Worker lines
   const workerLines = state.workers.map((w) => {
     const wLabel = `W${w.id}`.padEnd(3)
@@ -101,10 +110,11 @@ export function renderDashboard(state: DashboardState): string {
     if (w.status === 'idle' || !w.currentJob) return `${prefix} ${pc.dim('\u2500 idle')}`
     const { table, chunk } = w.currentJob
     const label = `${table.schema}.${table.name}`
-    const chunkLabel = table.chunks.length > 1 ? pc.dim(` [${chunk.index + 1}/${table.chunks.length}]`) : ''
+    const chunkSuffix = table.chunks.length > 1 ? ` [${chunk.index + 1}/${table.chunks.length}]` : ''
+    const paddedLabel = `${label}${chunkSuffix}`.padEnd(maxLabelWidth)
     if (w.status === 'retrying') {
       const attempt = w.currentJob.attempt
-      return `${prefix} ${pc.yellow('\u21BB')} ${pc.bold(label)}${chunkLabel} ${pc.yellow(`retry ${attempt}`)}`
+      return `${prefix} ${pc.yellow('\u21BB')} ${paddedLabel} ${pc.yellow(`retry ${attempt}`)}`
     }
     const miniBar = miniProgressBar(w.progressCurrent, w.progressTotal, 12, state.progressUnit)
     // Rolling speed: compute from a ~5s sliding anchor instead of lifetime average
@@ -124,7 +134,7 @@ export function renderDashboard(state: DashboardState): string {
     const speedSuffix = state.progressUnit === 'rows' ? ' rows/s' : '/s'
     const speedLabel =
       workerSpeed > 0 ? pc.dim(` ${formatProgress(workerSpeed, state.progressUnit)}${speedSuffix}`) : ''
-    return `${prefix} ${pc.green('\u25B6')} ${pc.bold(label)}${chunkLabel} ${miniBar}${speedLabel}`
+    return `${prefix} ${pc.green('\u25B6')} ${paddedLabel} ${miniBar}${speedLabel}`
   })
 
   return [header, timingLine, ...workerLines].join('\n')
