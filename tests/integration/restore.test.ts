@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, unlinkSync } from 'node:fs'
+import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pg from 'pg'
@@ -60,11 +60,7 @@ function clearResumeMarkers(dir: string) {
       const full = join(d, entry)
       if (statSync(full).isDirectory()) {
         removeMarkers(full)
-      } else if (
-        entry.endsWith('.restored.done') ||
-        entry.includes('_pre_data.') ||
-        entry.includes('_post_data.')
-      ) {
+      } else if (entry.endsWith('.restored.done') || entry.includes('_pre_data.') || entry.includes('_post_data.')) {
         unlinkSync(full)
       }
     }
@@ -94,10 +90,7 @@ function defaultDumpOpts(output: string, overrides: Partial<DumpOptions> = {}): 
   }
 }
 
-function defaultRestoreOpts(
-  input: string,
-  overrides: Partial<RestoreOptions> = {},
-): RestoreOptions {
+function defaultRestoreOpts(input: string, overrides: Partial<RestoreOptions> = {}): RestoreOptions {
   return {
     dbname: RESTORE,
     input,

@@ -1,5 +1,5 @@
-import { describe, expect, it } from 'vitest'
 import { execSync } from 'node:child_process'
+import { describe, expect, it } from 'vitest'
 
 describe('CLI routing', () => {
   it('shows help with no arguments', () => {

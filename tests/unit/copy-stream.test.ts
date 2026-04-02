@@ -19,12 +19,12 @@ import {
   createCompressor,
   createDecompressor,
   createRowCounter,
+  dropProgressTable,
   dumpChunk,
   ensureProgressTable,
   fetchCompletedChunks,
   removePartialChunk,
   resetProgress,
-  dropProgressTable,
   restoreChunk,
 } from '../../src/core/copy-stream.js'
 
@@ -268,10 +268,9 @@ describe('restoreChunk', () => {
     copyStream.on('data', () => {})
 
     const progressCalls: number[] = []
-    await restoreChunk(
-      mockClient as any, 'public', 'users', ['id'], chunkPath, 'public.users.0', 'zstd',
-      (bytes) => { progressCalls.push(bytes) },
-    )
+    await restoreChunk(mockClient as any, 'public', 'users', ['id'], chunkPath, 'public.users.0', 'zstd', (bytes) => {
+      progressCalls.push(bytes)
+    })
     expect(progressCalls.length).toBeGreaterThan(0)
   })
 

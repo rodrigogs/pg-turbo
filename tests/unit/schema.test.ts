@@ -176,24 +176,18 @@ describe('buildVolumeSampleQuery', () => {
 
 describe('parseSequenceRows', () => {
   it('parses sequence rows with valid last_value', () => {
-    const rows = [
-      { schemaname: 'public', sequencename: 'users_id_seq', last_value: '100', is_called: true },
-    ]
+    const rows = [{ schemaname: 'public', sequencename: 'users_id_seq', last_value: '100', is_called: true }]
     const result = parseSequenceRows(rows)
     expect(result).toEqual([{ schema: 'public', name: 'users_id_seq', lastValue: 100, isCalled: true }])
   })
 
   it('filters out null last_value', () => {
-    const rows = [
-      { schemaname: 'public', sequencename: 'unused_seq', last_value: null, is_called: false },
-    ]
+    const rows = [{ schemaname: 'public', sequencename: 'unused_seq', last_value: null, is_called: false }]
     expect(parseSequenceRows(rows)).toEqual([])
   })
 
   it('parses sequence with zero last_value', () => {
-    const rows = [
-      { schemaname: 'public', sequencename: 'zero_seq', last_value: '0', is_called: false },
-    ]
+    const rows = [{ schemaname: 'public', sequencename: 'zero_seq', last_value: '0', is_called: false }]
     const result = parseSequenceRows(rows)
     expect(result).toEqual([{ schema: 'public', name: 'zero_seq', lastValue: 0, isCalled: false }])
   })

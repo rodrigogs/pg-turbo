@@ -335,21 +335,41 @@ describe('buildCopyQuery for materialized views', () => {
 describe('chunkStrategy', () => {
   it('returns none for small table', () => {
     const table = makeTable({ actualBytes: 100_000 })
-    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 })).toBe('none')
+    expect(
+      chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 }),
+    ).toBe('none')
   })
 
   it('returns pk_range when PK and bounds available', () => {
     const table = makeTable({ actualBytes: 2_000_000_000 })
-    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 })).toBe('pk_range')
+    expect(
+      chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 }),
+    ).toBe('pk_range')
   })
 
   it('returns ctid_range for PG 14+ without PK', () => {
     const table = makeTable({ actualBytes: 2_000_000_000, pkColumn: null, pkType: null, relpages: 10000 })
-    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 14, pkMin: null, pkMax: null })).toBe('ctid_range')
+    expect(
+      chunkStrategy(table, {
+        splitThreshold: 1_073_741_824,
+        maxChunks: 32,
+        pgMajorVersion: 14,
+        pkMin: null,
+        pkMax: null,
+      }),
+    ).toBe('ctid_range')
   })
 
   it('returns none for PG 13 without PK', () => {
     const table = makeTable({ actualBytes: 2_000_000_000, pkColumn: null, pkType: null, relpages: 10000 })
-    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 13, pkMin: null, pkMax: null })).toBe('none')
+    expect(
+      chunkStrategy(table, {
+        splitThreshold: 1_073_741_824,
+        maxChunks: 32,
+        pgMajorVersion: 13,
+        pkMin: null,
+        pkMax: null,
+      }),
+    ).toBe('none')
   })
 })

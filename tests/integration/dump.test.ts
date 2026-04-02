@@ -1,5 +1,5 @@
 import { execSync } from 'node:child_process'
-import { existsSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import pg from 'pg'
@@ -116,11 +116,11 @@ describe('dump integration', () => {
 
     const products = manifest.tables.find((t) => t.name === 'products')
     expect(products).toBeDefined()
-    expect(products!.generatedColumns).toContain('tax')
-    expect(products!.columns).toContain('id')
-    expect(products!.columns).toContain('name')
-    expect(products!.columns).toContain('price')
-    expect(products!.generatedColumns.length).toBeGreaterThan(0)
+    expect(products?.generatedColumns).toContain('tax')
+    expect(products?.columns).toContain('id')
+    expect(products?.columns).toContain('name')
+    expect(products?.columns).toContain('price')
+    expect(products?.generatedColumns.length).toBeGreaterThan(0)
   })
 
   it('filters to analytics schema only', async () => {
@@ -155,8 +155,8 @@ describe('dump integration', () => {
 
     const customSeq = manifest.sequences.find((s) => s.name === 'custom_seq')
     expect(customSeq).toBeDefined()
-    expect(customSeq!.schema).toBe('public')
-    expect(customSeq!.lastValue).toBeGreaterThanOrEqual(43)
+    expect(customSeq?.schema).toBe('public')
+    expect(customSeq?.lastValue).toBeGreaterThanOrEqual(43)
   })
 
   it('chunks tables with low split threshold', async () => {
@@ -169,7 +169,7 @@ describe('dump integration', () => {
     // At least one table should have multiple chunks with pk_range strategy
     const chunkedTable = manifest.tables.find((t) => t.chunks.length > 1)
     expect(chunkedTable).toBeDefined()
-    expect(chunkedTable!.chunkStrategy).toBe('pk_range')
+    expect(chunkedTable?.chunkStrategy).toBe('pk_range')
 
     // Verify all chunk files exist
     for (const chunk of chunkedTable!.chunks) {
@@ -179,9 +179,7 @@ describe('dump integration', () => {
 
   it('errors on non-existent schema', async () => {
     const outDir = freshTmpDir()
-    await expect(
-      runDump(defaultOpts(outDir, { schema: 'nonexistent_schema_xyz' })),
-    ).rejects.toThrow()
+    await expect(runDump(defaultOpts(outDir, { schema: 'nonexistent_schema_xyz' }))).rejects.toThrow()
   })
 
   it('resumes: second dump skips already-completed chunks', async () => {

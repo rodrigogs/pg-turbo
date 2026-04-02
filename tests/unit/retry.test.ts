@@ -57,9 +57,7 @@ describe('retryWithBackoff', () => {
   })
 
   it('wraps non-Error thrown values into Error objects', async () => {
-    const fn = vi.fn()
-      .mockRejectedValueOnce('string error')
-      .mockResolvedValue('ok')
+    const fn = vi.fn().mockRejectedValueOnce('string error').mockResolvedValue('ok')
     const onRetry = vi.fn()
     await retryWithBackoff(fn, { maxRetries: 3, baseDelay: 0, maxDelay: 0, onRetry })
     expect(onRetry).toHaveBeenCalledWith(1, expect.objectContaining({ message: 'string error' }))
@@ -72,9 +70,7 @@ describe('retryWithBackoff', () => {
 
   it('applies delay when delay > 0', async () => {
     vi.useFakeTimers()
-    const fn = vi.fn()
-      .mockRejectedValueOnce(new Error('fail'))
-      .mockResolvedValue('ok')
+    const fn = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue('ok')
     // baseDelay=1, maxDelay=2 so delay will be > 0
     const promise = retryWithBackoff(fn, { maxRetries: 3, baseDelay: 1, maxDelay: 2 })
     // Advance timers enough for the delay + jitter

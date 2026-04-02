@@ -33,7 +33,12 @@ function safeName(name: string): string {
   return name.replace(/[/\\<>:"|?*\x00-\x1f]/g, '_')
 }
 
-export function chunkFilePath(schema: string, table: string, index: number, compression: 'zstd' | 'lz4' = 'zstd'): string {
+export function chunkFilePath(
+  schema: string,
+  table: string,
+  index: number,
+  compression: 'zstd' | 'lz4' = 'zstd',
+): string {
   const ext = compression === 'lz4' ? 'lz4' : 'zst'
   return `data/${safeName(schema)}.${safeName(table)}/chunk_${index.toString().padStart(4, '0')}.copy.${ext}`
 }
@@ -60,7 +65,8 @@ export function planChunks(table: TableInfo, opts: ChunkPlanOptions): ChunkMeta[
     }
     return planPkRangeChunks(table, opts.pkMin, opts.pkMax, opts.splitThreshold, opts.maxChunks, opts.compression)
   }
-  if (opts.pgMajorVersion >= 14 && table.relpages > 0) return planCtidChunks(table, opts.splitThreshold, opts.maxChunks, opts.compression)
+  if (opts.pgMajorVersion >= 14 && table.relpages > 0)
+    return planCtidChunks(table, opts.splitThreshold, opts.maxChunks, opts.compression)
   return [singleChunk]
 }
 
@@ -166,7 +172,12 @@ function planVolumeBalancedChunks(
   return chunks
 }
 
-function planCtidChunks(table: TableInfo, splitThreshold: number, maxChunks: number, compression?: 'zstd' | 'lz4'): ChunkMeta[] {
+function planCtidChunks(
+  table: TableInfo,
+  splitThreshold: number,
+  maxChunks: number,
+  compression?: 'zstd' | 'lz4',
+): ChunkMeta[] {
   const blockSize = 8192
   const pagesPerChunk = Math.ceil(splitThreshold / blockSize)
   const numChunks = Math.min(Math.ceil(table.relpages / pagesPerChunk), maxChunks)

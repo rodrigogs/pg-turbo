@@ -1,5 +1,5 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
-import type { ChunkJob, ManifestTable, ProgressEvent, WorkerState } from '../../src/types/index.js'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import type { DashboardState } from '../../src/cli/ui.js'
 import {
   createProgressHandler,
   installSignalHandlers,
@@ -10,7 +10,7 @@ import {
   renderDashboard,
   startDashboard,
 } from '../../src/cli/ui.js'
-import type { DashboardState } from '../../src/cli/ui.js'
+import type { ChunkJob, ManifestTable, WorkerState } from '../../src/types/index.js'
 
 function makeWorker(id: number): WorkerState {
   return {
@@ -272,7 +272,7 @@ describe('renderDashboard edge cases', () => {
     const state = makeDashboardState({ workers })
     renderDashboard(state)
     // After rendering, speedSnapshot should be reset to recent values
-    expect(workers[0].speedSnapshot!.current).toBe(800)
+    expect(workers[0].speedSnapshot?.current).toBe(800)
   })
 })
 
@@ -494,10 +494,7 @@ describe('printFailedTables', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     const warnSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
     printFailedTables(
-      [
-        { label: 'public.users chunk 0', error: 'connection timeout' },
-        { label: 'public.orders chunk 1' },
-      ],
+      [{ label: 'public.users chunk 0', error: 'connection timeout' }, { label: 'public.orders chunk 1' }],
       5,
     )
     const allOutput = logSpy.mock.calls.map((c: any[]) => c[0]).join('\n')

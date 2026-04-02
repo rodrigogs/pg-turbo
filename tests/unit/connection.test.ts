@@ -1,5 +1,5 @@
 // ts/tests/unit/connection.test.ts
-import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockQuery = vi.fn()
 const mockConnect = vi.fn()
@@ -14,7 +14,6 @@ vi.mock('pg', () => {
         connect = mockConnect
         end = mockEnd
         on = mockOn
-        constructor(_opts: unknown) {}
       },
     },
   }
@@ -100,7 +99,8 @@ describe('appendKeepaliveParams', () => {
     expect(result).toContain('keepalives=1') // added (wasn't present)
   })
   it('returns URL unchanged when all keepalive params already exist', () => {
-    const allParams = 'keepalives=1&keepalives_idle=10&keepalives_interval=10&keepalives_count=5&tcp_user_timeout=30000&connect_timeout=10'
+    const allParams =
+      'keepalives=1&keepalives_idle=10&keepalives_interval=10&keepalives_count=5&tcp_user_timeout=30000&connect_timeout=10'
     const url = `postgresql://u:p@h/db?${allParams}`
     const result = appendKeepaliveParams(url)
     expect(result).toBe(url)

@@ -116,15 +116,7 @@ describe('parseRestoreArgs', () => {
     expect(opts.dataOnly).toBe(false)
   })
   it('captures passthrough args after --', () => {
-    const opts = parseRestoreArgs([
-      '-d',
-      'pg://h/db',
-      '--input',
-      './in',
-      '--',
-      '--no-comments',
-      '--single-transaction',
-    ])
+    const opts = parseRestoreArgs(['-d', 'pg://h/db', '--input', './in', '--', '--no-comments', '--single-transaction'])
     expect(opts.pgRestoreArgs).toEqual(['--no-comments', '--single-transaction'])
   })
   it('returns empty passthrough when no separator', () => {
