@@ -6,6 +6,7 @@ import {
   buildSequenceQuery,
   buildTableDiscoveryQuery,
   buildVolumeSampleQuery,
+  parseSequenceRows,
   parseTableRows,
   quoteIdent,
 } from '../../src/core/schema.js'
@@ -148,5 +149,34 @@ describe('buildVolumeSampleQuery', () => {
     const sql = buildVolumeSampleQuery('my schema', 'my"table', 'pk col', 1, 100_000)
     expect(sql).toContain('"my schema"."my""table"')
     expect(sql).toContain('"pk col"')
+  })
+})
+
+describe('parseSequenceRows', () => {
+  it('parses sequence rows with valid last_value', () => {
+    const rows = [
+      { schemaname: 'public', sequencename: 'users_id_seq', last_value: '100', is_called: true },
+    ]
+    const result = parseSequenceRows(rows)
+    expect(result).toEqual([{ schema: 'public', name: 'users_id_seq', lastValue: 100, isCalled: true }])
+  })
+
+  it('filters out null last_value', () => {
+    const rows = [
+      { schemaname: 'public', sequencename: 'unused_seq', last_value: null, is_called: false },
+    ]
+    expect(parseSequenceRows(rows)).toEqual([])
+  })
+
+  it('handles mixed rows with null and non-null last_value', () => {
+    const rows = [
+      { schemaname: 'public', sequencename: 'active_seq', last_value: '42', is_called: true },
+      { schemaname: 'public', sequencename: 'unused_seq', last_value: null, is_called: false },
+      { schemaname: 'app', sequencename: 'orders_seq', last_value: '9999', is_called: true },
+    ]
+    const result = parseSequenceRows(rows)
+    expect(result).toHaveLength(2)
+    expect(result[0]).toEqual({ schema: 'public', name: 'active_seq', lastValue: 42, isCalled: true })
+    expect(result[1]).toEqual({ schema: 'app', name: 'orders_seq', lastValue: 9999, isCalled: true })
   })
 })

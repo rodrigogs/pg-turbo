@@ -1,10 +1,37 @@
 // ts/tests/unit/connection.test.ts
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
+
+const mockQuery = vi.fn()
+const mockConnect = vi.fn()
+const mockEnd = vi.fn()
+const mockOn = vi.fn()
+
+vi.mock('pg', () => {
+  return {
+    default: {
+      Client: class MockClient {
+        query = mockQuery
+        connect = mockConnect
+        end = mockEnd
+        on = mockOn
+        constructor(_opts: unknown) {}
+      },
+    },
+  }
+})
+
 import {
   appendKeepaliveParams,
   cleanConnectionString,
+  createClient,
+  createSnapshotCoordinator,
+  createWorkerClient,
+  destroyClient,
   extractDbName,
+  isReadReplica,
+  releaseWorkerClient,
   sanitizeConnectionString,
+  testConnection,
 } from '../../src/core/connection.js'
 
 describe('sanitizeConnectionString', () => {
@@ -66,5 +93,171 @@ describe('appendKeepaliveParams', () => {
     expect(result).not.toMatch(/keepalives_idle=10/) // not overridden
     expect(result).not.toMatch(/connect_timeout=10/) // not overridden
     expect(result).toContain('keepalives=1') // added (wasn't present)
+  })
+})
+
+describe('createClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockConnect.mockResolvedValue(undefined)
+  })
+
+  it('connects and returns a client', async () => {
+    const client = await createClient('postgresql://u:p@h/db')
+    expect(mockConnect).toHaveBeenCalledTimes(1)
+    expect(client).toBeDefined()
+    expect(client.query).toBe(mockQuery)
+  })
+})
+
+describe('createSnapshotCoordinator', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockConnect.mockResolvedValue(undefined)
+  })
+
+  it('begins transaction and exports snapshot', async () => {
+    mockQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockResolvedValueOnce({ rows: [{ snapshot_id: '00000003-1B' }] }) // pg_export_snapshot
+    const coord = await createSnapshotCoordinator('postgresql://u:p@h/db')
+    expect(coord.snapshotId).toBe('00000003-1B')
+    expect(mockQuery).toHaveBeenCalledWith('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+  })
+
+  it('throws on invalid snapshot ID format', async () => {
+    mockQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockResolvedValueOnce({ rows: [{ snapshot_id: 'invalid-format!' }] })
+      .mockResolvedValueOnce(undefined) // ROLLBACK
+    mockEnd.mockResolvedValue(undefined)
+    await expect(createSnapshotCoordinator('postgresql://u:p@h/db')).rejects.toThrow('Invalid snapshot ID format')
+  })
+
+  it('close commits and ends client', async () => {
+    mockQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockResolvedValueOnce({ rows: [{ snapshot_id: 'AABB1122-33' }] })
+    const coord = await createSnapshotCoordinator('postgresql://u:p@h/db')
+    mockQuery.mockResolvedValue(undefined)
+    mockEnd.mockResolvedValue(undefined)
+    await coord.close()
+    expect(mockQuery).toHaveBeenCalledWith('COMMIT')
+    expect(mockEnd).toHaveBeenCalled()
+  })
+})
+
+describe('createWorkerClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockConnect.mockResolvedValue(undefined)
+  })
+
+  it('sets snapshot when provided', async () => {
+    mockQuery.mockResolvedValue(undefined)
+    await createWorkerClient('postgresql://u:p@h/db', '00000003-1B')
+    expect(mockQuery).toHaveBeenCalledWith('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
+    expect(mockQuery).toHaveBeenCalledWith("SET TRANSACTION SNAPSHOT '00000003-1B'")
+  })
+
+  it('skips snapshot when null', async () => {
+    await createWorkerClient('postgresql://u:p@h/db', null)
+    expect(mockQuery).not.toHaveBeenCalled()
+  })
+
+  it('cleans up client when SET TRANSACTION fails', async () => {
+    mockQuery
+      .mockResolvedValueOnce(undefined) // BEGIN
+      .mockRejectedValueOnce(new Error('snapshot expired'))
+    mockEnd.mockResolvedValue(undefined)
+    await expect(createWorkerClient('postgresql://u:p@h/db', 'ABC-123')).rejects.toThrow('snapshot expired')
+    expect(mockEnd).toHaveBeenCalled()
+  })
+})
+
+describe('testConnection', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockConnect.mockResolvedValue(undefined)
+    mockEnd.mockResolvedValue(undefined)
+  })
+
+  it('returns version string', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ version: 'PostgreSQL 16.2' }] })
+    const version = await testConnection('postgresql://u:p@h/db')
+    expect(version).toBe('PostgreSQL 16.2')
+    expect(mockEnd).toHaveBeenCalled()
+  })
+})
+
+describe('isReadReplica', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockConnect.mockResolvedValue(undefined)
+    mockEnd.mockResolvedValue(undefined)
+  })
+
+  it('returns true for replica', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ is_replica: true }] })
+    expect(await isReadReplica('postgresql://u:p@h/db')).toBe(true)
+  })
+
+  it('returns false for primary', async () => {
+    mockQuery.mockResolvedValueOnce({ rows: [{ is_replica: false }] })
+    expect(await isReadReplica('postgresql://u:p@h/db')).toBe(false)
+  })
+})
+
+describe('releaseWorkerClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('commits and ends', async () => {
+    mockQuery.mockResolvedValue(undefined)
+    mockEnd.mockResolvedValue(undefined)
+    const client = { query: mockQuery, end: mockEnd } as any
+    await releaseWorkerClient(client)
+    expect(mockQuery).toHaveBeenCalledWith('COMMIT')
+    expect(mockEnd).toHaveBeenCalled()
+  })
+})
+
+describe('destroyClient', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('ends without throwing even on error', async () => {
+    mockEnd.mockRejectedValue(new Error('already closed'))
+    const client = { end: mockEnd } as any
+    await expect(destroyClient(client)).resolves.toBeUndefined()
+  })
+})
+
+describe('connectWithRetry (via createClient)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.useFakeTimers()
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('retries on failure and succeeds', async () => {
+    mockConnect
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockResolvedValueOnce(undefined)
+    mockEnd.mockResolvedValue(undefined)
+    const promise = createClient('postgresql://u:p@h/db')
+    // Advance past the retry delays (2s base * 2^attempt + jitter)
+    await vi.advanceTimersByTimeAsync(5_000)
+    await vi.advanceTimersByTimeAsync(10_000)
+    const client = await promise
+    expect(client).toBeDefined()
+    // 2 failed + 1 success = 3 connect calls
+    expect(mockConnect).toHaveBeenCalledTimes(3)
   })
 })

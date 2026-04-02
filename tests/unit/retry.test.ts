@@ -55,4 +55,32 @@ describe('retryWithBackoff', () => {
     expect(onRetry).toHaveBeenCalledTimes(1)
     expect(onRetry).toHaveBeenCalledWith(1, expect.any(Error))
   })
+
+  it('wraps non-Error thrown values into Error objects', async () => {
+    const fn = vi.fn()
+      .mockRejectedValueOnce('string error')
+      .mockResolvedValue('ok')
+    const onRetry = vi.fn()
+    await retryWithBackoff(fn, { maxRetries: 3, baseDelay: 0, maxDelay: 0, onRetry })
+    expect(onRetry).toHaveBeenCalledWith(1, expect.objectContaining({ message: 'string error' }))
+  })
+
+  it('throws wrapped non-Error after exhausting retries', async () => {
+    const fn = vi.fn().mockRejectedValue('plain string')
+    await expect(retryWithBackoff(fn, { maxRetries: 2, baseDelay: 0, maxDelay: 0 })).rejects.toThrow('plain string')
+  })
+
+  it('applies delay when delay > 0', async () => {
+    vi.useFakeTimers()
+    const fn = vi.fn()
+      .mockRejectedValueOnce(new Error('fail'))
+      .mockResolvedValue('ok')
+    // baseDelay=1, maxDelay=2 so delay will be > 0
+    const promise = retryWithBackoff(fn, { maxRetries: 3, baseDelay: 1, maxDelay: 2 })
+    // Advance timers enough for the delay + jitter
+    await vi.advanceTimersByTimeAsync(5_000)
+    const result = await promise
+    expect(result).toBe('ok')
+    vi.useRealTimers()
+  })
 })

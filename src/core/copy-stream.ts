@@ -11,18 +11,18 @@ import { CompressStream, DecompressStream } from 'zstd-napi'
 import type { Compression } from '../types/index.js'
 import { quoteIdent } from './schema.js'
 
-function createCompressor(compression: Compression): Transform {
+export function createCompressor(compression: Compression): Transform {
   if (compression === 'lz4') return lz4.createEncoderStream({ blockMaxSize: 4 * 1024 * 1024 })
   return new CompressStream()
 }
 
-function createDecompressor(compression: Compression): Transform {
+export function createDecompressor(compression: Compression): Transform {
   if (compression === 'lz4') return lz4.createDecoderStream()
   return new DecompressStream()
 }
 
 /** Passthrough transform that reports cumulative bytes to a callback. */
-function createByteCounter(onBytes: (totalBytes: number) => void): Transform {
+export function createByteCounter(onBytes: (totalBytes: number) => void): Transform {
   let total = 0
   return new Transform({
     transform(chunk: Buffer, _encoding: string, cb: TransformCallback) {
@@ -34,7 +34,7 @@ function createByteCounter(onBytes: (totalBytes: number) => void): Transform {
 }
 
 /** Passthrough transform that counts rows (\n bytes) in COPY TEXT output. */
-function createRowCounter(onRows: (totalRows: number) => void): Transform {
+export function createRowCounter(onRows: (totalRows: number) => void): Transform {
   let total = 0
   return new Transform({
     transform(chunk: Buffer, _encoding: string, cb: TransformCallback) {

@@ -6,6 +6,7 @@ import {
   chunkEstimatedBytes,
   chunkEstimatedRows,
   chunkFilePath,
+  chunkStrategy,
   planChunks,
 } from '../../src/core/chunker.js'
 import type { ChunkMeta, TableInfo } from '../../src/types/index.js'
@@ -262,5 +263,68 @@ describe('planChunks with volumeSamples', () => {
     expect(chunks.length).toBe(2)
     expect(chunks[0].rangeStart).toBe(1)
     expect(chunks[chunks.length - 1].rangeEnd).toBe(10_000_000)
+  })
+
+  it('returns single chunk when volume-balanced numChunks <= 1', () => {
+    // actualBytes just slightly above splitThreshold so ceil gives 1
+    const table = makeTable({ actualBytes: 1_073_741_824, estimatedRows: 5000 })
+    const samples: RowSample[] = [
+      { pk: 100, bytes: 50 },
+      { pk: 500, bytes: 60 },
+      { pk: 900, bytes: 70 },
+    ]
+    const chunks = planChunks(table, {
+      splitThreshold: 1_073_741_824,
+      maxChunks: 32,
+      pgMajorVersion: 16,
+      pkMin: 1,
+      pkMax: 10_000,
+      volumeSamples: samples,
+    })
+    expect(chunks).toHaveLength(1)
+    expect(chunks[0].rangeStart).toBe(1)
+    expect(chunks[0].rangeEnd).toBe(10_000)
+    expect(chunks[0].estimatedBytes).toBe(1_073_741_824)
+    expect(chunks[0].estimatedRows).toBe(5000)
+  })
+})
+
+describe('buildCopyQuery for materialized views', () => {
+  it('uses SELECT form for chunked matview with ctid', () => {
+    const matView = makeTable({ relkind: 'm', pkColumn: null, pkType: null })
+    const chunk: ChunkMeta = { index: 0, file: '...', ctidStart: 0, ctidEnd: 5000 }
+    const sql = buildCopyQuery(matView, chunk)
+    expect(sql).toContain("ctid >= '(0,0)'::tid")
+    expect(sql).toContain("ctid < '(5000,0)'::tid")
+  })
+
+  it('uses SELECT form for chunked matview with PK range', () => {
+    const matView = makeTable({ relkind: 'm' })
+    const chunk: ChunkMeta = { index: 1, file: '...', rangeStart: 1001, rangeEnd: 2000 }
+    const sql = buildCopyQuery(matView, chunk)
+    expect(sql).toContain('>= 1001')
+    expect(sql).toContain('<= 2000')
+  })
+})
+
+describe('chunkStrategy', () => {
+  it('returns none for small table', () => {
+    const table = makeTable({ actualBytes: 100_000 })
+    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 })).toBe('none')
+  })
+
+  it('returns pk_range when PK and bounds available', () => {
+    const table = makeTable({ actualBytes: 2_000_000_000 })
+    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 16, pkMin: 1, pkMax: 1000 })).toBe('pk_range')
+  })
+
+  it('returns ctid_range for PG 14+ without PK', () => {
+    const table = makeTable({ actualBytes: 2_000_000_000, pkColumn: null, pkType: null, relpages: 10000 })
+    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 14, pkMin: null, pkMax: null })).toBe('ctid_range')
+  })
+
+  it('returns none for PG 13 without PK', () => {
+    const table = makeTable({ actualBytes: 2_000_000_000, pkColumn: null, pkType: null, relpages: 10000 })
+    expect(chunkStrategy(table, { splitThreshold: 1_073_741_824, maxChunks: 32, pgMajorVersion: 13, pkMin: null, pkMax: null })).toBe('none')
   })
 })

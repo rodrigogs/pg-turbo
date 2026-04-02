@@ -123,4 +123,53 @@ describe('runWorkerPool', () => {
     expect(results.find((r) => r.job.outputPath.includes('table_1'))?.status).toBe('skipped')
     expect(task).toHaveBeenCalledTimes(1)
   })
+
+  it('applies retry delay via calculateDelay on failed jobs', async () => {
+    const start = Date.now()
+    const task = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue({ rowCount: 1, bytesWritten: 1 })
+    const results = await runWorkerPool({
+      jobs: [makeJob(1)],
+      workerCount: 1,
+      task,
+      onProgress: vi.fn(),
+      maxRetries: 3,
+      isResumable: () => false,
+      retryDelayMs: 50,
+    })
+    expect(results).toHaveLength(1)
+    expect(results[0].status).toBe('ok')
+    expect(task).toHaveBeenCalledTimes(2)
+    // Should have waited at least ~50ms for the retry delay
+    expect(Date.now() - start).toBeGreaterThanOrEqual(40)
+  })
+
+  it('wraps non-Error thrown values', async () => {
+    const task = vi.fn().mockRejectedValue('string error')
+    const results = await runWorkerPool({
+      jobs: [makeJob(1)],
+      workerCount: 1,
+      task,
+      onProgress: vi.fn(),
+      maxRetries: 1,
+      isResumable: () => false,
+    })
+    expect(results[0].status).toBe('failed')
+    expect(results[0].error).toBeInstanceOf(Error)
+    expect(results[0].error?.message).toBe('string error')
+  })
+
+  it('calls onWorkerError callback on failure', async () => {
+    const onWorkerError = vi.fn()
+    const task = vi.fn().mockRejectedValue(new Error('boom'))
+    await runWorkerPool({
+      jobs: [makeJob(1)],
+      workerCount: 1,
+      task,
+      onProgress: vi.fn(),
+      maxRetries: 1,
+      isResumable: () => false,
+      onWorkerError,
+    })
+    expect(onWorkerError).toHaveBeenCalledWith(0, expect.any(Error))
+  })
 })
