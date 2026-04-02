@@ -44,6 +44,18 @@ describe('isNetworkError', () => {
     expect(isNetworkError(err)).toBe(true)
   })
 
+  it('detects ERR_STREAM_PREMATURE_CLOSE', () => {
+    const err = new Error('Premature close')
+    ;(err as any).code = 'ERR_STREAM_PREMATURE_CLOSE'
+    expect(isNetworkError(err)).toBe(true)
+  })
+
+  it('detects ERR_STREAM_DESTROYED', () => {
+    const err = new Error('Cannot call write after a stream was destroyed')
+    ;(err as any).code = 'ERR_STREAM_DESTROYED'
+    expect(isNetworkError(err)).toBe(true)
+  })
+
   it('detects PostgreSQL connection error codes (08xxx)', () => {
     const err = new Error('connection lost')
     ;(err as any).code = '08006'
@@ -79,6 +91,26 @@ describe('isNetworkError', () => {
   it('does NOT flag COPY data errors', () => {
     const err = new Error('COPY failed')
     expect(isNetworkError(err)).toBe(false)
+  })
+
+  it('detects network error in cause chain', () => {
+    const cause = new Error('Connection terminated unexpectedly')
+    const wrapper = new Error('pipeline failed', { cause })
+    expect(isNetworkError(wrapper)).toBe(true)
+  })
+
+  it('detects network error code in cause chain', () => {
+    const cause = new Error('read ECONNRESET')
+    ;(cause as any).code = 'ECONNRESET'
+    const wrapper = new Error('stream error', { cause })
+    expect(isNetworkError(wrapper)).toBe(true)
+  })
+
+  it('does NOT flag wrapper with non-network cause', () => {
+    const cause = new Error('syntax error')
+    ;(cause as any).code = '42601'
+    const wrapper = new Error('pipeline failed', { cause })
+    expect(isNetworkError(wrapper)).toBe(false)
   })
 
   it('returns false for non-Error values', () => {
