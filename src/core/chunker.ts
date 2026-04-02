@@ -1,6 +1,8 @@
 import type { ChunkJob, ChunkMeta, ChunkStrategy, TableInfo } from '../types/index.js'
 import { quoteIdent } from './schema.js'
 
+const PG_BLOCK_SIZE = 8192
+
 export interface RowSample {
   pk: number
   bytes: number
@@ -178,8 +180,7 @@ function planCtidChunks(
   maxChunks: number,
   compression?: 'zstd' | 'lz4',
 ): ChunkMeta[] {
-  const blockSize = 8192
-  const pagesPerChunk = Math.ceil(splitThreshold / blockSize)
+  const pagesPerChunk = Math.ceil(splitThreshold / PG_BLOCK_SIZE)
   const numChunks = Math.min(Math.ceil(table.relpages / pagesPerChunk), maxChunks)
   const chunks: ChunkMeta[] = []
   let accountedBytes = 0

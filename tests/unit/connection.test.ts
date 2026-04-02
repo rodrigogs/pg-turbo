@@ -1,4 +1,3 @@
-// ts/tests/unit/connection.test.ts
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mockQuery = vi.fn()

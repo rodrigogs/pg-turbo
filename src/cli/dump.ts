@@ -1,4 +1,3 @@
-// ts/src/cli/dump.ts
 import { execFile } from 'node:child_process'
 import { promisify } from 'node:util'
 
@@ -24,7 +23,7 @@ import {
 } from '../core/connection.js'
 import { chunkDoneMarker, dumpChunk, removePartialChunk } from '../core/copy-stream.js'
 import { humanSize, progressBar } from '../core/format.js'
-import { writeManifest } from '../core/manifest.js'
+import { DDL_FILENAME, writeManifest } from '../core/manifest.js'
 import { runWorkerPool } from '../core/queue.js'
 import {
   buildBatchColumnsQuery,
@@ -270,7 +269,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
     }
 
     // ── Step 5: Dump DDL ──────────────────────────────────────────────────
-    const ddlPath = join(opts.output, '_schema_ddl.dump')
+    const ddlPath = join(opts.output, DDL_FILENAME)
     log.step('Step 5/7: Dumping DDL...')
 
     let ddlPromise: Promise<{ stdout: string; stderr: string }> | null = null

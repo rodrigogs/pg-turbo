@@ -1,5 +1,3 @@
-// ts/src/types/index.ts
-
 /** Table metadata from pg_catalog discovery */
 export interface TableInfo {
   oid: number

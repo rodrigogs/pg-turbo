@@ -1,4 +1,3 @@
-// ts/tests/unit/schema.test.ts
 import { describe, expect, it } from 'vitest'
 import {
   buildBatchColumnsQuery,

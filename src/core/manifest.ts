@@ -1,8 +1,8 @@
-// ts/src/core/manifest.ts
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type { DumpManifest } from '../types/index.js'
 
+export const DDL_FILENAME = '_schema_ddl.dump'
 const MANIFEST_FILENAME = 'manifest.json'
 const CURRENT_VERSION = 1
 

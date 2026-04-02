@@ -492,7 +492,7 @@ describe('printSummary', () => {
 describe('printFailedTables', () => {
   it('prints failed table labels and errors', () => {
     const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
-    const warnSpy = vi.spyOn(console, 'log').mockImplementation(() => {})
+    const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {})
     printFailedTables(
       [{ label: 'public.users chunk 0', error: 'connection timeout' }, { label: 'public.orders chunk 1' }],
       5,

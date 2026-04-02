@@ -1,4 +1,3 @@
-// ts/src/cli/restore.ts
 import { execFileSync } from 'node:child_process'
 import { existsSync } from 'node:fs'
 import { mkdtemp, rm, stat, unlink, writeFile } from 'node:fs/promises'
@@ -23,7 +22,7 @@ import {
   restoreChunk,
 } from '../core/copy-stream.js'
 import { humanSize } from '../core/format.js'
-import { readManifest } from '../core/manifest.js'
+import { DDL_FILENAME, readManifest } from '../core/manifest.js'
 import { runWorkerPool } from '../core/queue.js'
 import { quoteIdent } from '../core/schema.js'
 import type { ChunkJob, ManifestTable, RestoreOptions, WorkerState } from '../types/index.js'
@@ -122,7 +121,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
     log.info(`Restoring ${tables.length} tables (${humanSize(tables.reduce((s, t) => s + t.estimatedBytes, 0))})`)
     console.log('')
 
-    const ddlPath = join(inputDir, '_schema_ddl.dump')
+    const ddlPath = join(inputDir, DDL_FILENAME)
     // Scope resume markers by target database to avoid cross-target pollution
     const preDataMarker = join(inputDir, `_pre_data.${dbName}.done`)
     const postDataMarker = join(inputDir, `_post_data.${dbName}.done`)
@@ -472,12 +471,12 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       }
     }
 
-    signals.cleanup()
-    if (signals.wasInterrupted()) process.exit(130)
     if (hadDataFailures) process.exit(1)
   } finally {
     if (tempDir) {
       await rm(tempDir, { recursive: true, force: true }).catch(() => {})
     }
+    signals.cleanup()
+    if (signals.wasInterrupted()) process.exit(130)
   }
 }

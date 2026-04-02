@@ -28,7 +28,7 @@ export function cleanConnectionString(cs: string): string {
 }
 
 export function appendKeepaliveParams(cs: string): string {
-  const [_base, existingQuery] = cs.split('?')
+  const [, existingQuery] = cs.split('?')
   const existing = new Set(
     (existingQuery ?? '')
       .split('&')
@@ -95,6 +95,10 @@ export async function createSnapshotCoordinator(connectionString: string) {
 export async function createWorkerClient(connectionString: string, snapshotId: string | null) {
   const client = await connectWithRetry(connectionString)
   if (snapshotId) {
+    if (!/^[\dA-F]+-[\dA-F]+(-\d+)?$/i.test(snapshotId)) {
+      await client.end().catch(() => {})
+      throw new Error(`Invalid snapshot ID format: ${snapshotId}`)
+    }
     try {
       await client.query('BEGIN TRANSACTION ISOLATION LEVEL REPEATABLE READ')
       await client.query(`SET TRANSACTION SNAPSHOT '${snapshotId}'`)

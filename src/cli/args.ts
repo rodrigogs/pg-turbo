@@ -1,4 +1,3 @@
-// ts/src/cli/args.ts
 import { Command } from 'commander'
 import type { Compression, DumpOptions, RestoreOptions } from '../types/index.js'
 

@@ -32,7 +32,7 @@ pg_resilient/
 │   └── types/
 │       └── index.ts             # Shared type definitions
 ├── tests/
-│   ├── unit/                    # Unit tests (vitest) -- 10 test files
+│   ├── unit/                    # Unit tests (vitest) -- 12 test files
 │   └── integration/             # Integration tests (require Docker + PostgreSQL)
 │       ├── docker-compose.yml
 │       ├── fixtures.sql

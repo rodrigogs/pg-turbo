@@ -1,4 +1,3 @@
-// ts/src/cli/index.ts
 import { parseDumpArgs, parseRestoreArgs } from './args.js'
 import { runDump } from './dump.js'
 import { runRestore } from './restore.js'

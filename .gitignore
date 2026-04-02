@@ -34,3 +34,6 @@ Thumbs.db
 qat_dump*/
 *_dump/
 *.pgr
+
+# Playwright MCP
+.playwright-mcp/

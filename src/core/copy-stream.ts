@@ -1,5 +1,3 @@
-// ts/src/core/copy-stream.ts
-
 import { createReadStream, createWriteStream } from 'node:fs'
 import { stat, unlink, writeFile } from 'node:fs/promises'
 import { Transform, type TransformCallback } from 'node:stream'
@@ -11,8 +9,11 @@ import { CompressStream, DecompressStream } from 'zstd-napi'
 import type { Compression } from '../types/index.js'
 import { quoteIdent } from './schema.js'
 
+const STREAM_HIGH_WATER_MARK = 256 * 1024
+const LZ4_BLOCK_MAX_SIZE = 4 * 1024 * 1024
+
 export function createCompressor(compression: Compression): Transform {
-  if (compression === 'lz4') return lz4.createEncoderStream({ blockMaxSize: 4 * 1024 * 1024 })
+  if (compression === 'lz4') return lz4.createEncoderStream({ blockMaxSize: LZ4_BLOCK_MAX_SIZE })
   return new CompressStream()
 }
 
@@ -68,9 +69,9 @@ export async function dumpChunk(
   compression: Compression,
   onProgress?: (rowsProcessed: number) => void,
 ): Promise<DumpChunkResult> {
-  const copyStream = client.query(copyTo(copyQuery, { highWaterMark: 256 * 1024 }))
+  const copyStream = client.query(copyTo(copyQuery, { highWaterMark: STREAM_HIGH_WATER_MARK }))
   const compressor = createCompressor(compression)
-  const fileStream = createWriteStream(outputPath, { highWaterMark: 256 * 1024 })
+  const fileStream = createWriteStream(outputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
   if (onProgress) {
     const counter = createRowCounter(onProgress)
     await pipeline(copyStream, counter, compressor, fileStream)
@@ -125,7 +126,7 @@ export async function restoreChunk(
   try {
     const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
     const decompressor = createDecompressor(compression)
-    const fileStream = createReadStream(inputPath, { highWaterMark: 256 * 1024 })
+    const fileStream = createReadStream(inputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
     if (onProgress) {
       const counter = createByteCounter(onProgress)
       await pipeline(fileStream, counter, decompressor, copyStream)

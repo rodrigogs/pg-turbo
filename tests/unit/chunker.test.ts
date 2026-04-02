@@ -1,4 +1,3 @@
-// ts/tests/unit/chunker.test.ts
 import { describe, expect, it } from 'vitest'
 import type { RowSample } from '../../src/core/chunker.js'
 import {

@@ -91,6 +91,9 @@ export function buildVolumeSampleQuery(
   pkMax: number,
   targetRows: number = 10_000,
 ): string {
+  if (!Number.isFinite(pkMin) || !Number.isFinite(pkMax) || !Number.isFinite(targetRows)) {
+    throw new Error('PK range and targetRows must be finite numbers')
+  }
   const step = Math.max(1, Math.floor((pkMax - pkMin) / targetRows))
   const qt = `${quoteIdent(schema)}.${quoteIdent(table)}`
   const pk = quoteIdent(pkColumn)

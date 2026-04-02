@@ -1,4 +1,3 @@
-// ts/tests/unit/args.test.ts
 import { describe, expect, it } from 'vitest'
 import { parseDumpArgs, parseRestoreArgs, parseSize } from '../../src/cli/args.js'
 

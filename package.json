@@ -14,7 +14,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:integration": "vitest run --config vitest.integration.config.ts",
-    "dev": "tsx src/cli/index.ts",
+    "dev": "tsx bin/pg-resilient.ts",
     "bench": "tsx bench/benchmark.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --fix .",
