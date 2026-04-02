@@ -1,0 +1,567 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - text: "skip to:"
+          - link "skip to content" [ref=e8] [cursor=pointer]:
+            - /url: "#main"
+            - text: content
+          - link "skip to package search" [ref=e9] [cursor=pointer]:
+            - /url: "#search"
+            - text: package search
+          - link "skip to sign in" [ref=e10] [cursor=pointer]:
+            - /url: "#signin"
+            - text: sign in
+        - generic [ref=e11]:
+          - generic [ref=e12]: ❤
+          - navigation "Product Navigation" [ref=e13]:
+            - list [ref=e14]:
+              - listitem [ref=e15]:
+                - link "Pro" [ref=e16] [cursor=pointer]:
+                  - /url: /products/pro
+              - listitem [ref=e17]:
+                - link "Teams" [ref=e18] [cursor=pointer]:
+                  - /url: /products/teams
+              - listitem [ref=e19]:
+                - link "Pricing" [ref=e20] [cursor=pointer]:
+                  - /url: /products
+              - listitem [ref=e21]:
+                - link "Documentation" [ref=e22] [cursor=pointer]:
+                  - /url: https://docs.npmjs.com
+      - generic [ref=e24]:
+        - generic [ref=e25]: npm
+        - link "Npm" [ref=e27] [cursor=pointer]:
+          - /url: /
+          - img [ref=e28]
+        - generic [ref=e31]:
+          - generic [ref=e33]:
+            - img [ref=e35]
+            - combobox "Search packages" [ref=e41]
+          - button "Search" [ref=e43]
+        - generic [ref=e45]:
+          - link "Sign Up" [ref=e46] [cursor=pointer]:
+            - /url: /signup
+          - link "Sign In" [ref=e47] [cursor=pointer]:
+            - /url: /login
+    - main [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - heading "pg-mem TypeScript icon, indicating that this package has built-in type declarations" [level=1] [ref=e51]:
+            - generic [ref=e52]: pg-mem
+            - img "TypeScript icon, indicating that this package has built-in type declarations" [ref=e54]
+          - generic [ref=e55]: 3.0.14 •
+          - generic [ref=e56]: Public
+          - generic [ref=e57]:
+            - text: • Published
+            - time [ref=e58]: a month ago
+        - tablist [ref=e59]:
+          - tab "Readme" [selected] [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - text: Readme
+          - tab "Code Beta" [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]:
+              - img [ref=e66]
+              - text: Code
+              - generic [ref=e69]: Beta
+          - tab "7 Dependencies" [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - img [ref=e72]
+              - text: 7 Dependencies
+          - tab "11 Dependents" [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]:
+              - img [ref=e76]
+              - text: 11 Dependents
+          - tab "151 Versions" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]:
+              - img [ref=e80]
+              - text: 151 Versions
+        - generic [ref=e83]:
+          - tabpanel "Readme" [ref=e84]:
+            - article [ref=e86]:
+              - generic [ref=e87]:
+                - paragraph [ref=e88]:
+                  - link [ref=e89] [cursor=pointer]:
+                    - /url: https://npmjs.org/package/pg-mem
+                    - img [ref=e90]
+                  - link [ref=e91] [cursor=pointer]:
+                    - /url: https://npmjs.org/package/pg-mem
+                    - img [ref=e92]
+                  - link [ref=e93] [cursor=pointer]:
+                    - /url: https://david-dm.org/oguimbal/pg-mem
+                    - img [ref=e94]
+                  - link [ref=e95] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/workflows/CI/badge.svg
+                    - img [ref=e96]
+                - paragraph [ref=e97]:
+                  - link [ref=e98] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/blob/HEAD/.github/pg_mem.png
+                    - img [ref=e99]
+                - generic [ref=e100]:
+                  - heading "pg-mem is an experimental in-memory emulation of a postgres database." [level=3] [ref=e101]
+                  - 'link "Permalink: pg-mem is an experimental in-memory emulation of a postgres database." [ref=e102] [cursor=pointer]':
+                    - /url: "#pg-mem-is-an-experimental-in-memory-emulation-of-a-postgres-database"
+                - paragraph [ref=e103]: ❤ It works both in Node or in the browser.
+                - paragraph [ref=e104]: ⭐ this repo if you like this package, it helps to motivate me :)
+                - paragraph [ref=e105]:
+                  - text: 👉 See it in action with
+                  - link "pg-mem playground" [ref=e106] [cursor=pointer]:
+                    - /url: https://oguimbal.github.io/pg-mem-playground/
+                - list [ref=e107]:
+                  - listitem [ref=e108]:
+                    - link "Usage" [ref=e109] [cursor=pointer]:
+                      - /url: "#-usage"
+                  - listitem [ref=e110]:
+                    - link "Features" [ref=e111] [cursor=pointer]:
+                      - /url: "#-features"
+                  - listitem [ref=e112]:
+                    - link "Libraries adapters" [ref=e113] [cursor=pointer]:
+                      - /url: "#-libraries-adapters"
+                  - listitem [ref=e114]:
+                    - link "Inspection" [ref=e115] [cursor=pointer]:
+                      - /url: "#-inspection"
+                  - listitem [ref=e116]:
+                    - link "Development" [ref=e117] [cursor=pointer]:
+                      - /url: "#-development"
+                  - listitem [ref=e118]:
+                    - link "FAQ" [ref=e119] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ
+                - generic [ref=e120]:
+                  - heading "📐 Usage" [level=1] [ref=e121]
+                  - 'link "Permalink: 📐 Usage" [ref=e122] [cursor=pointer]':
+                    - /url: "#-usage"
+                - generic [ref=e123]:
+                  - heading "Using Node.js" [level=2] [ref=e124]
+                  - 'link "Permalink: Using Node.js" [ref=e125] [cursor=pointer]':
+                    - /url: "#using-nodejs"
+                - paragraph [ref=e126]: "As always, it starts with an:"
+                - generic [ref=e128]: npm i pg-mem --save
+                - paragraph [ref=e129]: "Then, assuming you're using something like webpack, if you're targeting a browser:"
+                - generic [ref=e131]: "import { newDb } from \"pg-mem\"; const db = newDb(); db.public.many(/* put some sql here */);"
+                - generic [ref=e132]:
+                  - heading "Using Deno" [level=2] [ref=e133]
+                  - 'link "Permalink: Using Deno" [ref=e134] [cursor=pointer]':
+                    - /url: "#using-deno"
+                - paragraph [ref=e135]: Pretty straightforward :)
+                - generic [ref=e137]: "import { newDb } from \"https://deno.land/x/pg_mem/mod.ts\"; const db = newDb(); db.public.many(/* put some sql here */);"
+                - generic [ref=e138]:
+                  - heading "Only use the SQL syntax parser" [level=2] [ref=e139]
+                  - 'link "Permalink: Only use the SQL syntax parser" [ref=e140] [cursor=pointer]':
+                    - /url: "#only-use-the-sql-syntax-parser"
+                - paragraph [ref=e141]:
+                  - text: ❤ Head to the
+                  - link "pgsql-ast-parser" [ref=e142] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pgsql-ast-parser
+                  - text: repo
+                - generic [ref=e143]:
+                  - heading "⚠ Disclaimer" [level=2] [ref=e144]
+                  - 'link "Permalink: ⚠ Disclaimer" [ref=e145] [cursor=pointer]':
+                    - /url: "#-disclaimer"
+                - paragraph [ref=e146]:
+                  - text: The sql syntax parser is
+                  - link "home-made" [ref=e147] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pgsql-ast-parser
+                  - text: . Which means that some features are not implemented, and will be considered as invalid syntaxes.
+                - paragraph [ref=e148]: This lib is quite new, so forgive it if some obvious pg syntax is not supported !
+                - paragraph [ref=e149]: ... And open an issue if you feel like a feature should be implemented :)
+                - paragraph [ref=e150]: Moreover, even if I wrote hundreds of tests, keep in mind that this implementation is a best effort to replicate PG. Keep an eye on your query results if you perform complex queries. Please file issues if some results seem incoherent with what should be returned.
+                - paragraph [ref=e151]: Finally, I invite you to read the below section to have an idea of you can or cannot do.
+                - generic [ref=e152]:
+                  - heading "🔍 Features" [level=1] [ref=e153]
+                  - 'link "Permalink: 🔍 Features" [ref=e154] [cursor=pointer]':
+                    - /url: "#-features"
+                - generic [ref=e155]:
+                  - heading "Rollback to a previous state" [level=2] [ref=e156]
+                  - 'link "Permalink: Rollback to a previous state" [ref=e157] [cursor=pointer]':
+                    - /url: "#rollback-to-a-previous-state"
+                - paragraph [ref=e158]:
+                  - code [ref=e159]: pg-mem
+                  - text: uses immutable data structures (
+                  - link "here" [ref=e160] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/immutable
+                  - text: and
+                  - link "here" [ref=e161] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/functional-red-black-tree
+                  - text: ), which means that you can have restore points for free!
+                - paragraph [ref=e162]:
+                  - text: This is super useful if you intend to use
+                  - code [ref=e163]: pg-mem
+                  - text: to mock your database for unit tests.
+                - paragraph [ref=e164]: "You could:"
+                - list [ref=e165]:
+                  - listitem [ref=e166]: Create your schema only once (which could be a heavy operation for a single unit test)
+                  - listitem [ref=e167]: Insert test data which will be shared by all test
+                  - listitem [ref=e168]: Create a restore point
+                  - listitem [ref=e169]:
+                    - text: Run your tests with the same db instance, executing a
+                    - code [ref=e170]: backup.restore()
+                    - text: before each test (which instantly resets db to the state it has after creating the restore point)
+                - paragraph [ref=e171]: "Usage:"
+                - generic [ref=e173]: "const db = newDb(); db.public.none(`create table test(id text); insert into test values ('value');`); // create a restore point & mess with data const backup = db.backup(); db.public.none(`update test set id='new value';`); // restore it ! backup.restore(); db.public.many(`select * from test`); // => {test: 'value'}"
+                - generic [ref=e174]:
+                  - heading "Custom functions" [level=2] [ref=e175]
+                  - 'link "Permalink: Custom functions" [ref=e176] [cursor=pointer]':
+                    - /url: "#custom-functions"
+                - paragraph [ref=e177]: "You can declare custom functions like this:"
+                - generic [ref=e179]: "db.public.registerFunction({ name: \"say_hello\", args: [DataType.text], returns: DataType.text, implementation: (x) => \"hello \" + x, });"
+                - paragraph [ref=e180]:
+                  - text: And then use them like in SQL
+                  - code [ref=e181]: select say_hello('world')
+                  - text: .
+                - paragraph [ref=e182]: Custom functions support overloading and variadic arguments.
+                - paragraph [ref=e183]: ⚠ However, the value you return is not type checked. It MUST correspond to the datatype you provided as 'returns' (it won't fail if not, but could lead to weird bugs).
+                - generic [ref=e184]:
+                  - heading "Custom types" [level=2] [ref=e185]
+                  - 'link "Permalink: Custom types" [ref=e186] [cursor=pointer]':
+                    - /url: "#custom-types"
+                - paragraph [ref=e187]: Not all pg types are implemented in pg-mem. That said, most of the types are often equivalent to other types, with a format validation. pg-mem provides a way to register such types.
+                - paragraph [ref=e188]: For instance, lets say you'd like to register the MACADDR type, which is basically a string, with a format constraint.
+                - paragraph [ref=e189]: "You can register it like this:"
+                - generic [ref=e191]: "db.public.registerEquivalentType({ name: \"macaddr\", // which type is it equivalent to (will be able to cast it from it) equivalentTo: DataType.text, isValid(val: string) { // check that it will be this format return isValidMacAddress(val); }, });"
+                - paragraph [ref=e192]: "Doing so, you'll be able to do things such as:"
+                - generic [ref=e194]:
+                  - text: SELECT
+                  - generic [ref=e195]: "'08:00:2b:01:02:03:04:05'"
+                  - text: ::macaddr;
+                  - generic [ref=e196]: "-- WORKS"
+                  - text: SELECT
+                  - generic [ref=e197]: "'invalid'"
+                  - text: ::macaddr;
+                  - generic [ref=e198]: "-- will throw a conversion error"
+                - paragraph [ref=e199]:
+                  - text: "If you feel your implementation of a type matches the standard, and would like to include it in pg-mem for others to enjoy it, please consider filing a pull request ! (tip: see the"
+                  - link "INET" [ref=e200] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/blob/master/src/datatypes/t-inet.ts
+                  - text: type implementation as an example, and the
+                  - link "pg_catalog index" [ref=e201] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/blob/master/src/schema/pg-catalog/index.ts
+                  - text: where supported types are registered)
+                - generic [ref=e202]:
+                  - heading "Extensions" [level=2] [ref=e203]
+                  - 'link "Permalink: Extensions" [ref=e204] [cursor=pointer]':
+                    - /url: "#extensions"
+                - paragraph [ref=e205]: "No native extension is implemented (pull requests are welcome), but you can define kind-of extensions like this:"
+                - generic [ref=e207]: "db.registerExtension(\"my-ext\", (schema) => { // install your ext in 'schema' // ex: schema.registerFunction(...) });"
+                - paragraph [ref=e208]:
+                  - text: Statements like
+                  - code [ref=e209]: create extension "my-ext"
+                  - text: will then be supported.
+                - generic [ref=e210]:
+                  - heading "📃 Libraries adapters" [level=1] [ref=e211]
+                  - 'link "Permalink: 📃 Libraries adapters" [ref=e212] [cursor=pointer]':
+                    - /url: "#-libraries-adapters"
+                - paragraph [ref=e213]: pg-mem provides handy shortcuts to create instances of popular libraries that will be bound to pg-mem instead of a real postgres db.
+                - list [ref=e214]:
+                  - listitem [ref=e215]: pg-native
+                  - listitem [ref=e216]: node-postgres (pg)
+                  - listitem [ref=e217]: pg-promise (pgp)
+                  - listitem [ref=e218]: slonik
+                  - listitem [ref=e219]: typeorm
+                  - listitem [ref=e220]: knex
+                  - listitem [ref=e221]: kysely
+                  - listitem [ref=e222]: mikro-orm
+                - paragraph [ref=e223]:
+                  - link "See the wiki for more details" [ref=e224] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/wiki/Libraries-adapters
+                - generic [ref=e225]:
+                  - heading "💥 Inspection" [level=1] [ref=e226]
+                  - 'link "Permalink: 💥 Inspection" [ref=e227] [cursor=pointer]':
+                    - /url: "#-inspection"
+                - generic [ref=e228]:
+                  - heading "Intercept queries" [level=2] [ref=e229]
+                  - 'link "Permalink: Intercept queries" [ref=e230] [cursor=pointer]':
+                    - /url: "#intercept-queries"
+                - paragraph [ref=e231]: "If you would like to hook your database, and return ad-hoc results, you can do so like this:"
+                - generic [ref=e233]: "const db = newDb(); db.public.interceptQueries((sql) => { if (sql === \"select * from whatever\") { // intercept this statement, and return something custom: return [{ something: 42 }]; } // proceed to actual SQL execution for other requests. return null; });"
+                - generic [ref=e234]:
+                  - heading "Inspect a table" [level=2] [ref=e235]
+                  - 'link "Permalink: Inspect a table" [ref=e236] [cursor=pointer]':
+                    - /url: "#inspect-a-table"
+                - paragraph [ref=e237]:
+                  - text: You can manually inspect a table content using the
+                  - code [ref=e238]: find()
+                  - text: "method:"
+                - generic [ref=e240]: "for (const item of db.public.getTable<TItem>(\"mytable\").find(itemTemplate)) { console.log(item); }"
+                - generic [ref=e241]:
+                  - heading "Manually insert items" [level=2] [ref=e242]
+                  - 'link "Permalink: Manually insert items" [ref=e243] [cursor=pointer]':
+                    - /url: "#manually-insert-items"
+                - paragraph [ref=e244]: "If you'd like to insert items manually into a table, you can do this like that:"
+                - generic [ref=e246]: "db.public.getTable<TItem>('mytable').insert({ /* item to insert */ }))"
+                - generic [ref=e247]:
+                  - heading "Subscribe to events" [level=2] [ref=e248]
+                  - 'link "Permalink: Subscribe to events" [ref=e249] [cursor=pointer]':
+                    - /url: "#subscribe-to-events"
+                - paragraph [ref=e250]: "You can subscribe to some events, like:"
+                - generic [ref=e252]: "const db = newDb(); // called on each successful sql request db.on(\"query\", (sql) => {}); // called on each failed sql request db.on(\"query-failed\", (sql) => {}); // called on schema changes db.on(\"schema-change\", () => {}); // called when a CREATE EXTENSION schema is encountered. db.on(\"create-extension\", (ext) => {});"
+                - generic [ref=e253]:
+                  - heading "Experimental events" [level=2] [ref=e254]
+                  - 'link "Permalink: Experimental events" [ref=e255] [cursor=pointer]':
+                    - /url: "#experimental-events"
+                - paragraph [ref=e256]:
+                  - code [ref=e257]: pg-mem
+                  - text: implements a basic support for indices.
+                - paragraph [ref=e258]: These handlers are called when a request cannot be optimized using one of the created indices.
+                - paragraph [ref=e259]:
+                  - text: However, a real postgres instance will be much smarter to optimize its requests... so when
+                  - code [ref=e260]: pg-mem
+                  - text: says "this request does not use an index", dont take my word for it.
+                - generic [ref=e262]: "// called when a table is iterated entirely (ex: 'select * from data where notIndex=3' triggers it) db.on('seq-scan', () => {}); // same, but on a specific table db.getTable('myTable').on('seq-scan', () = {}); // will be called if pg-mem did not find any way to optimize a join // (which leads to a O(n*m) lookup with the current implementation) db.on('catastrophic-join-optimization', () => {});"
+                - generic [ref=e263]:
+                  - heading "🙋‍♂️ FAQ" [level=1] [ref=e264]
+                  - 'link "Permalink: 🙋‍♂️ FAQ" [ref=e265] [cursor=pointer]':
+                    - /url: "#‍️-faq"
+                - list [ref=e266]:
+                  - listitem [ref=e267]:
+                    - link "Why this instead of Docker ?" [ref=e268] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ#-why-use-pg-mem-instead-of-an-instance-of-postgres-in-docker-
+                    - emphasis [ref=e269]: "TLDR : It's faster. Docker is overkill."
+                  - listitem [ref=e270]:
+                    - link "What if I need an extension like uuid-ossp ?" [ref=e271] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ#-what-if-i-need-an-extension-like-uuid-ossp-
+                    - emphasis [ref=e272]: "TLDR: You can mock those"
+                  - listitem [ref=e273]:
+                    - link "How to import my production schema in pg-mem ?" [ref=e274] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ#-how-to-import-my-production-schema-in-pg-mem-
+                    - emphasis [ref=e275]: "TLDR: pg_dump with the right args"
+                  - listitem [ref=e276]:
+                    - link "Does pg-mem supports sql migrations ?" [ref=e277] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ#-does-pg-mem-support-sql-migrations-scripts-
+                    - emphasis [ref=e278]: "TLDR: yes."
+                  - listitem [ref=e279]:
+                    - link "Does pg-mem supports plpgsql/other scripts/\"create functions\"/\"do statements\" ?" [ref=e280] [cursor=pointer]:
+                      - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ#-how-to-use-plpgsql-or-other-scripts-
+                    - emphasis [ref=e281]: "TLDR: kind of..."
+                - paragraph [ref=e282]:
+                  - text: Detailed answers
+                  - link "in the wiki" [ref=e283] [cursor=pointer]:
+                    - /url: https://github.com/oguimbal/pg-mem/wiki/FAQ
+                - generic [ref=e284]:
+                  - heading "⚠️ Current limitations" [level=1] [ref=e285]
+                  - 'link "Permalink: ⚠️ Current limitations" [ref=e286] [cursor=pointer]':
+                    - /url: "#️-current-limitations"
+                - list [ref=e287]:
+                  - listitem [ref=e288]: Materialized views are implemented as views (meaning that they are always up-to-date, without needing them to refresh)
+                  - listitem [ref=e289]: Indices implementations are basic
+                  - listitem [ref=e290]: No support for timezones
+                  - listitem [ref=e291]:
+                    - text: All number-like types are all handled as javascript numbers, meaning that types like
+                    - code [ref=e292]: numeric(x,y)
+                    - text: could not behave as expected.
+                - generic [ref=e293]:
+                  - heading "🐜 Development" [level=1] [ref=e294]
+                  - 'link "Permalink: 🐜 Development" [ref=e295] [cursor=pointer]':
+                    - /url: "#-development"
+                - paragraph [ref=e296]: Pull requests are welcome :)
+                - paragraph [ref=e297]:
+                  - text: Unit tests are ran using
+                  - link "Bun" [ref=e298] [cursor=pointer]:
+                    - /url: https://bun.sh/
+                  - text: ", which you will have to install to run tests."
+                - generic [ref=e299]:
+                  - heading "Run all tests" [level=2] [ref=e300]
+                  - 'link "Permalink: Run all tests" [ref=e301] [cursor=pointer]':
+                    - /url: "#run-all-tests"
+                - generic [ref=e303]: bun test
+                - generic [ref=e304]:
+                  - heading "Debug a test" [level=2] [ref=e305]
+                  - 'link "Permalink: Debug a test" [ref=e306] [cursor=pointer]':
+                    - /url: "#debug-a-test"
+                - paragraph [ref=e307]: "Using vscode:"
+                - list [ref=e308]:
+                  - listitem [ref=e309]:
+                    - text: Add a
+                    - code [ref=e310]: .only
+                    - text: on the test you'd like to debug
+                  - listitem [ref=e311]: Just hit F5 (or execute via the debugger tab), which should launch your test with debugger attached
+            - generic [ref=e312]:
+              - heading "Readme" [level=2] [ref=e313]
+              - heading "Keywords" [level=3] [ref=e314]
+              - list [ref=e315]:
+                - listitem [ref=e316]:
+                  - link "postgres" [ref=e317] [cursor=pointer]:
+                    - /url: /search?q=keywords:postgres
+                - listitem [ref=e318]:
+                  - link "pg-mock" [ref=e319] [cursor=pointer]:
+                    - /url: /search?q=keywords:pg-mock
+                - listitem [ref=e320]:
+                  - link "mock" [ref=e321] [cursor=pointer]:
+                    - /url: /search?q=keywords:mock
+                - listitem [ref=e322]:
+                  - link "memory" [ref=e323] [cursor=pointer]:
+                    - /url: /search?q=keywords:memory
+                - listitem [ref=e324]:
+                  - link "db" [ref=e325] [cursor=pointer]:
+                    - /url: /search?q=keywords:db
+                - listitem [ref=e326]:
+                  - link "database" [ref=e327] [cursor=pointer]:
+                    - /url: /search?q=keywords:database
+                - listitem [ref=e328]:
+                  - link "pg" [ref=e329] [cursor=pointer]:
+                    - /url: /search?q=keywords:pg
+                - listitem [ref=e330]:
+                  - link "typeorm" [ref=e331] [cursor=pointer]:
+                    - /url: /search?q=keywords:typeorm
+                - listitem [ref=e332]:
+                  - link "pg-promise" [ref=e333] [cursor=pointer]:
+                    - /url: /search?q=keywords:pg-promise
+                - listitem [ref=e334]:
+                  - link "pg-native" [ref=e335] [cursor=pointer]:
+                    - /url: /search?q=keywords:pg-native
+                - listitem [ref=e336]:
+                  - link "unit test" [ref=e337] [cursor=pointer]:
+                    - /url: /search?q=keywords:"unit test"
+                - listitem [ref=e338]:
+                  - link "ut" [ref=e339] [cursor=pointer]:
+                    - /url: /search?q=keywords:ut
+                - listitem [ref=e340]:
+                  - link "sql" [ref=e341] [cursor=pointer]:
+                    - /url: /search?q=keywords:sql
+                - listitem [ref=e342]:
+                  - link "pgsql" [ref=e343] [cursor=pointer]:
+                    - /url: /search?q=keywords:pgsql
+                - listitem [ref=e344]:
+                  - link "postgresql" [ref=e345] [cursor=pointer]:
+                    - /url: /search?q=keywords:postgresql
+                - listitem [ref=e346]:
+                  - link "knex" [ref=e347] [cursor=pointer]:
+                    - /url: /search?q=keywords:knex
+                - listitem [ref=e348]:
+                  - link "kysely" [ref=e349] [cursor=pointer]:
+                    - /url: /search?q=keywords:kysely
+          - tabpanel
+          - tabpanel
+          - tabpanel "7 Dependencies"
+          - tabpanel "11 Dependents"
+          - tabpanel "151 Versions"
+        - complementary "Package sidebar" [ref=e350]:
+          - heading "Package Sidebar" [level=2] [ref=e351]
+          - heading "Install" [level=3] [ref=e352]
+          - generic [ref=e353]:
+            - img
+            - paragraph [ref=e354]:
+              - generic [ref=e355]:
+                - code [ref=e356]: npm i pg-mem
+                - button "Copy install command line" [ref=e357] [cursor=pointer]:
+                  - img
+          - generic [ref=e358]:
+            - heading "Repository" [level=3] [ref=e359]
+            - paragraph [ref=e360]:
+              - link "Repository github.com/oguimbal/pg-mem" [ref=e361] [cursor=pointer]:
+                - /url: https://github.com/oguimbal/pg-mem
+                - img [ref=e363]
+                - text: github.com/oguimbal/pg-mem
+          - generic [ref=e366]:
+            - heading "Homepage" [level=3] [ref=e367]
+            - paragraph [ref=e368]:
+              - link "Homepage github.com/oguimbal/pg-mem#readme" [ref=e369] [cursor=pointer]:
+                - /url: https://github.com/oguimbal/pg-mem#readme
+                - img [ref=e370]
+                - text: github.com/oguimbal/pg-mem#readme
+          - button "Showing weekly downloads" [ref=e372]:
+            - heading "Weekly Downloads" [level=3] [ref=e373]:
+              - img [ref=e374]
+              - text: Weekly Downloads
+            - generic [ref=e378]:
+              - img [ref=e379]
+              - paragraph [ref=e384]: "267.549"
+          - generic [ref=e385]:
+            - heading "Version" [level=3] [ref=e386]
+            - paragraph [ref=e388]: 3.0.14
+          - generic [ref=e389]:
+            - heading "License" [level=3] [ref=e390]
+            - paragraph [ref=e391]: MIT
+          - generic [ref=e392]:
+            - heading "Unpacked Size" [level=3] [ref=e393]
+            - paragraph [ref=e394]: 1.86 MB
+          - generic [ref=e395]:
+            - heading "Total Files" [level=3] [ref=e396]
+            - paragraph [ref=e397]: "148"
+          - generic [ref=e398]:
+            - heading "Last publish" [level=3] [ref=e399]
+            - paragraph [ref=e400]:
+              - time [ref=e401]: a month ago
+          - generic [ref=e402]:
+            - heading "Collaborators" [level=3] [ref=e403]
+            - list "Collaborators" [ref=e404]:
+              - listitem [ref=e405]:
+                - link "oguimbal" [ref=e407] [cursor=pointer]:
+                  - /url: /~oguimbal
+                  - img "oguimbal" [ref=e408]
+          - generic [ref=e409]:
+            - link "Analyze security with Socket" [ref=e410] [cursor=pointer]:
+              - /url: https://socket.dev/npm/package/pg-mem
+              - img [ref=e411]
+              - strong [ref=e413]: Analyze security
+              - text: with Socket
+            - link "Check bundle size" [ref=e414] [cursor=pointer]:
+              - /url: https://bundlephobia.com/package/pg-mem
+              - img [ref=e415]
+              - strong [ref=e417]: Check bundle size
+            - link "View package health" [ref=e418] [cursor=pointer]:
+              - /url: https://snyk.io/advisor/npm-package/pg-mem
+              - img [ref=e419]
+              - strong [ref=e421]: View package health
+            - link "Explore dependencies" [ref=e422] [cursor=pointer]:
+              - /url: https://npmgraph.js.org/?q=pg-mem
+              - img [ref=e423]
+              - strong [ref=e425]: Explore dependencies
+          - link "Report malware" [ref=e427] [cursor=pointer]:
+            - /url: /support?inquire=security&security-inquire=malware&package=pg-mem&version=3.0.14
+            - img [ref=e428]
+            - strong [ref=e430]: Report
+            - text: malware
+    - contentinfo [ref=e431]:
+      - heading "Footer" [level=2] [ref=e432]
+      - generic [ref=e433]:
+        - generic [ref=e434]:
+          - link "Visit npm GitHub page" [ref=e436] [cursor=pointer]:
+            - /url: https://github.com/npm
+            - img [ref=e437]
+          - link "GitHub" [ref=e441] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e442]
+        - generic [ref=e444]:
+          - heading "Support" [level=3] [ref=e445]
+          - list "Support" [ref=e446]:
+            - listitem [ref=e447]:
+              - link "Help" [ref=e448] [cursor=pointer]:
+                - /url: https://docs.npmjs.com
+            - listitem [ref=e449]:
+              - link "Advisories" [ref=e450] [cursor=pointer]:
+                - /url: https://github.com/advisories
+            - listitem [ref=e451]:
+              - link "Status" [ref=e452] [cursor=pointer]:
+                - /url: http://status.npmjs.org/
+            - listitem [ref=e453]:
+              - link "Contact npm" [ref=e454] [cursor=pointer]:
+                - /url: /support
+        - generic [ref=e455]:
+          - heading "Company" [level=3] [ref=e456]
+          - list "Company" [ref=e457]:
+            - listitem [ref=e458]:
+              - link "About" [ref=e459] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e460]:
+              - link "Blog" [ref=e461] [cursor=pointer]:
+                - /url: https://github.blog/tag/npm/
+            - listitem [ref=e462]:
+              - link "Press" [ref=e463] [cursor=pointer]:
+                - /url: /press
+        - generic [ref=e464]:
+          - heading "Terms & Policies" [level=3] [ref=e465]
+          - list "Terms & Policies" [ref=e466]:
+            - listitem [ref=e467]:
+              - link "Policies" [ref=e468] [cursor=pointer]:
+                - /url: /policies/
+            - listitem [ref=e469]:
+              - link "Terms of Use" [ref=e470] [cursor=pointer]:
+                - /url: /policies/terms
+            - listitem [ref=e471]:
+              - link "Code of Conduct" [ref=e472] [cursor=pointer]:
+                - /url: /policies/conduct
+            - listitem [ref=e473]:
+              - link "Privacy" [ref=e474] [cursor=pointer]:
+                - /url: /policies/privacy
+  - generic [ref=e476]: Viewing pg-mem version 3.0.14

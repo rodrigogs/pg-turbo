@@ -1,0 +1,460 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - text: "skip to:"
+          - link "skip to content" [ref=e8] [cursor=pointer]:
+            - /url: "#main"
+            - text: content
+          - link "skip to package search" [ref=e9] [cursor=pointer]:
+            - /url: "#search"
+            - text: package search
+          - link "skip to sign in" [ref=e10] [cursor=pointer]:
+            - /url: "#signin"
+            - text: sign in
+        - generic [ref=e11]:
+          - generic [ref=e12]: ❤
+          - navigation "Product Navigation" [ref=e13]:
+            - list [ref=e14]:
+              - listitem [ref=e15]:
+                - link "Pro" [ref=e16] [cursor=pointer]:
+                  - /url: /products/pro
+              - listitem [ref=e17]:
+                - link "Teams" [ref=e18] [cursor=pointer]:
+                  - /url: /products/teams
+              - listitem [ref=e19]:
+                - link "Pricing" [ref=e20] [cursor=pointer]:
+                  - /url: /products
+              - listitem [ref=e21]:
+                - link "Documentation" [ref=e22] [cursor=pointer]:
+                  - /url: https://docs.npmjs.com
+      - generic [ref=e24]:
+        - generic [ref=e25]: npm
+        - link "Npm" [ref=e27] [cursor=pointer]:
+          - /url: /
+          - img [ref=e28]
+        - generic [ref=e31]:
+          - generic [ref=e33]:
+            - img [ref=e35]
+            - combobox "Search packages" [ref=e41]
+          - button "Search" [ref=e43]
+        - generic [ref=e45]:
+          - link "Sign Up" [ref=e46] [cursor=pointer]:
+            - /url: /signup
+          - link "Sign In" [ref=e47] [cursor=pointer]:
+            - /url: /login
+    - main [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - heading "@electric-sql/pglite TypeScript icon, indicating that this package has built-in type declarations" [level=1] [ref=e51]:
+            - generic [ref=e52]: "@electric-sql/pglite"
+            - img "TypeScript icon, indicating that this package has built-in type declarations" [ref=e54]
+          - generic [ref=e55]: 0.4.3 •
+          - generic [ref=e56]: Public
+          - generic [ref=e57]:
+            - text: • Published
+            - time [ref=e58]: 4 hours ago
+        - tablist [ref=e59]:
+          - tab "Readme" [selected] [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - text: Readme
+          - tab "Code Beta" [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]:
+              - img [ref=e66]
+              - text: Code
+              - generic [ref=e69]: Beta
+          - tab "0 Dependencies" [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - img [ref=e72]
+              - text: 0 Dependencies
+          - tab "166 Dependents" [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]:
+              - img [ref=e76]
+              - text: 166 Dependents
+          - tab "66 Versions" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]:
+              - img [ref=e80]
+              - text: 66 Versions
+        - generic [ref=e83]:
+          - tabpanel "Readme" [ref=e84]:
+            - article [ref=e86]:
+              - generic [ref=e87]:
+                - paragraph [ref=e88]:
+                  - link:
+                    - /url: https://pglite.dev
+                  - link "ElectricSQL logo" [ref=e89] [cursor=pointer]:
+                    - /url: https://raw.githubusercontent.com/electric-sql/pglite/main/docs/public/img/brand/logo-light.svg
+                    - img "ElectricSQL logo" [ref=e90]
+                - paragraph [ref=e91]:
+                  - link "PGlite" [ref=e92] [cursor=pointer]:
+                    - /url: https://pglite.dev
+                  - text: "- the WASM build of Postgres from"
+                  - link "ElectricSQL" [ref=e93] [cursor=pointer]:
+                    - /url: https://electric-sql.com
+                  - text: .
+                  - text: Build reactive, realtime, local-first apps directly on Postgres.
+                - paragraph
+                - paragraph [ref=e94]:
+                  - link [ref=e95] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/stargazers/
+                    - img [ref=e96]
+                  - link "License - Apache 2.0" [ref=e97] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/blob/main/LICENSE
+                    - img "License - Apache 2.0" [ref=e98]
+                  - link "Status - Alpha" [ref=e99] [cursor=pointer]:
+                    - /url: "#roadmap"
+                    - img "Status - Alpha" [ref=e100]
+                  - link "Chat - Discord" [ref=e101] [cursor=pointer]:
+                    - /url: https://discord.electric-sql.com
+                    - img "Chat - Discord" [ref=e102]
+                  - link [ref=e103] [cursor=pointer]:
+                    - /url: https://twitter.com/ElectricSQL
+                    - img [ref=e104]
+                  - link [ref=e105] [cursor=pointer]:
+                    - /url: https://fosstodon.org/@electric
+                    - img [ref=e106]
+                - generic [ref=e107]:
+                  - heading "PGlite - Postgres in WASM" [level=1] [ref=e108]
+                  - 'link "Permalink: PGlite - Postgres in WASM" [ref=e109] [cursor=pointer]':
+                    - /url: "#pglite---postgres-in-wasm"
+                - paragraph [ref=e110]:
+                  - link "PGlite" [ref=e111] [cursor=pointer]:
+                    - /url: https://raw.githubusercontent.com/electric-sql/pglite/main/screenshot.png
+                    - img "PGlite" [ref=e112]
+                - paragraph [ref=e113]:
+                  - text: PGlite is a WASM Postgres build packaged into a TypeScript client library that enables you to run Postgres in the browser, Node.js, Bun and Deno, with no need to install any other dependencies. It is only 3mb gzipped and has support for many Postgres extensions, including
+                  - link "pgvector" [ref=e114] [cursor=pointer]:
+                    - /url: https://github.com/pgvector/pgvector
+                  - text: .
+                - generic [ref=e116]: "import { PGlite } from '@electric-sql/pglite' const db = new PGlite() await db.query(\"select 'Hello world' as message;\") // -> { rows: [ { message: \"Hello world\" } ] }"
+                - paragraph [ref=e117]: It can be used as an ephemeral in-memory database, or with persistence either to the file system (Node/Bun/Deno) or indexedDB (Browser).
+                - paragraph [ref=e118]: Unlike previous "Postgres in the browser" projects, PGlite does not use a Linux virtual machine - it is simply Postgres in WASM.
+                - paragraph [ref=e119]:
+                  - text: For full documentation and user guides see
+                  - link "pglite.dev" [ref=e120] [cursor=pointer]:
+                    - /url: https://pglite.dev
+                  - text: .
+                - generic [ref=e121]:
+                  - heading "Browser" [level=2] [ref=e122]
+                  - 'link "Permalink: Browser" [ref=e123] [cursor=pointer]':
+                    - /url: "#browser"
+                - paragraph [ref=e124]: "It can be installed and imported using your usual package manager:"
+                - generic [ref=e126]: "import { PGlite } from '@electric-sql/pglite'"
+                - paragraph [ref=e127]: "or using a CDN such as JSDeliver:"
+                - generic [ref=e129]: "import { PGlite } from 'https://cdn.jsdelivr.net/npm/@electric-sql/pglite/dist/index.js'"
+                - paragraph [ref=e130]: "Then for an in-memory Postgres:"
+                - generic [ref=e132]: "const db = new PGlite() await db.query(\"select 'Hello world' as message;\") // -> { rows: [ { message: \"Hello world\" } ] }"
+                - paragraph [ref=e133]: "or to persist the database to indexedDB:"
+                - generic [ref=e135]: const db = new PGlite('idb://my-pgdata')
+                - generic [ref=e136]:
+                  - heading "Node/Bun/Deno" [level=2] [ref=e137]
+                  - 'link "Permalink: Node/Bun/Deno" [ref=e138] [cursor=pointer]':
+                    - /url: "#nodebundeno"
+                - paragraph [ref=e139]: "Install into your project:"
+                - paragraph [ref=e140]:
+                  - strong [ref=e141]: NodeJS
+                - generic [ref=e143]: npm install @electric-sql/pglite
+                - paragraph [ref=e144]:
+                  - strong [ref=e145]: Bun
+                - generic [ref=e147]: bun install @electric-sql/pglite
+                - paragraph [ref=e148]:
+                  - strong [ref=e149]: Deno
+                - generic [ref=e151]: deno add npm:@electric-sql/pglite
+                - paragraph [ref=e152]: "To use the in-memory Postgres:"
+                - generic [ref=e154]: "import { PGlite } from '@electric-sql/pglite' const db = new PGlite() await db.query(\"select 'Hello world' as message;\") // -> { rows: [ { message: \"Hello world\" } ] }"
+                - paragraph [ref=e155]: "or to persist to the filesystem:"
+                - generic [ref=e157]: const db = new PGlite('./path/to/pgdata')
+                - generic [ref=e158]:
+                  - heading "How it works" [level=2] [ref=e159]
+                  - 'link "Permalink: How it works" [ref=e160] [cursor=pointer]':
+                    - /url: "#how-it-works"
+                - paragraph [ref=e161]: PostgreSQL typically operates using a process forking model; whenever a client initiates a connection, a new process is forked to manage that connection. However, programs compiled with Emscripten - a C to WebAssembly (WASM) compiler - cannot fork new processes, and operates strictly in a single-process mode. As a result, PostgreSQL cannot be directly compiled to WASM for conventional operation.
+                - paragraph [ref=e162]: Fortunately, PostgreSQL includes a "single user mode" primarily intended for command-line usage during bootstrapping and recovery procedures. Building upon this capability, PGlite introduces a input/output pathway that facilitates interaction with PostgreSQL when it is compiled to WASM within a JavaScript environment.
+                - generic [ref=e163]:
+                  - heading "Limitations" [level=2] [ref=e164]
+                  - 'link "Permalink: Limitations" [ref=e165] [cursor=pointer]':
+                    - /url: "#limitations"
+                - list [ref=e166]:
+                  - listitem [ref=e167]: PGlite is single user/connection.
+                - generic [ref=e168]:
+                  - heading "How to build PGlite and contribute" [level=2] [ref=e169]
+                  - 'link "Permalink: How to build PGlite and contribute" [ref=e170] [cursor=pointer]':
+                    - /url: "#how-to-build-pglite-and-contribute"
+                - paragraph [ref=e171]: "The build process of PGlite is split into two parts:"
+                - list [ref=e172]:
+                  - listitem [ref=e173]: Building the Postgres WASM module.
+                  - listitem [ref=e174]: Building the PGlite client library and other TypeScript packages.
+                - paragraph [ref=e175]:
+                  - text: Docker is required to build the WASM module, along with Node (v20 or above) and
+                  - link "pnpm" [ref=e176] [cursor=pointer]:
+                    - /url: https://pnpm.io/
+                  - text: for package management and building the TypeScript packages.
+                - paragraph [ref=e177]: "To start checkout the repository and install dependencies:"
+                - generic [ref=e179]: git clone https://github.com/electric-sql/pglite cd pglite pnpm install
+                - paragraph [ref=e180]:
+                  - text: To build everything, we have the convenient
+                  - code [ref=e181]: pnpm build:all
+                  - text: "command in the root of the repository. This command will:"
+                - list [ref=e182]:
+                  - listitem [ref=e183]:
+                    - text: Use Docker to build the Postgres WASM module. The artifacts from this are then copied to
+                    - code [ref=e184]: /packages/pglite/release
+                    - text: .
+                  - listitem [ref=e185]: Build the PGlite client library and other TypeScript packages.
+                - paragraph [ref=e186]:
+                  - text: To
+                  - emphasis [ref=e187]: only
+                  - text: build the Postgres WASM module (i.e. point 1 above), run
+                - generic [ref=e189]: pnpm wasm:build
+                - paragraph [ref=e190]:
+                  - text: If you don't want to build the WASM module and assorted WASM binaries from scratch, you can download them from a comment under the most recently merged PR, labeled as
+                  - emphasis [ref=e191]: interim build files
+                  - text: ", and place them under"
+                  - code [ref=e192]: packages/pglite/release
+                  - text: .
+                - paragraph [ref=e193]: "To build all TypeScript packages (i.e. point 2 of the above), run:"
+                - generic [ref=e195]: pnpm ts:build
+                - paragraph [ref=e196]:
+                  - text: This will build all packages in the correct order based on their dependency relationships. You can now develop any individual package using the
+                  - code [ref=e197]: build
+                  - text: and
+                  - code [ref=e198]: test
+                  - text: scripts, as well as the
+                  - code [ref=e199]: stylecheck
+                  - text: and
+                  - code [ref=e200]: typecheck
+                  - text: scripts to ensure style and type validity.
+                - paragraph [ref=e201]: "Or alternatively to build a single package, move into the package directory and run:"
+                - generic [ref=e203]: cd packages/pglite pnpm build
+                - paragraph [ref=e204]: "When ready to open a PR, run the following command at the root of the repository:"
+                - generic [ref=e206]: pnpm changeset
+                - paragraph [ref=e207]: And follow the instructions to create an appropriate changeset. Please ensure any contributions that touch code are accompanied by a changeset.
+                - generic [ref=e208]:
+                  - heading "Acknowledgments" [level=2] [ref=e209]
+                  - 'link "Permalink: Acknowledgments" [ref=e210] [cursor=pointer]':
+                    - /url: "#acknowledgments"
+                - paragraph [ref=e211]:
+                  - text: PGlite builds on the work of
+                  - link "Stas Kelvich" [ref=e212] [cursor=pointer]:
+                    - /url: https://github.com/kelvich
+                  - text: of
+                  - link "Neon" [ref=e213] [cursor=pointer]:
+                    - /url: https://neon.tech
+                  - text: in this
+                  - link "Postgres fork" [ref=e214] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/postgres-wasm
+                  - text: .
+                - generic [ref=e215]:
+                  - heading "License" [level=2] [ref=e216]
+                  - 'link "Permalink: License" [ref=e217] [cursor=pointer]':
+                    - /url: "#license"
+                - paragraph [ref=e218]:
+                  - text: PGlite is dual-licensed under the terms of the
+                  - link "Apache License 2.0" [ref=e219] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/blob/main/LICENSE
+                  - text: and the
+                  - link "PostgreSQL License" [ref=e220] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/blob/main/POSTGRES-LICENSE
+                  - text: ", you can choose which you prefer."
+                - paragraph [ref=e221]:
+                  - text: Changes to the
+                  - link "Postgres source" [ref=e222] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/postgres-wasm
+                  - text: are licensed under the PostgreSQL License.
+            - generic [ref=e223]:
+              - heading "Readme" [level=2] [ref=e224]
+              - heading "Keywords" [level=3] [ref=e225]
+              - list [ref=e226]:
+                - listitem [ref=e227]:
+                  - link "postgres" [ref=e228] [cursor=pointer]:
+                    - /url: /search?q=keywords:postgres
+                - listitem [ref=e229]:
+                  - link "sql" [ref=e230] [cursor=pointer]:
+                    - /url: /search?q=keywords:sql
+                - listitem [ref=e231]:
+                  - link "database" [ref=e232] [cursor=pointer]:
+                    - /url: /search?q=keywords:database
+                - listitem [ref=e233]:
+                  - link "wasm" [ref=e234] [cursor=pointer]:
+                    - /url: /search?q=keywords:wasm
+                - listitem [ref=e235]:
+                  - link "client" [ref=e236] [cursor=pointer]:
+                    - /url: /search?q=keywords:client
+                - listitem [ref=e237]:
+                  - link "pglite" [ref=e238] [cursor=pointer]:
+                    - /url: /search?q=keywords:pglite
+            - complementary [ref=e239]:
+              - heading "Provenance" [level=1] [ref=e240]
+              - generic [ref=e243]:
+                - generic [ref=e245]:
+                  - img [ref=e247]
+                  - generic [ref=e250]: Built and signed on
+                  - heading "GitHub Actions" [level=2] [ref=e251]
+                  - link "View build summary" [ref=e252] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/actions/runs/23900996344/attempts/1
+                - generic [ref=e253]:
+                  - paragraph [ref=e254]: Source Commit
+                  - link "Source Commit" [ref=e255] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/tree/b7ba70759cbc695c6543459b8452dbe92e32d244
+                    - text: github.com/electric-sql/pglite@b7ba707
+                  - paragraph [ref=e256]: Build File
+                  - link "Build File" [ref=e257] [cursor=pointer]:
+                    - /url: https://github.com/electric-sql/pglite/actions/runs/23900996344/workflow
+                    - text: .github/workflows/build_and_test.yml
+                  - paragraph [ref=e258]: Public Ledger
+                  - link "Transparency log entry" [ref=e259] [cursor=pointer]:
+                    - /url: https://search.sigstore.dev/?logIndex=1216905410
+              - link "Share feedback" [ref=e260] [cursor=pointer]:
+                - /url: " https://github.com/npm/feedback"
+          - tabpanel
+          - tabpanel
+          - tabpanel "0 Dependencies"
+          - tabpanel "166 Dependents"
+          - tabpanel "66 Versions"
+        - complementary "Package sidebar" [ref=e261]:
+          - heading "Package Sidebar" [level=2] [ref=e262]
+          - heading "Install" [level=3] [ref=e263]
+          - generic [ref=e264]:
+            - img
+            - paragraph [ref=e265]:
+              - generic [ref=e266]:
+                - code [ref=e267]: npm i @electric-sql/pglite
+                - button "Copy install command line" [ref=e268] [cursor=pointer]:
+                  - img
+          - generic [ref=e269]:
+            - heading "Repository" [level=3] [ref=e270]
+            - paragraph [ref=e271]:
+              - link "Repository github.com/electric-sql/pglite" [ref=e272] [cursor=pointer]:
+                - /url: https://github.com/electric-sql/pglite
+                - img [ref=e274]
+                - text: github.com/electric-sql/pglite
+          - generic [ref=e277]:
+            - heading "Homepage" [level=3] [ref=e278]
+            - paragraph [ref=e279]:
+              - link "Homepage pglite.dev" [ref=e280] [cursor=pointer]:
+                - /url: https://pglite.dev
+                - img [ref=e281]
+                - text: pglite.dev
+          - button "Showing weekly downloads" [ref=e283]:
+            - heading "Weekly Downloads" [level=3] [ref=e284]:
+              - img [ref=e285]
+              - text: Weekly Downloads
+            - generic [ref=e289]:
+              - img [ref=e290]
+              - paragraph [ref=e295]: 6.779.405
+          - generic [ref=e296]:
+            - heading "Version" [level=3] [ref=e297]
+            - generic [ref=e298]:
+              - paragraph [ref=e299]: 0.4.3
+              - button "View more provenance details" [ref=e302]:
+                - img [ref=e303]
+          - generic [ref=e305]:
+            - heading "License" [level=3] [ref=e306]
+            - paragraph [ref=e307]: Apache-2.0
+          - generic [ref=e308]:
+            - heading "Unpacked Size" [level=3] [ref=e309]
+            - paragraph [ref=e310]: 23.3 MB
+          - generic [ref=e311]:
+            - heading "Total Files" [level=3] [ref=e312]
+            - paragraph [ref=e313]: "342"
+          - generic [ref=e314]:
+            - heading "Last publish" [level=3] [ref=e315]
+            - paragraph [ref=e316]:
+              - time [ref=e317]: 4 hours ago
+          - generic [ref=e318]:
+            - heading "Collaborators" [level=3] [ref=e319]
+            - list "Collaborators" [ref=e320]:
+              - listitem [ref=e321]:
+                - link "thruflo" [ref=e323] [cursor=pointer]:
+                  - /url: /~thruflo
+                  - img "thruflo" [ref=e324]
+              - listitem [ref=e325]:
+                - link "icehaunter" [ref=e327] [cursor=pointer]:
+                  - /url: /~icehaunter
+                  - img "icehaunter" [ref=e328]
+              - listitem [ref=e329]:
+                - link "kylemathews" [ref=e331] [cursor=pointer]:
+                  - /url: /~kylemathews
+                  - img "kylemathews" [ref=e332]
+              - listitem [ref=e333]:
+                - link "sgwillis" [ref=e335] [cursor=pointer]:
+                  - /url: /~sgwillis
+                  - img "sgwillis" [ref=e336]
+          - generic [ref=e337]:
+            - link "Analyze security with Socket" [ref=e338] [cursor=pointer]:
+              - /url: https://socket.dev/npm/package/%40electric-sql%2Fpglite
+              - img [ref=e339]
+              - strong [ref=e341]: Analyze security
+              - text: with Socket
+            - link "Check bundle size" [ref=e342] [cursor=pointer]:
+              - /url: https://bundlephobia.com/package/%40electric-sql%2Fpglite
+              - img [ref=e343]
+              - strong [ref=e345]: Check bundle size
+            - link "View package health" [ref=e346] [cursor=pointer]:
+              - /url: https://snyk.io/advisor/npm-package/%40electric-sql%2Fpglite
+              - img [ref=e347]
+              - strong [ref=e349]: View package health
+            - link "Explore dependencies" [ref=e350] [cursor=pointer]:
+              - /url: https://npmgraph.js.org/?q=%40electric-sql%2Fpglite
+              - img [ref=e351]
+              - strong [ref=e353]: Explore dependencies
+          - link "Report malware" [ref=e355] [cursor=pointer]:
+            - /url: /support?inquire=security&security-inquire=malware&package=%40electric-sql%2Fpglite&version=0.4.3
+            - img [ref=e356]
+            - strong [ref=e358]: Report
+            - text: malware
+    - contentinfo [ref=e359]:
+      - heading "Footer" [level=2] [ref=e360]
+      - generic [ref=e361]:
+        - generic [ref=e362]:
+          - link "Visit npm GitHub page" [ref=e364] [cursor=pointer]:
+            - /url: https://github.com/npm
+            - img [ref=e365]
+          - link "GitHub" [ref=e369] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e370]
+        - generic [ref=e372]:
+          - heading "Support" [level=3] [ref=e373]
+          - list "Support" [ref=e374]:
+            - listitem [ref=e375]:
+              - link "Help" [ref=e376] [cursor=pointer]:
+                - /url: https://docs.npmjs.com
+            - listitem [ref=e377]:
+              - link "Advisories" [ref=e378] [cursor=pointer]:
+                - /url: https://github.com/advisories
+            - listitem [ref=e379]:
+              - link "Status" [ref=e380] [cursor=pointer]:
+                - /url: http://status.npmjs.org/
+            - listitem [ref=e381]:
+              - link "Contact npm" [ref=e382] [cursor=pointer]:
+                - /url: /support
+        - generic [ref=e383]:
+          - heading "Company" [level=3] [ref=e384]
+          - list "Company" [ref=e385]:
+            - listitem [ref=e386]:
+              - link "About" [ref=e387] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e388]:
+              - link "Blog" [ref=e389] [cursor=pointer]:
+                - /url: https://github.blog/tag/npm/
+            - listitem [ref=e390]:
+              - link "Press" [ref=e391] [cursor=pointer]:
+                - /url: /press
+        - generic [ref=e392]:
+          - heading "Terms & Policies" [level=3] [ref=e393]
+          - list "Terms & Policies" [ref=e394]:
+            - listitem [ref=e395]:
+              - link "Policies" [ref=e396] [cursor=pointer]:
+                - /url: /policies/
+            - listitem [ref=e397]:
+              - link "Terms of Use" [ref=e398] [cursor=pointer]:
+                - /url: /policies/terms
+            - listitem [ref=e399]:
+              - link "Code of Conduct" [ref=e400] [cursor=pointer]:
+                - /url: /policies/conduct
+            - listitem [ref=e401]:
+              - link "Privacy" [ref=e402] [cursor=pointer]:
+                - /url: /policies/privacy
+  - generic [ref=e404]: Viewing @electric-sql/pglite version 0.4.3

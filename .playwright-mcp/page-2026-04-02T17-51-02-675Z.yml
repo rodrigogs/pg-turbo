@@ -1,0 +1,304 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - text: "skip to:"
+          - link "skip to content" [ref=e8] [cursor=pointer]:
+            - /url: "#main"
+            - text: content
+          - link "skip to package search" [ref=e9] [cursor=pointer]:
+            - /url: "#search"
+            - text: package search
+          - link "skip to sign in" [ref=e10] [cursor=pointer]:
+            - /url: "#signin"
+            - text: sign in
+        - generic [ref=e11]:
+          - generic [ref=e12]: ❤
+          - navigation "Product Navigation" [ref=e13]:
+            - list [ref=e14]:
+              - listitem [ref=e15]:
+                - link "Pro" [ref=e16] [cursor=pointer]:
+                  - /url: /products/pro
+              - listitem [ref=e17]:
+                - link "Teams" [ref=e18] [cursor=pointer]:
+                  - /url: /products/teams
+              - listitem [ref=e19]:
+                - link "Pricing" [ref=e20] [cursor=pointer]:
+                  - /url: /products
+              - listitem [ref=e21]:
+                - link "Documentation" [ref=e22] [cursor=pointer]:
+                  - /url: https://docs.npmjs.com
+      - generic [ref=e24]:
+        - generic [ref=e25]: npm
+        - link "Npm" [ref=e27] [cursor=pointer]:
+          - /url: /
+          - img [ref=e28]
+        - generic [ref=e31]:
+          - generic [ref=e33]:
+            - img [ref=e35]
+            - combobox "Search packages" [ref=e41]
+          - button "Search" [ref=e43]
+        - generic [ref=e45]:
+          - link "Sign Up" [ref=e46] [cursor=pointer]:
+            - /url: /signup
+          - link "Sign In" [ref=e47] [cursor=pointer]:
+            - /url: /login
+    - main [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]:
+          - heading "@testcontainers/postgresql TypeScript icon, indicating that this package has built-in type declarations" [level=1] [ref=e51]:
+            - generic [ref=e52]: "@testcontainers/postgresql"
+            - img "TypeScript icon, indicating that this package has built-in type declarations" [ref=e54]
+          - generic [ref=e55]: 11.13.0 •
+          - generic [ref=e56]: Public
+          - generic [ref=e57]:
+            - text: • Published
+            - time [ref=e58]: 16 days ago
+        - tablist [ref=e59]:
+          - tab "Readme" [selected] [ref=e60] [cursor=pointer]:
+            - generic [ref=e61]:
+              - img [ref=e62]
+              - text: Readme
+          - tab "Code Beta" [ref=e64] [cursor=pointer]:
+            - generic [ref=e65]:
+              - img [ref=e66]
+              - text: Code
+              - generic [ref=e69]: Beta
+          - tab "1 Dependency" [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - img [ref=e72]
+              - text: 1 Dependency
+          - tab "28 Dependents" [ref=e74] [cursor=pointer]:
+            - generic [ref=e75]:
+              - img [ref=e76]
+              - text: 28 Dependents
+          - tab "74 Versions" [ref=e78] [cursor=pointer]:
+            - generic [ref=e79]:
+              - img [ref=e80]
+              - text: 74 Versions
+        - generic [ref=e83]:
+          - tabpanel "Readme" [ref=e84]:
+            - article [ref=e86]:
+              - generic [ref=e87]:
+                - generic [ref=e88]:
+                  - heading "Testcontainers" [level=1] [ref=e89]
+                  - 'link "Permalink: Testcontainers" [ref=e90] [cursor=pointer]':
+                    - /url: "#testcontainers"
+                - paragraph [ref=e91]:
+                  - link "Open in GitHub Codespaces" [ref=e92] [cursor=pointer]:
+                    - /url: https://github.com/codespaces/new?hide_repo_select=true&ref=main&repo=116414510&machine=standardLinux32gb&devcontainer_path=.devcontainer%2Fdevcontainer.json&location=EastUs
+                    - img "Open in GitHub Codespaces" [ref=e93]
+                - paragraph [ref=e94]:
+                  - link "Test" [ref=e95] [cursor=pointer]:
+                    - /url: https://github.com/testcontainers/testcontainers-node/actions/workflows/checks.yml
+                    - img "Test" [ref=e96]
+                  - link "npm version" [ref=e97] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/testcontainers
+                    - img "npm version" [ref=e98]
+                  - link "npm version" [ref=e99] [cursor=pointer]:
+                    - /url: https://www.npmjs.com/package/testcontainers
+                    - img "npm version" [ref=e100]
+                - paragraph [ref=e101]:
+                  - link "Testcontainers Banner" [ref=e102] [cursor=pointer]:
+                    - /url: https://github.com/testcontainers/testcontainers-node/raw/main/docs/site/logo.png
+                    - img "Testcontainers Banner" [ref=e103]
+                - generic [ref=e104]:
+                  - heading "📖 Documentation" [level=2] [ref=e105]:
+                    - link "📖 Documentation" [ref=e106] [cursor=pointer]:
+                      - /url: https://node.testcontainers.org/
+                  - 'link "Permalink: 📖 Documentation" [ref=e107] [cursor=pointer]':
+                    - /url: "#-documentation"
+                - generic [ref=e108]:
+                  - heading "License" [level=2] [ref=e109]
+                  - 'link "Permalink: License" [ref=e110] [cursor=pointer]':
+                    - /url: "#license"
+                - paragraph [ref=e111]:
+                  - text: See
+                  - link "LICENSE" [ref=e112] [cursor=pointer]:
+                    - /url: https://github.com/testcontainers/testcontainers-node/blob/main/LICENSE
+                  - text: .
+                - generic [ref=e113]:
+                  - heading "Copyright" [level=2] [ref=e114]
+                  - 'link "Permalink: Copyright" [ref=e115] [cursor=pointer]':
+                    - /url: "#copyright"
+                - paragraph [ref=e116]: Copyright (c) 2018 - 2025 Cristian Greco and other authors.
+                - generic [ref=e117]:
+                  - heading "Contributing" [level=2] [ref=e118]
+                  - 'link "Permalink: Contributing" [ref=e119] [cursor=pointer]':
+                    - /url: "#contributing"
+                - paragraph [ref=e120]:
+                  - text: See
+                  - link "CONTRIBUTING.md" [ref=e121] [cursor=pointer]:
+                    - /url: https://github.com/testcontainers/testcontainers-node/blob/HEAD/CONTRIBUTING.md
+                  - text: for how to contribute to this repo.
+                - paragraph [ref=e122]:
+                  - text: See
+                  - link "contributors" [ref=e123] [cursor=pointer]:
+                    - /url: https://github.com/testcontainers/testcontainers-node/graphs/contributors/
+                  - text: for all contributors.
+                - separator [ref=e124]
+                - paragraph [ref=e125]:
+                  - text: Join our
+                  - link "Slack workspace" [ref=e126] [cursor=pointer]:
+                    - /url: https://slack.testcontainers.org/
+                  - text: "|"
+                  - link "Testcontainers OSS" [ref=e127] [cursor=pointer]:
+                    - /url: https://java.testcontainers.org/
+                  - text: "|"
+                  - link "Testcontainers Cloud" [ref=e128] [cursor=pointer]:
+                    - /url: https://www.testcontainers.cloud/
+            - generic [ref=e129]:
+              - heading "Readme" [level=2] [ref=e130]
+              - heading "Keywords" [level=3] [ref=e131]
+              - list [ref=e132]:
+                - listitem [ref=e133]:
+                  - link "postgres" [ref=e134] [cursor=pointer]:
+                    - /url: /search?q=keywords:postgres
+                - listitem [ref=e135]:
+                  - link "postgresql" [ref=e136] [cursor=pointer]:
+                    - /url: /search?q=keywords:postgresql
+                - listitem [ref=e137]:
+                  - link "testing" [ref=e138] [cursor=pointer]:
+                    - /url: /search?q=keywords:testing
+                - listitem [ref=e139]:
+                  - link "docker" [ref=e140] [cursor=pointer]:
+                    - /url: /search?q=keywords:docker
+                - listitem [ref=e141]:
+                  - link "testcontainers" [ref=e142] [cursor=pointer]:
+                    - /url: /search?q=keywords:testcontainers
+          - tabpanel
+          - tabpanel
+          - tabpanel "1 Dependency"
+          - tabpanel "28 Dependents"
+          - tabpanel "74 Versions"
+        - complementary "Package sidebar" [ref=e143]:
+          - heading "Package Sidebar" [level=2] [ref=e144]
+          - heading "Install" [level=3] [ref=e145]
+          - generic [ref=e146]:
+            - img
+            - paragraph [ref=e147]:
+              - generic [ref=e148]:
+                - code [ref=e149]: npm i @testcontainers/postgresql
+                - button "Copy install command line" [ref=e150] [cursor=pointer]:
+                  - img
+          - generic [ref=e151]:
+            - heading "Repository" [level=3] [ref=e152]
+            - paragraph [ref=e153]:
+              - link "Repository github.com/testcontainers/testcontainers-node" [ref=e154] [cursor=pointer]:
+                - /url: https://github.com/testcontainers/testcontainers-node
+                - img [ref=e156]
+                - text: github.com/testcontainers/testcontainers-node
+          - generic [ref=e159]:
+            - heading "Homepage" [level=3] [ref=e160]
+            - paragraph [ref=e161]:
+              - link "Homepage github.com/testcontainers/testcontainers-node#readme" [ref=e162] [cursor=pointer]:
+                - /url: https://github.com/testcontainers/testcontainers-node#readme
+                - img [ref=e163]
+                - text: github.com/testcontainers/testcontainers-node#readme
+          - button "Showing weekly downloads" [ref=e165]:
+            - heading "Weekly Downloads" [level=3] [ref=e166]:
+              - img [ref=e167]
+              - text: Weekly Downloads
+            - generic [ref=e171]:
+              - img [ref=e172]
+              - paragraph [ref=e177]: 1.297.741
+          - generic [ref=e178]:
+            - heading "Version" [level=3] [ref=e179]
+            - paragraph [ref=e181]: 11.13.0
+          - generic [ref=e182]:
+            - heading "License" [level=3] [ref=e183]
+            - paragraph [ref=e184]: MIT
+          - generic [ref=e185]:
+            - heading "Unpacked Size" [level=3] [ref=e186]
+            - paragraph [ref=e187]: 17.2 kB
+          - generic [ref=e188]:
+            - heading "Total Files" [level=3] [ref=e189]
+            - paragraph [ref=e190]: "7"
+          - generic [ref=e191]:
+            - heading "Last publish" [level=3] [ref=e192]
+            - paragraph [ref=e193]:
+              - time [ref=e194]: 16 days ago
+          - generic [ref=e195]:
+            - heading "Collaborators" [level=3] [ref=e196]
+            - list "Collaborators" [ref=e197]:
+              - listitem [ref=e198]:
+                - link "cristianrgreco" [ref=e200] [cursor=pointer]:
+                  - /url: /~cristianrgreco
+                  - img "cristianrgreco" [ref=e201]
+          - generic [ref=e202]:
+            - link "Analyze security with Socket" [ref=e203] [cursor=pointer]:
+              - /url: https://socket.dev/npm/package/%40testcontainers%2Fpostgresql
+              - img [ref=e204]
+              - strong [ref=e206]: Analyze security
+              - text: with Socket
+            - link "Check bundle size" [ref=e207] [cursor=pointer]:
+              - /url: https://bundlephobia.com/package/%40testcontainers%2Fpostgresql
+              - img [ref=e208]
+              - strong [ref=e210]: Check bundle size
+            - link "View package health" [ref=e211] [cursor=pointer]:
+              - /url: https://snyk.io/advisor/npm-package/%40testcontainers%2Fpostgresql
+              - img [ref=e212]
+              - strong [ref=e214]: View package health
+            - link "Explore dependencies" [ref=e215] [cursor=pointer]:
+              - /url: https://npmgraph.js.org/?q=%40testcontainers%2Fpostgresql
+              - img [ref=e216]
+              - strong [ref=e218]: Explore dependencies
+          - link "Report malware" [ref=e220] [cursor=pointer]:
+            - /url: /support?inquire=security&security-inquire=malware&package=%40testcontainers%2Fpostgresql&version=11.13.0
+            - img [ref=e221]
+            - strong [ref=e223]: Report
+            - text: malware
+    - contentinfo [ref=e224]:
+      - heading "Footer" [level=2] [ref=e225]
+      - generic [ref=e226]:
+        - generic [ref=e227]:
+          - link "Visit npm GitHub page" [ref=e229] [cursor=pointer]:
+            - /url: https://github.com/npm
+            - img [ref=e230]
+          - link "GitHub" [ref=e234] [cursor=pointer]:
+            - /url: https://github.com
+            - img [ref=e235]
+        - generic [ref=e237]:
+          - heading "Support" [level=3] [ref=e238]
+          - list "Support" [ref=e239]:
+            - listitem [ref=e240]:
+              - link "Help" [ref=e241] [cursor=pointer]:
+                - /url: https://docs.npmjs.com
+            - listitem [ref=e242]:
+              - link "Advisories" [ref=e243] [cursor=pointer]:
+                - /url: https://github.com/advisories
+            - listitem [ref=e244]:
+              - link "Status" [ref=e245] [cursor=pointer]:
+                - /url: http://status.npmjs.org/
+            - listitem [ref=e246]:
+              - link "Contact npm" [ref=e247] [cursor=pointer]:
+                - /url: /support
+        - generic [ref=e248]:
+          - heading "Company" [level=3] [ref=e249]
+          - list "Company" [ref=e250]:
+            - listitem [ref=e251]:
+              - link "About" [ref=e252] [cursor=pointer]:
+                - /url: /about
+            - listitem [ref=e253]:
+              - link "Blog" [ref=e254] [cursor=pointer]:
+                - /url: https://github.blog/tag/npm/
+            - listitem [ref=e255]:
+              - link "Press" [ref=e256] [cursor=pointer]:
+                - /url: /press
+        - generic [ref=e257]:
+          - heading "Terms & Policies" [level=3] [ref=e258]
+          - list "Terms & Policies" [ref=e259]:
+            - listitem [ref=e260]:
+              - link "Policies" [ref=e261] [cursor=pointer]:
+                - /url: /policies/
+            - listitem [ref=e262]:
+              - link "Terms of Use" [ref=e263] [cursor=pointer]:
+                - /url: /policies/terms
+            - listitem [ref=e264]:
+              - link "Code of Conduct" [ref=e265] [cursor=pointer]:
+                - /url: /policies/conduct
+            - listitem [ref=e266]:
+              - link "Privacy" [ref=e267] [cursor=pointer]:
+                - /url: /policies/privacy
+  - generic [ref=e269]: Viewing @testcontainers/postgresql version 11.13.0
