@@ -96,7 +96,7 @@ export function renderDashboard(state: DashboardState): string {
 
   // Worker lines
   const workerLines = state.workers.map((w) => {
-    const prefix = `  ${pc.dim(`W${w.id}`)}`
+    const prefix = `    ${pc.dim(`W${w.id}`)}`
     if (w.status === 'idle' || !w.currentJob) return `${prefix} ${pc.dim('\u2500 idle')}`
     const { table, chunk } = w.currentJob
     const label = `${table.schema}.${table.name}`
