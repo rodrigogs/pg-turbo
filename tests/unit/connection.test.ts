@@ -191,6 +191,16 @@ describe('createWorkerClient', () => {
     await expect(createWorkerClient('postgresql://u:p@h/db', 'ABC-123')).rejects.toThrow('snapshot expired')
     expect(mockEnd).toHaveBeenCalled()
   })
+
+  it('rejects invalid snapshot ID format', async () => {
+    mockEnd.mockResolvedValue(undefined)
+    await expect(createWorkerClient('postgresql://u:p@h/db', 'invalid; DROP TABLE')).rejects.toThrow(
+      'Invalid snapshot ID format',
+    )
+    expect(mockEnd).toHaveBeenCalled()
+    // Should never have issued any queries
+    expect(mockQuery).not.toHaveBeenCalled()
+  })
 })
 
 describe('testConnection', () => {

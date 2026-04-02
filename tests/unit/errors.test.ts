@@ -80,4 +80,11 @@ describe('isNetworkError', () => {
     const err = new Error('COPY failed')
     expect(isNetworkError(err)).toBe(false)
   })
+
+  it('returns false for non-Error values', () => {
+    expect(isNetworkError('string error')).toBe(false)
+    expect(isNetworkError(null)).toBe(false)
+    expect(isNetworkError(undefined)).toBe(false)
+    expect(isNetworkError(42)).toBe(false)
+  })
 })
