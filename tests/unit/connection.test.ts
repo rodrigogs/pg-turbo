@@ -317,20 +317,22 @@ describe('connectWithRetry (via createClient)', () => {
   })
 
   it('throws after CONNECT_MAX_ATTEMPTS for network errors (queue handles outer retry)', async () => {
-    vi.useFakeTimers()
+    vi.useRealTimers()
+    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
+    const origSetTimeout = globalThis.setTimeout
+    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn: any) => {
+      return origSetTimeout(fn, 0)
+    })
+
     const networkErr = Object.assign(new Error('ECONNREFUSED'), { code: 'ECONNREFUSED' })
     mockConnect.mockRejectedValue(networkErr)
     mockEnd.mockResolvedValue(undefined)
 
-    const promise = createClient('postgresql://u:p@h/db')
-    // Advance through all 3 attempts (CONNECT_MAX_ATTEMPTS=3)
-    for (let i = 0; i < 5; i++) {
-      await vi.advanceTimersByTimeAsync(15_000)
-    }
-    await expect(promise).rejects.toThrow('ECONNREFUSED')
-    // Exactly 3 attempts
+    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('ECONNREFUSED')
     expect(mockConnect).toHaveBeenCalledTimes(3)
 
-    vi.useRealTimers()
+    setTimeoutSpy.mockRestore()
+    randomSpy.mockRestore()
+    vi.useFakeTimers()
   })
 })
