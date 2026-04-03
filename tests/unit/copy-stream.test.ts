@@ -162,9 +162,9 @@ describe('createIdleMonitor', () => {
 
     // Send data every 100ms — should NOT timeout (timer resets each time)
     input.write(Buffer.from('a'))
-    await new Promise(r => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 100))
     input.write(Buffer.from('b'))
-    await new Promise(r => setTimeout(r, 100))
+    await new Promise((r) => setTimeout(r, 100))
     input.write(Buffer.from('c'))
     input.end()
     await p // should complete without timeout

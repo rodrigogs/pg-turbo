@@ -119,11 +119,16 @@ export async function dumpChunk(
     const check = setInterval(() => {
       if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
         clearInterval(check)
-        try { (client as any).connection?.stream?.destroy() } catch {}
+        try {
+          ;(client as any).connection?.stream?.destroy()
+        } catch {}
         reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
       }
     }, 1_000)
-    pipelinePromise.then(() => clearInterval(check), () => clearInterval(check))
+    pipelinePromise.then(
+      () => clearInterval(check),
+      () => clearInterval(check),
+    )
   })
 
   await Promise.race([pipelinePromise, idlePromise])
@@ -190,11 +195,16 @@ export async function restoreChunk(
       const check = setInterval(() => {
         if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
           clearInterval(check)
-          try { (client as any).connection?.stream?.destroy() } catch {}
+          try {
+            ;(client as any).connection?.stream?.destroy()
+          } catch {}
           reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
         }
       }, 1_000)
-      pipelinePromise.then(() => clearInterval(check), () => clearInterval(check))
+      pipelinePromise.then(
+        () => clearInterval(check),
+        () => clearInterval(check),
+      )
     })
 
     await Promise.race([pipelinePromise, idlePromise])

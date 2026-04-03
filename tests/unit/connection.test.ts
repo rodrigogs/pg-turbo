@@ -285,10 +285,7 @@ describe('connectWithRetry (via createClient)', () => {
 
   it('retries on failure and succeeds', async () => {
     const networkErr = Object.assign(new Error('ECONNREFUSED'), { code: 'ECONNREFUSED' })
-    mockConnect
-      .mockRejectedValueOnce(networkErr)
-      .mockRejectedValueOnce(networkErr)
-      .mockResolvedValueOnce(undefined)
+    mockConnect.mockRejectedValueOnce(networkErr).mockRejectedValueOnce(networkErr).mockResolvedValueOnce(undefined)
     mockEnd.mockResolvedValue(undefined)
     const promise = createClient('postgresql://u:p@h/db')
     await vi.advanceTimersByTimeAsync(5_000)

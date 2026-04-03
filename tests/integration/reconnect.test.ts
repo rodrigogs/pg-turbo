@@ -1,16 +1,16 @@
+import { execSync } from 'node:child_process'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import * as net from 'node:net'
-import { mkdtempSync, rmSync, existsSync, readFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { execSync } from 'node:child_process'
 import pg from 'pg'
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { runDump } from '../../src/cli/dump.js'
 import { isNetworkError } from '../../src/core/errors.js'
 import type { DumpManifest } from '../../src/types/index.js'
 
 const { Client } = pg
-const COMPOSE = join(__dirname, 'docker-compose.yml')
+const _COMPOSE = join(__dirname, 'docker-compose.yml')
 const FIXTURES = join(__dirname, 'fixtures.sql')
 const PG_PORT = 54399
 const PG_HOST = '127.0.0.1'
@@ -51,7 +51,7 @@ class TcpProxy {
           serverSocket.unpipe?.(clientSocket)
           clientSocket.destroy()
           serverSocket.destroy()
-          this.sockets = this.sockets.filter(s => s !== clientSocket && s !== serverSocket)
+          this.sockets = this.sockets.filter((s) => s !== clientSocket && s !== serverSocket)
         }
         clientSocket.on('error', cleanup)
         serverSocket.on('error', cleanup)
@@ -60,7 +60,7 @@ class TcpProxy {
 
       this.server.on('error', reject)
       this.server.listen(listenPort ?? 0, PG_HOST, () => {
-        this.port = (this.server!.address() as net.AddressInfo).port
+        this.port = (this.server?.address() as net.AddressInfo).port
         resolve(this.port)
       })
     })
@@ -110,7 +110,7 @@ async function waitForPg(maxMs = 30_000) {
       await c.end()
       return
     } catch {
-      await new Promise(r => setTimeout(r, 500))
+      await new Promise((r) => setTimeout(r, 500))
     }
   }
   throw new Error('PG not ready')
@@ -130,9 +130,15 @@ describe('connection recovery via TCP proxy', () => {
     await waitForPg()
     // Load fixtures if needed
     try {
-      execSync(`psql "postgresql://test_admin@${PG_HOST}:${PG_PORT}/pg_turbo_test" -c "SELECT count(*) FROM public.users"`, { stdio: 'pipe' })
+      execSync(
+        `psql "postgresql://test_admin@${PG_HOST}:${PG_PORT}/pg_turbo_test" -c "SELECT count(*) FROM public.users"`,
+        { stdio: 'pipe' },
+      )
     } catch {
-      execSync(`psql "postgresql://test_admin@${PG_HOST}:${PG_PORT}/pg_turbo_test" -f "${FIXTURES}"`, { stdio: 'pipe', timeout: 30_000 })
+      execSync(`psql "postgresql://test_admin@${PG_HOST}:${PG_PORT}/pg_turbo_test" -f "${FIXTURES}"`, {
+        stdio: 'pipe',
+        timeout: 30_000,
+      })
     }
     // Create a large table for the reconnect test
     const c = new Client({ connectionString: `postgresql://test_admin@${PG_HOST}:${PG_PORT}/pg_turbo_test` })
@@ -190,7 +196,7 @@ describe('connection recovery via TCP proxy', () => {
 
     expect(caughtError).toBeDefined()
     console.log('=== ACTUAL ERROR FROM KILLED COPY ===')
-    console.log('message:', caughtError!.message)
+    console.log('message:', caughtError?.message)
     console.log('code:', (caughtError as any).code)
     console.log('isNetworkError:', isNetworkError(caughtError))
     console.log('=====================================')

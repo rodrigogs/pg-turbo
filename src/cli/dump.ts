@@ -9,7 +9,6 @@ import { dirname, join } from 'node:path'
 import logUpdate from 'log-update'
 import pg from 'pg'
 import { createArchive } from '../core/archive.js'
-import { isTransientError } from '../core/errors.js'
 import type { ChunkPlanOptions, RowSample } from '../core/chunker.js'
 import { buildCopyQuery, chunkEstimatedBytes, chunkEstimatedRows, chunkStrategy, planChunks } from '../core/chunker.js'
 import {
@@ -23,6 +22,7 @@ import {
   sanitizeConnectionString,
 } from '../core/connection.js'
 import { chunkDoneMarker, dumpChunk, removePartialChunk } from '../core/copy-stream.js'
+import { isTransientError } from '../core/errors.js'
 import { humanSize, progressBar } from '../core/format.js'
 import { DDL_FILENAME, writeManifest } from '../core/manifest.js'
 import { runWorkerPool } from '../core/queue.js'

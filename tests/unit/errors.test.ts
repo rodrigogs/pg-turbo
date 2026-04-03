@@ -1,10 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  ErrorCategory,
-  classifyError,
-  isNetworkError,
-  isTransientError,
-} from '../../src/core/errors.js'
+import { classifyError, ErrorCategory, isNetworkError, isTransientError } from '../../src/core/errors.js'
 
 function makeError(message: string, code?: string): Error {
   const err = new Error(message)

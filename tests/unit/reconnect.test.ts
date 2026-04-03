@@ -1,9 +1,9 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest'
 import * as net from 'node:net'
-import pg from 'pg'
-import { pipeline } from 'node:stream/promises'
-import { to as copyTo } from 'pg-copy-streams'
 import { PassThrough } from 'node:stream'
+import { pipeline } from 'node:stream/promises'
+import pg from 'pg'
+import { to as copyTo } from 'pg-copy-streams'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
 import { isNetworkError } from '../../src/core/errors.js'
 
 const { Client } = pg
@@ -34,7 +34,7 @@ class TcpProxy {
         serverSocket.on('close', () => clientSocket.destroy())
       })
       this.server.listen(0, '127.0.0.1', () => {
-        this.port = (this.server!.address() as net.AddressInfo).port
+        this.port = (this.server?.address() as net.AddressInfo).port
         resolve(this.port)
       })
     })
