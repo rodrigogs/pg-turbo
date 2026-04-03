@@ -12,6 +12,9 @@ export interface WorkerPoolOptions {
   retryDelayMs?: number
   isResumable: (job: ChunkJob) => boolean
   onWorkerError?: (workerId: number, error: Error) => void
+  /** Called when a worker starts waiting for a retry backoff delay.
+   *  The dashboard uses retryAt to show a countdown. */
+  onRetryWait?: (workerId: number, retryAt: number) => void
 }
 
 export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResult[]> {
@@ -44,7 +47,9 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
       if (retryCount > 0 && opts.retryDelayMs) {
         const baseDelaySec = opts.retryDelayMs / 1000
         const delay = calculateDelay(Math.min(retryCount - 1, 5), baseDelaySec, 60)
+        opts.onRetryWait?.(workerId, Date.now() + delay)
         await new Promise((r) => setTimeout(r, delay))
+        opts.onRetryWait?.(workerId, 0) // clear countdown
       }
       const startTime = Date.now()
       try {

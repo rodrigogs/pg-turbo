@@ -328,6 +328,10 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         onWorkerError: (workerId) => {
           workerClients.delete(workerId)
         },
+        onRetryWait: (workerId, retryAt) => {
+          const w = workers[workerId]
+          if (w) w.retryAt = retryAt
+        },
       })
 
       dashboard?.stop()

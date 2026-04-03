@@ -387,6 +387,10 @@ export async function runDump(opts: DumpOptions): Promise<void> {
           // Client already destroyed in task error handler
           workerClients.delete(workerId)
         },
+        onRetryWait: (workerId, retryAt) => {
+          const w = workers[workerId]
+          if (w) w.retryAt = retryAt
+        },
       })
 
       if (snapshotLost) {
