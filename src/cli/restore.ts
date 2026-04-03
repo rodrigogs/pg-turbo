@@ -320,7 +320,7 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
             )
             return { rowCount: 0, bytesWritten: chunkEstimatedBytes(job) }
           } catch (err) {
-            await destroyClient(client)
+            destroyClient(client)
             workerClients.delete(workerId)
             throw err
           }

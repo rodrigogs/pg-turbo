@@ -136,9 +136,17 @@ export async function isReadReplica(connectionString: string): Promise<boolean> 
 
 export async function releaseWorkerClient(client: InstanceType<typeof Client>): Promise<void> {
   await client.query('COMMIT').catch(() => {})
-  await client.end()
+  const timeout = new Promise<void>((resolve) => setTimeout(resolve, 2_000))
+  await Promise.race([client.end().catch(() => {}), timeout])
 }
 
-export async function destroyClient(client: InstanceType<typeof Client>): Promise<void> {
-  await client.end().catch(() => {})
+export function destroyClient(client: InstanceType<typeof Client>): void {
+  // Forcibly destroy the underlying socket without waiting. client.end() can hang
+  // if the 'end' event already fired (dead connection), blocking the worker forever.
+  try {
+    ;(client as any).connection?.stream?.destroy()
+  } catch {
+    // ignore — stream may already be destroyed
+  }
+  client.end().catch(() => {})
 }

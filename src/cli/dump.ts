@@ -373,7 +373,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
             })
           } catch (err) {
             // On error, destroy this worker's client so it gets recreated
-            await destroyClient(client)
+            destroyClient(client)
             workerClients.delete(workerId)
             await removePartialChunk(job.outputPath)
             throw err

@@ -256,10 +256,20 @@ describe('destroyClient', () => {
     vi.clearAllMocks()
   })
 
-  it('ends without throwing even on error', async () => {
+  it('destroys socket and calls end without throwing', () => {
     mockEnd.mockRejectedValue(new Error('already closed'))
-    const client = { end: mockEnd } as any
-    await expect(destroyClient(client)).resolves.toBeUndefined()
+    const mockDestroy = vi.fn()
+    const client = {
+      end: mockEnd,
+      connection: { stream: { destroy: mockDestroy } },
+    } as any
+    expect(() => destroyClient(client)).not.toThrow()
+    expect(mockDestroy).toHaveBeenCalled()
+  })
+
+  it('handles missing connection/stream gracefully', () => {
+    const client = { end: mockEnd, connection: null } as any
+    expect(() => destroyClient(client)).not.toThrow()
   })
 })
 
