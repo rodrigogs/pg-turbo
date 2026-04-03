@@ -53,10 +53,7 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
       }
       const startTime = Date.now()
       try {
-        // Don't show 'started' (downloading) during reconnection — keep showing 'retrying'
-        if (!job.networkRetries) {
-          opts.onProgress({ type: 'started', workerId, job })
-        }
+        opts.onProgress({ type: 'started', workerId, job })
         const { rowCount, bytesWritten } = await opts.task(job, workerId)
         // Success — reset network retries
         job.networkRetries = 0
