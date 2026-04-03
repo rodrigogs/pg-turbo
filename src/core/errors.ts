@@ -28,6 +28,9 @@ function isNetworkErrorShallow(err: Error): boolean {
   // PostgreSQL connection error class (08xxx)
   if (code && /^08/.test(code)) return true
 
+  // PostgreSQL operator intervention (57xxx) — admin shutdown, crash recovery, cannot connect
+  if (code && /^57/.test(code)) return true
+
   // pg driver connection terminated messages
   const msg = err.message
   for (const pattern of CONNECTION_TERMINATED_PATTERNS) {

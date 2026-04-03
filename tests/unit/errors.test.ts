@@ -62,6 +62,24 @@ describe('isNetworkError', () => {
     expect(isNetworkError(err)).toBe(true)
   })
 
+  it('detects PostgreSQL admin shutdown (57P01)', () => {
+    const err = new Error('terminating connection due to administrator command')
+    ;(err as any).code = '57P01'
+    expect(isNetworkError(err)).toBe(true)
+  })
+
+  it('detects PostgreSQL cannot connect now (57P03)', () => {
+    const err = new Error('the database system is shutting down')
+    ;(err as any).code = '57P03'
+    expect(isNetworkError(err)).toBe(true)
+  })
+
+  it('detects PostgreSQL crash recovery (57P02)', () => {
+    const err = new Error('terminating connection due to crash of another server process')
+    ;(err as any).code = '57P02'
+    expect(isNetworkError(err)).toBe(true)
+  })
+
   it('detects "Connection terminated unexpectedly"', () => {
     const err = new Error('Connection terminated unexpectedly')
     expect(isNetworkError(err)).toBe(true)
