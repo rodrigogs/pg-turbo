@@ -76,7 +76,7 @@ async function connectWithRetry(connectionString: string): Promise<InstanceType<
     const client = newClient(connectionString)
     let timer: ReturnType<typeof setTimeout> | undefined
     try {
-      // Hard timeout we control — never trust pg's internal timeout alone
+      const t0 = Date.now()
       await Promise.race([
         client.connect(),
         new Promise<never>((_, reject) => {
@@ -84,18 +84,24 @@ async function connectWithRetry(connectionString: string): Promise<InstanceType<
         }),
       ])
       clearTimeout(timer)
+      process.stderr.write(`[pg-turbo] connect ok (attempt ${attempt}, ${Date.now() - t0}ms)\n`)
       return client
     } catch (err) {
       clearTimeout(timer)
+      const msg = err instanceof Error ? err.message : String(err)
+      const code = (err as any)?.code ?? 'no-code'
+      const transient = isTransientError(err)
+      process.stderr.write(`[pg-turbo] connect failed (attempt ${attempt}): ${code} / ${msg.slice(0, 80)} [transient=${transient}]\n`)
       lastError = err
       destroyClient(client)
-      if (!isTransientError(err)) throw err
+      if (!transient) throw err
       if (attempt < CONNECT_MAX_ATTEMPTS - 1) {
         const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** attempt, 10_000) + Math.random() * 1_000
         await new Promise((r) => setTimeout(r, delay))
       }
     }
   }
+  process.stderr.write(`[pg-turbo] connectWithRetry exhausted ${CONNECT_MAX_ATTEMPTS} attempts, throwing\n`)
   throw lastError
 }
 

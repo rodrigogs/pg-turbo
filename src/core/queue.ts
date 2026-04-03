@@ -66,8 +66,8 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         const error = err instanceof Error ? err : new Error(String(err))
 
         if (isTransientError(error)) {
-          // Network errors: don't count against retry limit, but track for backoff
           job.networkRetries = (job.networkRetries ?? 0) + 1
+          process.stderr.write(`[Q] W${workerId} transient error, networkRetries=${job.networkRetries}: ${error.message.slice(0, 60)}\n`)
           opts.onProgress({ type: 'retrying', workerId, job, error })
           retryQueue.push(job)
         } else {

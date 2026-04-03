@@ -355,28 +355,34 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         task: async (job, workerId) => {
           let client = workerClients.get(workerId)
           if (!client) {
+            process.stderr.write(`[W${workerId}] creating new connection (snapshot=${!!activeSnapshotId})\n`)
             try {
               client = await createWorkerClient(cs, activeSnapshotId)
+              process.stderr.write(`[W${workerId}] connected\n`)
             } catch (connectErr) {
-              // If snapshot is stale (not a network error), degrade to no-snapshot
-              if (!isTransientError(connectErr) && activeSnapshotId) {
+              const transient = isTransientError(connectErr)
+              const msg = connectErr instanceof Error ? connectErr.message.slice(0, 80) : String(connectErr)
+              process.stderr.write(`[W${workerId}] connect failed: ${msg} [transient=${transient}]\n`)
+              if (!transient && activeSnapshotId) {
                 activeSnapshotId = null
                 snapshotLost = true
                 client = await createWorkerClient(cs, null)
               } else {
-                // Network error — throw immediately so the queue can track the retry
                 throw connectErr
               }
             }
             workerClients.set(workerId, client)
           }
           try {
+            process.stderr.write(`[W${workerId}] starting COPY: ${job.table.schema}.${job.table.name} chunk ${job.chunk.index}\n`)
             const w = workers[workerId]
             return await dumpChunk(client, job.copyQuery ?? '', job.outputPath, opts.compression, (rows) => {
               if (w) w.progressCurrent = rows
             })
           } catch (err) {
-            // On error, destroy this worker's client so it gets recreated
+            const msg = err instanceof Error ? err.message.slice(0, 80) : String(err)
+            const transient = isTransientError(err)
+            process.stderr.write(`[W${workerId}] COPY failed: ${msg} [transient=${transient}]\n`)
             destroyClient(client)
             workerClients.delete(workerId)
             await removePartialChunk(job.outputPath)
