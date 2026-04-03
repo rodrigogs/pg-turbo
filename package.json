@@ -1,8 +1,30 @@
 {
   "name": "pg-turbo",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Resilient PostgreSQL dump & restore with direct COPY protocol",
   "license": "AGPL-3.0-only",
+  "author": "Rodrigo Gomes da Silva",
+  "homepage": "https://github.com/rodrigogs/pg-turbo",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rodrigogs/pg-turbo.git"
+  },
+  "bugs": {
+    "url": "https://github.com/rodrigogs/pg-turbo/issues"
+  },
+  "keywords": [
+    "postgresql",
+    "pg",
+    "dump",
+    "restore",
+    "backup",
+    "copy",
+    "resilient",
+    "parallel",
+    "chunked",
+    "streaming",
+    "cli"
+  ],
   "type": "module",
   "bin": {
     "pg-turbo": "./dist/bin/pg-turbo.js"
