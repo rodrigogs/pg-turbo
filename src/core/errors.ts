@@ -60,6 +60,12 @@ enum PgDriverMessage {
   SERVER_CLOSED = 'server closed the connection unexpectedly',
 }
 
+/** pg driver internal error messages (no error code available). */
+enum PgInternalMessage {
+  /** Thrown by pg when connectionTimeoutMillis fires */
+  TIMEOUT_EXPIRED = 'timeout expired',
+}
+
 /** pg-turbo internal error messages. */
 enum InternalMessage {
   IDLE_TIMEOUT = 'Connection idle timeout',
@@ -72,6 +78,7 @@ const STREAM_CODES = new Set<string>(Object.values(StreamErrorCode))
 const PG_TRANSIENT_PREFIXES = Object.values(PgTransientClass)
 const TRANSIENT_MESSAGE_PATTERNS = [
   ...Object.values(PgDriverMessage),
+  ...Object.values(PgInternalMessage),
   ...Object.values(InternalMessage),
 ]
 

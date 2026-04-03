@@ -9,6 +9,7 @@ import { dirname, join } from 'node:path'
 import logUpdate from 'log-update'
 import pg from 'pg'
 import { createArchive } from '../core/archive.js'
+import { isTransientError } from '../core/errors.js'
 import type { ChunkPlanOptions, RowSample } from '../core/chunker.js'
 import { buildCopyQuery, chunkEstimatedBytes, chunkEstimatedRows, chunkStrategy, planChunks } from '../core/chunker.js'
 import {
@@ -356,13 +357,16 @@ export async function runDump(opts: DumpOptions): Promise<void> {
           if (!client) {
             try {
               client = await createWorkerClient(cs, activeSnapshotId)
-            } catch {
-              // Snapshot may be invalid after coordinator disconnect — fall back
-              if (activeSnapshotId) {
+            } catch (connectErr) {
+              // If snapshot is stale (not a network error), degrade to no-snapshot
+              if (!isTransientError(connectErr) && activeSnapshotId) {
                 activeSnapshotId = null
                 snapshotLost = true
+                client = await createWorkerClient(cs, null)
+              } else {
+                // Network error — throw immediately so the queue can track the retry
+                throw connectErr
               }
-              client = await createWorkerClient(cs, null)
             }
             workerClients.set(workerId, client)
           }

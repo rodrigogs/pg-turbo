@@ -55,6 +55,7 @@ describe('classifyError', () => {
       'connection lost',
       'server closed the connection unexpectedly',
       'Connection idle timeout — no data received for 15s',
+      'timeout expired',
     ])('classifies message "%s" as STREAM', (message) => {
       expect(classifyError(makeError(message))).toBe(ErrorCategory.STREAM)
     })
