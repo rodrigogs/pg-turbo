@@ -5,7 +5,7 @@
 [![npm version](https://img.shields.io/npm/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![npm downloads](https://img.shields.io/npm/dm/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![Node.js](https://img.shields.io/node/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
 Resilient PostgreSQL dump & restore CLI for large databases over flaky connections.
 
@@ -259,4 +259,4 @@ bench/          # Performance benchmarks
 
 ## License
 
-[MIT](LICENSE)
+[AGPL-3.0](LICENSE)
