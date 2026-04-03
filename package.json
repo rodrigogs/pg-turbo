@@ -2,6 +2,7 @@
   "name": "pg-turbo",
   "version": "0.1.0",
   "description": "Resilient PostgreSQL dump & restore with direct COPY protocol",
+  "license": "AGPL-3.0",
   "type": "module",
   "bin": {
     "pg-turbo": "./bin/pg-turbo.ts"
