@@ -58,33 +58,33 @@ function newClient(connectionString: string): InstanceType<typeof Client> {
   return client
 }
 
-const CONNECT_RETRIES = 5
+/** Max attempts per connectWithRetry call. Kept small so the QUEUE retry loop
+ *  (which tracks visible retry count in the dashboard) drives the outer retry. */
+const CONNECT_MAX_ATTEMPTS = 3
 const CONNECT_BASE_DELAY_MS = 2_000
 
-/** Connect with retries so transient network failures don't consume task retry budget.
- *  Transient errors retry indefinitely; permanent errors give up after CONNECT_RETRIES. */
+/** Try to connect with a few fast retries. Throws on failure so the caller
+ *  (queue worker) can re-queue and show retry progress in the dashboard.
+ *  Permanent errors (auth failure, bad config) throw immediately. */
 async function connectWithRetry(connectionString: string): Promise<InstanceType<typeof Client>> {
-  for (let attempt = 0; ; attempt++) {
+  let lastError: unknown
+  for (let attempt = 0; attempt < CONNECT_MAX_ATTEMPTS; attempt++) {
     const client = newClient(connectionString)
     try {
       await client.connect()
-      if (attempt > 0) {
-        process.stderr.write(`[pg-turbo] reconnected after ${attempt} attempt(s)\n`)
-      }
       return client
     } catch (err) {
-      // Forcibly destroy — do NOT await client.end() which can hang on dead sockets
+      lastError = err
       destroyClient(client)
-      // Transient errors: retry indefinitely
-      // Permanent errors: give up after CONNECT_RETRIES
-      if (!isTransientError(err) && attempt >= CONNECT_RETRIES) throw err
-      const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** Math.min(attempt, 10), 30_000) + Math.random() * 1_000
-      if (attempt > 0 && attempt % 5 === 0) {
-        process.stderr.write(`[pg-turbo] connection attempt ${attempt + 1} failed, retrying in ${(delay / 1000).toFixed(0)}s...\n`)
+      // Permanent errors: throw immediately (no point retrying auth failures)
+      if (!isTransientError(err)) throw err
+      if (attempt < CONNECT_MAX_ATTEMPTS - 1) {
+        const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** attempt, 10_000) + Math.random() * 1_000
+        await new Promise((r) => setTimeout(r, delay))
       }
-      await new Promise((r) => setTimeout(r, delay))
     }
   }
+  throw lastError
 }
 
 export async function createClient(connectionString: string): Promise<InstanceType<typeof Client>> {

@@ -284,92 +284,56 @@ describe('connectWithRetry (via createClient)', () => {
   })
 
   it('retries on failure and succeeds', async () => {
+    const networkErr = Object.assign(new Error('ECONNREFUSED'), { code: 'ECONNREFUSED' })
     mockConnect
-      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
-      .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+      .mockRejectedValueOnce(networkErr)
+      .mockRejectedValueOnce(networkErr)
       .mockResolvedValueOnce(undefined)
     mockEnd.mockResolvedValue(undefined)
     const promise = createClient('postgresql://u:p@h/db')
-    // Advance past the retry delays (2s base * 2^attempt + jitter)
     await vi.advanceTimersByTimeAsync(5_000)
     await vi.advanceTimersByTimeAsync(10_000)
     const client = await promise
     expect(client).toBeDefined()
-    // 2 failed + 1 success = 3 connect calls
+    // 2 failed + 1 success = 3 connect calls (within CONNECT_MAX_ATTEMPTS=3)
     expect(mockConnect).toHaveBeenCalledTimes(3)
   })
 
-  it('throws after exhausting all connect retries for non-network errors', async () => {
-    // Use real timers with zero delays by mocking setTimeout to fire immediately
+  it('throws after exhausting connect attempts for non-network errors', async () => {
     vi.useRealTimers()
-    // Mock Math.random to return 0 (no jitter) for deterministic behavior
     const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
-    // Mock setTimeout to fire callbacks immediately
     const origSetTimeout = globalThis.setTimeout
     const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn: any) => {
       return origSetTimeout(fn, 0)
     })
 
+    // Non-network error: throws immediately on first attempt (no retry)
     mockConnect.mockRejectedValue(new Error('authentication failed'))
     mockEnd.mockResolvedValue(undefined)
 
     await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('authentication failed')
-    // CONNECT_RETRIES=5, attempts 0..5 = 6 total connect calls
-    expect(mockConnect).toHaveBeenCalledTimes(6)
+    expect(mockConnect).toHaveBeenCalledTimes(1)
 
     setTimeoutSpy.mockRestore()
     randomSpy.mockRestore()
     vi.useFakeTimers()
   })
-})
 
-describe('connectWithRetry resilience', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
-  it('retries indefinitely on network errors until success', async () => {
+  it('throws after CONNECT_MAX_ATTEMPTS for network errors (queue handles outer retry)', async () => {
     vi.useFakeTimers()
-
-    // Simulate 10 network failures then success
     const networkErr = Object.assign(new Error('ECONNREFUSED'), { code: 'ECONNREFUSED' })
-    for (let i = 0; i < 10; i++) {
-      mockConnect.mockRejectedValueOnce(networkErr)
-    }
-    mockConnect.mockResolvedValueOnce(undefined)
+    mockConnect.mockRejectedValue(networkErr)
     mockEnd.mockResolvedValue(undefined)
 
     const promise = createClient('postgresql://u:p@h/db')
-
-    // Advance through all 10 retries
-    for (let i = 0; i < 10; i++) {
-      await vi.advanceTimersByTimeAsync(60_000)
+    // Advance through all 3 attempts (CONNECT_MAX_ATTEMPTS=3)
+    for (let i = 0; i < 5; i++) {
+      await vi.advanceTimersByTimeAsync(15_000)
     }
-
-    const client = await promise
-    expect(client).toBeDefined()
-    expect(mockConnect).toHaveBeenCalledTimes(11) // 10 failures + 1 success
+    await expect(promise).rejects.toThrow('ECONNREFUSED')
+    // Exactly 3 attempts
+    expect(mockConnect).toHaveBeenCalledTimes(3)
 
     vi.useRealTimers()
-  })
-
-  it('gives up on non-network errors after retry limit', async () => {
-    vi.useRealTimers()
-    const randomSpy = vi.spyOn(Math, 'random').mockReturnValue(0)
-    const origSetTimeout = globalThis.setTimeout
-    const setTimeoutSpy = vi.spyOn(globalThis, 'setTimeout').mockImplementation((fn: any) => {
-      return origSetTimeout(fn, 0)
-    })
-
-    mockConnect.mockRejectedValue(new Error('authentication failed'))
-    mockEnd.mockResolvedValue(undefined)
-
-    await expect(createClient('postgresql://u:p@h/db')).rejects.toThrow('authentication failed')
-    // CONNECT_RETRIES=5, attempts 0..5 = 6 total connect calls
-    expect(mockConnect).toHaveBeenCalledTimes(6)
-
-    setTimeoutSpy.mockRestore()
-    randomSpy.mockRestore()
-    vi.useFakeTimers()
   })
 })
