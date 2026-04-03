@@ -1,7 +1,9 @@
 # pg-turbo
 
 [![CI](https://github.com/rodrigogs/pg-turbo/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigogs/pg-turbo/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/rodrigogs/pg-turbo/branch/main/graph/badge.svg)](https://codecov.io/gh/rodrigogs/pg-turbo)
 [![npm version](https://img.shields.io/npm/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
+[![npm downloads](https://img.shields.io/npm/dm/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![Node.js](https://img.shields.io/node/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
@@ -22,19 +24,17 @@ Uses the PostgreSQL **COPY protocol directly** with chunked streaming, parallel 
 ## Quick Start
 
 ```bash
-# Install
-git clone https://github.com/rodrigogs/pg-turbo.git
-cd pg-turbo
-npm install
+# Install globally
+npm install -g pg-turbo
 
 # Dump a database
-npx tsx bin/pg-turbo.ts dump \
+pg-turbo dump \
     -d "postgresql://user:pass@host:5432/mydb" \
     --output ./mydb_dump \
     -j 4
 
 # Restore to another database
-npx tsx bin/pg-turbo.ts restore \
+pg-turbo restore \
     -d "postgresql://user:pass@host:5432/target_db" \
     --input ./mydb_dump \
     -j 4
