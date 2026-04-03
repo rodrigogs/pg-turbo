@@ -1,0 +1,33 @@
+# Tests
+tests/
+coverage/
+vitest.config.ts
+vitest.integration.config.ts
+
+# Benchmarks
+bench/
+
+# Dev config
+biome.json
+tsconfig.json
+CLAUDE.md
+.github/
+
+# Build artifacts
+*.tsbuildinfo
+dist/
+
+# Dump output
+*.dump
+*.done
+*.pgt
+.dumps/
+qat_dump*/
+*_dump/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+.playwright-mcp/
+.env

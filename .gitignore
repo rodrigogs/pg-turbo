@@ -9,11 +9,6 @@ dist/
 coverage/
 tests/integration/tmp/
 
-# Dump output
-*.dump
-*.done
-_dump.log
-
 # OS files
 .DS_Store
 Thumbs.db
@@ -28,9 +23,8 @@ Thumbs.db
 # Environment
 .env
 
-.dumps
-
 # Dump output directories
+.dumps/
 qat_dump*/
 *_dump/
 *.pgt
