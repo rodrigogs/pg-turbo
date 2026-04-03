@@ -12,6 +12,12 @@ import { quoteIdent } from './schema.js'
 const STREAM_HIGH_WATER_MARK = 256 * 1024
 const LZ4_BLOCK_MAX_SIZE = 4 * 1024 * 1024
 
+/** How long to wait without receiving any data before considering the connection dead.
+ *  This is an application-level idle timeout — necessary because node-postgres does NOT
+ *  use the libpq keepalive connection string params, and even with socket keepAlive enabled
+ *  macOS takes 10+ minutes to detect a dead connection (TCP_KEEPINTVL=75s × TCP_KEEPCNT=8). */
+const COPY_IDLE_TIMEOUT_MS = 30_000
+
 export function createCompressor(compression: Compression): Transform {
   if (compression === 'lz4') return lz4.createEncoderStream({ blockMaxSize: LZ4_BLOCK_MAX_SIZE })
   return new CompressStream()
@@ -20,6 +26,30 @@ export function createCompressor(compression: Compression): Transform {
 export function createDecompressor(compression: Compression): Transform {
   if (compression === 'lz4') return lz4.createDecoderStream()
   return new DecompressStream()
+}
+
+/** Passthrough transform that destroys the pipeline if no data passes through within
+ *  the timeout period. Resets on every chunk, so active streams are never interrupted. */
+export function createIdleMonitor(timeoutMs: number = COPY_IDLE_TIMEOUT_MS): Transform {
+  let timer: ReturnType<typeof setTimeout>
+  const monitor = new Transform({
+    transform(chunk: Buffer, _encoding: string, cb: TransformCallback) {
+      clearTimeout(timer)
+      timer = setTimeout(() => {
+        monitor.destroy(new Error(`Connection idle timeout — no data received for ${timeoutMs / 1000}s`))
+      }, timeoutMs)
+      cb(null, chunk)
+    },
+    flush(cb: TransformCallback) {
+      clearTimeout(timer)
+      cb()
+    },
+  })
+  // Start initial timer immediately
+  timer = setTimeout(() => {
+    monitor.destroy(new Error(`Connection idle timeout — no data received for ${timeoutMs / 1000}s`))
+  }, timeoutMs)
+  return monitor
 }
 
 /** Passthrough transform that reports cumulative bytes to a callback. */
@@ -70,13 +100,14 @@ export async function dumpChunk(
   onProgress?: (rowsProcessed: number) => void,
 ): Promise<DumpChunkResult> {
   const copyStream = client.query(copyTo(copyQuery, { highWaterMark: STREAM_HIGH_WATER_MARK }))
+  const idleMonitor = createIdleMonitor()
   const compressor = createCompressor(compression)
   const fileStream = createWriteStream(outputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
   if (onProgress) {
     const counter = createRowCounter(onProgress)
-    await pipeline(copyStream, counter, compressor, fileStream)
+    await pipeline(copyStream, idleMonitor, counter, compressor, fileStream)
   } else {
-    await pipeline(copyStream, compressor, fileStream)
+    await pipeline(copyStream, idleMonitor, compressor, fileStream)
   }
   const { size } = await stat(outputPath)
   await writeFile(chunkDoneMarker(outputPath), '', 'utf-8')
@@ -126,12 +157,13 @@ export async function restoreChunk(
   try {
     const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
     const decompressor = createDecompressor(compression)
+    const idleMonitor = createIdleMonitor()
     const fileStream = createReadStream(inputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
     if (onProgress) {
       const counter = createByteCounter(onProgress)
-      await pipeline(fileStream, counter, decompressor, copyStream)
+      await pipeline(fileStream, counter, idleMonitor, decompressor, copyStream)
     } else {
-      await pipeline(fileStream, decompressor, copyStream)
+      await pipeline(fileStream, idleMonitor, decompressor, copyStream)
     }
     // Atomic: data + completion marker in the same transaction.
     // Either both persist (COMMIT) or neither does (ROLLBACK / crash).

@@ -42,10 +42,17 @@ export function appendKeepaliveParams(cs: string): string {
   return `${cs}${sep}${newParams.join('&')}`
 }
 
-/** Create a Client with a no-op error handler so socket errors (ETIMEDOUT, ECONNRESET)
- *  don't crash the process. The error still surfaces on the next query() call. */
+/** Create a Client with TCP keepalive enabled and a no-op error handler so socket
+ *  errors (ETIMEDOUT, ECONNRESET) don't crash the process.
+ *  NOTE: The connection string keepalive params (keepalives=1, keepalives_idle, etc.)
+ *  are libpq parameters that node-postgres IGNORES. We must set keepAlive via the
+ *  Client constructor options for them to actually take effect on the TCP socket. */
 function newClient(connectionString: string): InstanceType<typeof Client> {
-  const client = new Client({ connectionString: appendKeepaliveParams(connectionString) })
+  const client = new Client({
+    connectionString: appendKeepaliveParams(connectionString),
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10_000, // Start probing after 10s idle
+  })
   client.on('error', () => {})
   return client
 }

@@ -17,6 +17,7 @@ import {
   createByteCounter,
   createCompressor,
   createDecompressor,
+  createIdleMonitor,
   createRowCounter,
   dropProgressTable,
   dumpChunk,
@@ -127,6 +128,47 @@ describe('createByteCounter', () => {
     await p
     expect(reports[reports.length - 1]).toBe(11)
   })
+})
+
+describe('createIdleMonitor', () => {
+  it('passes data through when stream is active', async () => {
+    const monitor = createIdleMonitor(500)
+    const input = new PassThrough()
+    const output = new PassThrough()
+    const chunks: Buffer[] = []
+    output.on('data', (c: Buffer) => chunks.push(c))
+    const p = pipeline(input, monitor, output)
+    input.write(Buffer.from('hello'))
+    input.end(Buffer.from(' world'))
+    await p
+    expect(Buffer.concat(chunks).toString()).toBe('hello world')
+  })
+
+  it('destroys stream after idle timeout', async () => {
+    const monitor = createIdleMonitor(100) // 100ms timeout
+    const stalled = new Readable({ read() {} }) // never pushes data
+    const output = new PassThrough()
+
+    await expect(pipeline(stalled, monitor, output)).rejects.toThrow('Connection idle timeout')
+  }, 5_000)
+
+  it('resets timer on each chunk', async () => {
+    const monitor = createIdleMonitor(200) // 200ms timeout
+    const input = new PassThrough()
+    const output = new PassThrough()
+    output.resume() // drain
+
+    const p = pipeline(input, monitor, output)
+
+    // Send data every 100ms — should NOT timeout (timer resets each time)
+    input.write(Buffer.from('a'))
+    await new Promise(r => setTimeout(r, 100))
+    input.write(Buffer.from('b'))
+    await new Promise(r => setTimeout(r, 100))
+    input.write(Buffer.from('c'))
+    input.end()
+    await p // should complete without timeout
+  }, 5_000)
 })
 
 describe('createRowCounter', () => {

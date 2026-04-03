@@ -17,6 +17,7 @@ const CONNECTION_TERMINATED_PATTERNS = [
   'Connection terminated',
   'connection lost',
   'server closed the connection unexpectedly',
+  'Connection idle timeout',
 ]
 
 function isNetworkErrorShallow(err: Error): boolean {

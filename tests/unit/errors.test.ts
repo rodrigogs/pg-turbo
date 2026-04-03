@@ -90,6 +90,11 @@ describe('isNetworkError', () => {
     expect(isNetworkError(err)).toBe(true)
   })
 
+  it('detects "Connection idle timeout"', () => {
+    const err = new Error('Connection idle timeout — no data received for 30s')
+    expect(isNetworkError(err)).toBe(true)
+  })
+
   it('does NOT flag constraint violations', () => {
     const err = new Error('unique constraint violation')
     ;(err as any).code = '23505'
