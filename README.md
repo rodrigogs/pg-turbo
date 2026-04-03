@@ -1,6 +1,8 @@
 # pg-turbo
 
-[![CI](https://github.com/rodrigo.gomes/pg_turbo/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigo.gomes/pg_turbo/actions/workflows/ci.yml)
+[![CI](https://github.com/rodrigogs/pg-turbo/actions/workflows/ci.yml/badge.svg)](https://github.com/rodrigogs/pg-turbo/actions/workflows/ci.yml)
+[![npm version](https://img.shields.io/npm/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
+[![Node.js](https://img.shields.io/node/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Resilient PostgreSQL dump & restore CLI for large databases over flaky connections.
@@ -21,8 +23,8 @@ Uses the PostgreSQL **COPY protocol directly** with chunked streaming, parallel 
 
 ```bash
 # Install
-git clone https://github.com/rodrigo.gomes/pg_turbo.git
-cd pg_turbo
+git clone https://github.com/rodrigogs/pg-turbo.git
+cd pg-turbo
 npm install
 
 # Dump a database
