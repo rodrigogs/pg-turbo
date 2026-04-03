@@ -81,7 +81,9 @@ async function main() {
         retries: 1,
         retryDelay: 1,
         noSnapshot: false,
+        noArchive: true,
         dryRun: false,
+        compression: 'zstd',
         pgDumpArgs: [],
       })
     })
@@ -103,7 +105,9 @@ async function main() {
         retries: 1,
         retryDelay: 1,
         noSnapshot: false,
+        noArchive: true,
         dryRun: false,
+        compression: 'zstd',
         pgDumpArgs: [],
       })
     })
