@@ -100,15 +100,35 @@ export async function dumpChunk(
   onProgress?: (rowsProcessed: number) => void,
 ): Promise<DumpChunkResult> {
   const copyStream = client.query(copyTo(copyQuery, { highWaterMark: STREAM_HIGH_WATER_MARK }))
-  const idleMonitor = createIdleMonitor()
   const compressor = createCompressor(compression)
   const fileStream = createWriteStream(outputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
-  if (onProgress) {
-    const counter = createRowCounter(onProgress)
-    await pipeline(copyStream, idleMonitor, counter, compressor, fileStream)
-  } else {
-    await pipeline(copyStream, idleMonitor, compressor, fileStream)
-  }
+
+  // Track last data activity to detect dead connections
+  let lastDataTime = Date.now()
+  const counter = createRowCounter((rows) => {
+    lastDataTime = Date.now()
+    onProgress?.(rows)
+  })
+
+  const pipelinePromise = pipeline(copyStream, counter, compressor, fileStream)
+
+  // External idle watchdog — kills the TCP socket if no data flows for COPY_IDLE_TIMEOUT_MS.
+  // This is more reliable than destroying a mid-pipeline Transform because it directly
+  // kills the underlying socket, forcing pg to surface the error to the pipeline.
+  const idlePromise = new Promise<never>((_, reject) => {
+    const check = setInterval(() => {
+      if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
+        clearInterval(check)
+        process.stderr.write(`[pg-turbo] idle timeout: no data for ${COPY_IDLE_TIMEOUT_MS / 1000}s, killing socket\n`)
+        try { (client as any).connection?.stream?.destroy() } catch {}
+        reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
+      }
+    }, 1_000)
+    pipelinePromise.then(() => clearInterval(check), () => clearInterval(check))
+  })
+
+  await Promise.race([pipelinePromise, idlePromise])
+
   const { size } = await stat(outputPath)
   await writeFile(chunkDoneMarker(outputPath), '', 'utf-8')
   return { rowCount: copyStream.rowCount, bytesWritten: size }
@@ -157,14 +177,28 @@ export async function restoreChunk(
   try {
     const copyStream = client.query(copyFrom(buildRestoreCopyQuery(schema, table, columns)))
     const decompressor = createDecompressor(compression)
-    const idleMonitor = createIdleMonitor()
     const fileStream = createReadStream(inputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
-    if (onProgress) {
-      const counter = createByteCounter(onProgress)
-      await pipeline(fileStream, counter, idleMonitor, decompressor, copyStream)
-    } else {
-      await pipeline(fileStream, idleMonitor, decompressor, copyStream)
-    }
+
+    let lastDataTime = Date.now()
+    const counter = createByteCounter((bytes) => {
+      lastDataTime = Date.now()
+      onProgress?.(bytes)
+    })
+
+    const pipelinePromise = pipeline(fileStream, counter, decompressor, copyStream)
+
+    const idlePromise = new Promise<never>((_, reject) => {
+      const check = setInterval(() => {
+        if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
+          clearInterval(check)
+          try { (client as any).connection?.stream?.destroy() } catch {}
+          reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
+        }
+      }, 1_000)
+      pipelinePromise.then(() => clearInterval(check), () => clearInterval(check))
+    })
+
+    await Promise.race([pipelinePromise, idlePromise])
     // Atomic: data + completion marker in the same transaction.
     // Either both persist (COMMIT) or neither does (ROLLBACK / crash).
     await client.query(`INSERT INTO ${PROGRESS_TABLE} (chunk_key) VALUES ($1) ON CONFLICT DO NOTHING`, [chunkKey])
