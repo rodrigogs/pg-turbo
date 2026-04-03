@@ -1,5 +1,5 @@
 import pg from 'pg'
-import { isNetworkError } from './errors.js'
+import { isTransientError } from './errors.js'
 
 const { Client } = pg
 
@@ -62,19 +62,26 @@ const CONNECT_RETRIES = 5
 const CONNECT_BASE_DELAY_MS = 2_000
 
 /** Connect with retries so transient network failures don't consume task retry budget.
- *  Network errors retry indefinitely; non-network errors give up after CONNECT_RETRIES. */
+ *  Transient errors retry indefinitely; permanent errors give up after CONNECT_RETRIES. */
 async function connectWithRetry(connectionString: string): Promise<InstanceType<typeof Client>> {
   for (let attempt = 0; ; attempt++) {
     const client = newClient(connectionString)
     try {
       await client.connect()
+      if (attempt > 0) {
+        process.stderr.write(`[pg-turbo] reconnected after ${attempt} attempt(s)\n`)
+      }
       return client
     } catch (err) {
-      await client.end().catch(() => {})
-      // Network errors: retry indefinitely
-      // Non-network errors: give up after CONNECT_RETRIES
-      if (!isNetworkError(err) && attempt >= CONNECT_RETRIES) throw err
+      // Forcibly destroy — do NOT await client.end() which can hang on dead sockets
+      destroyClient(client)
+      // Transient errors: retry indefinitely
+      // Permanent errors: give up after CONNECT_RETRIES
+      if (!isTransientError(err) && attempt >= CONNECT_RETRIES) throw err
       const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** Math.min(attempt, 10), 30_000) + Math.random() * 1_000
+      if (attempt > 0 && attempt % 5 === 0) {
+        process.stderr.write(`[pg-turbo] connection attempt ${attempt + 1} failed, retrying in ${(delay / 1000).toFixed(0)}s...\n`)
+      }
       await new Promise((r) => setTimeout(r, delay))
     }
   }

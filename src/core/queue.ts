@@ -1,6 +1,6 @@
 import type { ChunkJob, ChunkResult, ProgressEvent } from '../types/index.js'
 import { chunkEstimatedBytes } from './chunker.js'
-import { isNetworkError } from './errors.js'
+import { isTransientError } from './errors.js'
 import { calculateDelay } from './retry.js'
 
 export interface WorkerPoolOptions {
@@ -57,7 +57,7 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
 
-        if (isNetworkError(error)) {
+        if (isTransientError(error)) {
           // Network errors: don't count against retry limit, but track for backoff
           job.networkRetries = (job.networkRetries ?? 0) + 1
           opts.onProgress({ type: 'retrying', workerId, job, error })
