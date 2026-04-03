@@ -39,22 +39,27 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         job = nextWork()
         continue
       }
-      if (job.attempt > 0 && opts.retryDelayMs) {
+      // Apply backoff delay for both data retries and network retries
+      const retryCount = (job.networkRetries ?? 0) + job.attempt
+      if (retryCount > 0 && opts.retryDelayMs) {
         const baseDelaySec = opts.retryDelayMs / 1000
-        const delay = calculateDelay(job.attempt - 1, baseDelaySec, 60)
+        const delay = calculateDelay(Math.min(retryCount - 1, 5), baseDelaySec, 60)
         await new Promise((r) => setTimeout(r, delay))
       }
       const startTime = Date.now()
       try {
         opts.onProgress({ type: 'started', workerId, job })
         const { rowCount, bytesWritten } = await opts.task(job, workerId)
+        // Success — reset network retries
+        job.networkRetries = 0
         results.push({ job, status: 'ok', rowCount, bytesWritten, durationMs: Date.now() - startTime })
         opts.onProgress({ type: 'completed', workerId, job, bytesWritten })
       } catch (err) {
         const error = err instanceof Error ? err : new Error(String(err))
 
         if (isNetworkError(error)) {
-          // Network errors: don't count against retry limit, just re-queue
+          // Network errors: don't count against retry limit, but track for backoff
+          job.networkRetries = (job.networkRetries ?? 0) + 1
           opts.onProgress({ type: 'retrying', workerId, job, error })
           retryQueue.push(job)
         } else {

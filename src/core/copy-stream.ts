@@ -16,7 +16,7 @@ const LZ4_BLOCK_MAX_SIZE = 4 * 1024 * 1024
  *  This is an application-level idle timeout — necessary because node-postgres does NOT
  *  use the libpq keepalive connection string params, and even with socket keepAlive enabled
  *  macOS takes 10+ minutes to detect a dead connection (TCP_KEEPINTVL=75s × TCP_KEEPCNT=8). */
-const COPY_IDLE_TIMEOUT_MS = 30_000
+const COPY_IDLE_TIMEOUT_MS = 15_000
 
 export function createCompressor(compression: Compression): Transform {
   if (compression === 'lz4') return lz4.createEncoderStream({ blockMaxSize: LZ4_BLOCK_MAX_SIZE })

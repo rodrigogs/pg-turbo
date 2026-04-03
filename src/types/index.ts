@@ -73,6 +73,8 @@ export interface ChunkJob {
   copyQuery?: string
   outputPath: string
   attempt: number
+  /** Number of consecutive network errors (not counted against retry limit but used for backoff). */
+  networkRetries?: number
 }
 
 export interface ChunkResult {
