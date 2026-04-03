@@ -74,16 +74,19 @@ async function connectWithRetry(connectionString: string): Promise<InstanceType<
   let lastError: unknown
   for (let attempt = 0; attempt < CONNECT_MAX_ATTEMPTS; attempt++) {
     const client = newClient(connectionString)
+    let timer: ReturnType<typeof setTimeout> | undefined
     try {
       // Hard timeout we control — never trust pg's internal timeout alone
       await Promise.race([
         client.connect(),
-        new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('pg-turbo connect timeout')), CONNECT_TIMEOUT_MS),
-        ),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new Error('pg-turbo connect timeout')), CONNECT_TIMEOUT_MS)
+        }),
       ])
+      clearTimeout(timer)
       return client
     } catch (err) {
+      clearTimeout(timer)
       lastError = err
       destroyClient(client)
       if (!isTransientError(err)) throw err
