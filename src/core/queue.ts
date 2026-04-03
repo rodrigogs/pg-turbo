@@ -54,6 +54,7 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         }
         const { rowCount, bytesWritten } = await opts.task(job, workerId)
         job.networkRetries = 0
+        job.attempt = 0
         results.push({ job, status: 'ok', rowCount, bytesWritten, durationMs: Date.now() - startTime })
         opts.onProgress({ type: 'completed', workerId, job, bytesWritten })
       } catch (err) {
