@@ -47,18 +47,17 @@ jobs:
             echo "exists=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create GitHub Release (draft)
+      - name: Create GitHub Release
         if: steps.tag.outputs.exists == 'false'
         run: |
           gh release create "v${{ steps.pkg.outputs.version }}" \
             --title "v${{ steps.pkg.outputs.version }}" \
-            --generate-notes \
-            --draft
+            --generate-notes
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish to npm (dry-run for draft)
+      - name: Publish to npm
         if: steps.tag.outputs.exists == 'false'
-        run: npm publish --access public --dry-run
+        run: npm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
