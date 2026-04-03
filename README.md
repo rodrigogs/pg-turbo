@@ -4,7 +4,6 @@
 [![codecov](https://codecov.io/gh/rodrigogs/pg-turbo/branch/main/graph/badge.svg)](https://codecov.io/gh/rodrigogs/pg-turbo)
 [![npm version](https://img.shields.io/npm/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![npm downloads](https://img.shields.io/npm/dm/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
-[![Node.js](https://img.shields.io/node/v/pg-turbo.svg)](https://www.npmjs.com/package/pg-turbo)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-blue.svg)](LICENSE)
 
 Resilient PostgreSQL dump & restore CLI for large databases over flaky connections.
