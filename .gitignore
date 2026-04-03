@@ -31,3 +31,4 @@ qat_dump*/
 
 # Playwright MCP
 .playwright-mcp/
+logs.txt
