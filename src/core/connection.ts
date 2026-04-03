@@ -62,6 +62,10 @@ function newClient(connectionString: string): InstanceType<typeof Client> {
  *  (which tracks visible retry count in the dashboard) drives the outer retry. */
 const CONNECT_MAX_ATTEMPTS = 3
 const CONNECT_BASE_DELAY_MS = 2_000
+/** Hard timeout per connection attempt. We enforce this ourselves via Promise.race
+ *  because pg's connectionTimeoutMillis uses .unref() and can fail to fire during
+ *  DNS resolution or the Happy Eyeballs algorithm on dual-stack hosts. */
+const CONNECT_TIMEOUT_MS = 10_000
 
 /** Try to connect with a few fast retries. Throws on failure so the caller
  *  (queue worker) can re-queue and show retry progress in the dashboard.
@@ -71,12 +75,17 @@ async function connectWithRetry(connectionString: string): Promise<InstanceType<
   for (let attempt = 0; attempt < CONNECT_MAX_ATTEMPTS; attempt++) {
     const client = newClient(connectionString)
     try {
-      await client.connect()
+      // Hard timeout we control — never trust pg's internal timeout alone
+      await Promise.race([
+        client.connect(),
+        new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('pg-turbo connect timeout')), CONNECT_TIMEOUT_MS),
+        ),
+      ])
       return client
     } catch (err) {
       lastError = err
       destroyClient(client)
-      // Permanent errors: throw immediately (no point retrying auth failures)
       if (!isTransientError(err)) throw err
       if (attempt < CONNECT_MAX_ATTEMPTS - 1) {
         const delay = Math.min(CONNECT_BASE_DELAY_MS * 2 ** attempt, 10_000) + Math.random() * 1_000

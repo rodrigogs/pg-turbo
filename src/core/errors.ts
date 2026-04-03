@@ -69,6 +69,7 @@ enum PgInternalMessage {
 /** pg-turbo internal error messages. */
 enum InternalMessage {
   IDLE_TIMEOUT = 'Connection idle timeout',
+  CONNECT_TIMEOUT = 'pg-turbo connect timeout',
 }
 
 // ── Lookup Sets (built from enums for O(1) matching) ────────────────────────
