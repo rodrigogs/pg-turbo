@@ -355,15 +355,10 @@ export async function runDump(opts: DumpOptions): Promise<void> {
         task: async (job, workerId) => {
           let client = workerClients.get(workerId)
           if (!client) {
-            process.stderr.write(`[W${workerId}] creating new connection (snapshot=${!!activeSnapshotId})\n`)
             try {
               client = await createWorkerClient(cs, activeSnapshotId)
-              process.stderr.write(`[W${workerId}] connected\n`)
             } catch (connectErr) {
-              const transient = isTransientError(connectErr)
-              const msg = connectErr instanceof Error ? connectErr.message.slice(0, 80) : String(connectErr)
-              process.stderr.write(`[W${workerId}] connect failed: ${msg} [transient=${transient}]\n`)
-              if (!transient && activeSnapshotId) {
+              if (!isTransientError(connectErr) && activeSnapshotId) {
                 activeSnapshotId = null
                 snapshotLost = true
                 client = await createWorkerClient(cs, null)
@@ -381,14 +376,10 @@ export async function runDump(opts: DumpOptions): Promise<void> {
             w.progressCurrent = 0
           }
           try {
-            process.stderr.write(`[W${workerId}] starting COPY: ${job.table.schema}.${job.table.name} chunk ${job.chunk.index}\n`)
             return await dumpChunk(client, job.copyQuery ?? '', job.outputPath, opts.compression, (rows) => {
               if (w) w.progressCurrent = rows
             })
           } catch (err) {
-            const msg = err instanceof Error ? err.message.slice(0, 80) : String(err)
-            const transient = isTransientError(err)
-            process.stderr.write(`[W${workerId}] COPY failed: ${msg} [transient=${transient}]\n`)
             destroyClient(client)
             workerClients.delete(workerId)
             await removePartialChunk(job.outputPath)

@@ -119,7 +119,6 @@ export async function dumpChunk(
     const check = setInterval(() => {
       if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
         clearInterval(check)
-        process.stderr.write(`[pg-turbo] idle timeout: no data for ${COPY_IDLE_TIMEOUT_MS / 1000}s, killing socket\n`)
         try { (client as any).connection?.stream?.destroy() } catch {}
         reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
       }
