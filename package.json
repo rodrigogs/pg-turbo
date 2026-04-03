@@ -2,15 +2,17 @@
   "name": "pg-turbo",
   "version": "0.1.0",
   "description": "Resilient PostgreSQL dump & restore with direct COPY protocol",
-  "license": "AGPL-3.0",
+  "license": "AGPL-3.0-only",
   "type": "module",
   "bin": {
-    "pg-turbo": "./bin/pg-turbo.ts"
+    "pg-turbo": "./dist/bin/pg-turbo.js"
   },
   "engines": {
     "node": ">=20"
   },
   "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "prepublishOnly": "npm run build",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -21,6 +23,11 @@
     "lint:fix": "biome check --fix .",
     "format": "biome format --write ."
   },
+  "files": [
+    "dist/",
+    "README.md",
+    "LICENSE"
+  ],
   "dependencies": {
     "commander": "^14.0.3",
     "log-update": "^7.2.0",
