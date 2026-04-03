@@ -373,9 +373,15 @@ export async function runDump(opts: DumpOptions): Promise<void> {
             }
             workerClients.set(workerId, client)
           }
+          // Connection succeeded — tell the dashboard we're working again
+          const w = workers[workerId]
+          if (w) {
+            w.status = 'working'
+            w.currentJob = job
+            w.progressCurrent = 0
+          }
           try {
             process.stderr.write(`[W${workerId}] starting COPY: ${job.table.schema}.${job.table.name} chunk ${job.chunk.index}\n`)
-            const w = workers[workerId]
             return await dumpChunk(client, job.copyQuery ?? '', job.outputPath, opts.compression, (rows) => {
               if (w) w.progressCurrent = rows
             })
@@ -390,12 +396,7 @@ export async function runDump(opts: DumpOptions): Promise<void> {
           }
         },
         onWorkerError: (workerId) => {
-          // Client already destroyed in task error handler
           workerClients.delete(workerId)
-        },
-        onRetryWait: (workerId, retryAt) => {
-          const w = workers[workerId]
-          if (w) w.retryAt = retryAt
         },
       })
 

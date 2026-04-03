@@ -12,16 +12,12 @@ export interface WorkerPoolOptions {
   retryDelayMs?: number
   isResumable: (job: ChunkJob) => boolean
   onWorkerError?: (workerId: number, error: Error) => void
-  /** Called when a worker starts waiting for a retry backoff delay.
-   *  The dashboard uses retryAt to show a countdown. */
-  onRetryWait?: (workerId: number, retryAt: number) => void
 }
 
 export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResult[]> {
   if (opts.workerCount <= 0) {
     throw new Error('workerCount must be at least 1')
   }
-  // Sort largest chunks first (not just by table) so big work items start early and don't become stragglers
   const queue = [...opts.jobs].sort((a, b) => chunkEstimatedBytes(b) - chunkEstimatedBytes(a))
   const results: ChunkResult[] = []
   let queueIndex = 0
@@ -42,20 +38,21 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         job = nextWork()
         continue
       }
-      // Apply backoff delay for both data retries and network retries
+      // Backoff delay for retries
       const retryCount = (job.networkRetries ?? 0) + job.attempt
       if (retryCount > 0 && opts.retryDelayMs) {
         const baseDelaySec = opts.retryDelayMs / 1000
         const delay = calculateDelay(Math.min(retryCount - 1, 5), baseDelaySec, 60)
-        opts.onRetryWait?.(workerId, Date.now() + delay)
         await new Promise((r) => setTimeout(r, delay))
-        opts.onRetryWait?.(workerId, 0) // clear countdown
       }
       const startTime = Date.now()
       try {
-        opts.onProgress({ type: 'started', workerId, job })
+        // Only emit 'started' for fresh jobs — retries stay in 'retrying' state
+        // until the task itself signals recovery (by updating worker state directly)
+        if (!job.networkRetries && !job.attempt) {
+          opts.onProgress({ type: 'started', workerId, job })
+        }
         const { rowCount, bytesWritten } = await opts.task(job, workerId)
-        // Success — reset network retries
         job.networkRetries = 0
         results.push({ job, status: 'ok', rowCount, bytesWritten, durationMs: Date.now() - startTime })
         opts.onProgress({ type: 'completed', workerId, job, bytesWritten })
@@ -68,7 +65,6 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
           opts.onProgress({ type: 'retrying', workerId, job, error })
           retryQueue.push(job)
         } else {
-          // Data errors: count against retry limit
           job.attempt++
           if (job.attempt < opts.maxRetries) {
             opts.onProgress({ type: 'retrying', workerId, job, error })

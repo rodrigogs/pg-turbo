@@ -303,9 +303,15 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
             client = await createClient(cs)
             workerClients.set(workerId, client)
           }
+          // Connection succeeded — tell dashboard we're working
+          const w = workers[workerId]
+          if (w) {
+            w.status = 'working'
+            w.currentJob = job
+            w.progressCurrent = 0
+          }
           try {
             const columns = job.table.columns.filter((c) => !job.table.generatedColumns.includes(c))
-            const w = workers[workerId]
             await restoreChunk(
               client,
               job.table.schema,
@@ -327,10 +333,6 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
         },
         onWorkerError: (workerId) => {
           workerClients.delete(workerId)
-        },
-        onRetryWait: (workerId, retryAt) => {
-          const w = workers[workerId]
-          if (w) w.retryAt = retryAt
         },
       })
 

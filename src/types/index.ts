@@ -105,8 +105,6 @@ export interface WorkerState {
   speedSnapshot?: { time: number; current: number }
   /** Last computed speed (shown while waiting for next meaningful delta) */
   lastSpeed?: number
-  /** Timestamp when the next retry attempt will start (for countdown display) */
-  retryAt?: number
 }
 
 export type Compression = 'zstd' | 'lz4'

@@ -114,14 +114,7 @@ export function renderDashboard(state: DashboardState): string {
     const paddedLabel = `${label}${chunkSuffix}`.padEnd(maxLabelWidth)
     if (w.status === 'retrying') {
       const retries = (w.currentJob.networkRetries ?? 0) + w.currentJob.attempt
-      let retryLabel = `retry ${retries}`
-      if (w.retryAt && w.retryAt > now) {
-        const secsLeft = Math.ceil((w.retryAt - now) / 1000)
-        retryLabel += ` (${secsLeft}s)`
-      } else if (w.retryAt === 0 || !w.retryAt) {
-        retryLabel += ' (connecting...)'
-      }
-      return `${prefix} ${pc.yellow('\u21BB')} ${paddedLabel} ${pc.yellow(retryLabel)}`
+      return `${prefix} ${pc.yellow('\u21BB')} ${paddedLabel} ${pc.yellow(`retry ${retries}`)}`
     }
     const miniBar = miniProgressBar(w.progressCurrent, w.progressTotal, 12, state.progressUnit)
     // Rolling speed: compute from a ~5s sliding anchor instead of lifetime average
