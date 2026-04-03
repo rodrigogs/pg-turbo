@@ -52,6 +52,7 @@ function newClient(connectionString: string): InstanceType<typeof Client> {
     connectionString: appendKeepaliveParams(connectionString),
     keepAlive: true,
     keepAliveInitialDelayMillis: 10_000, // Start probing after 10s idle
+    connectionTimeoutMillis: 10_000, // Fail connect() after 10s (connect_timeout in CS is ignored by pg)
   })
   client.on('error', () => {})
   return client
