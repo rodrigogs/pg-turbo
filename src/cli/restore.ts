@@ -176,22 +176,38 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       if (opts.dryRun) {
         log.warn('Skipped (dry run)')
       } else if (existsSync(preDataMarker)) {
-        log.info('Already restored (resuming)')
-      } else if (existsSync(ddlPath)) {
+        // Verify tables actually exist — marker may be stale from a failed run
+        const verifyClient = await createClient(cs)
         try {
-          const args = ['--section=pre-data', '--no-owner', '--no-privileges', '-d', cs, ...opts.pgRestoreArgs, ddlPath]
-          execFileSync('pg_restore', args, { stdio: 'pipe' })
-        } catch (err: unknown) {
-          // pg_restore returns non-zero for warnings (e.g., "relation already exists")
-          // This is expected behavior when resuming or restoring to non-empty DB
-          const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
-          if (stderr) log.warn(`pg_restore warnings: ${stderr.slice(0, 500)}`)
-          else log.warn('pg_restore exited with warnings (this is often normal)')
+          const { rows } = await verifyClient.query(
+            `SELECT count(*)::int AS c FROM information_schema.tables WHERE table_schema NOT IN ('pg_catalog','information_schema','pg_toast','_pg_turbo') AND table_type = 'BASE TABLE'`,
+          )
+          if (rows[0].c > 0) {
+            log.info('Already restored (resuming)')
+          } else {
+            log.warn('Pre-data marker exists but no tables found — re-running DDL')
+            await unlink(preDataMarker).catch(() => {})
+          }
+        } finally {
+          await verifyClient.end()
         }
-        await writeFile(preDataMarker, '', 'utf-8')
-        log.success('Pre-data DDL restored')
-      } else {
-        log.warn('No DDL file found — skipping pre-data')
+      }
+      // Run DDL if marker was cleared or never existed
+      if (!existsSync(preDataMarker) && !opts.dryRun) {
+        if (existsSync(ddlPath)) {
+          try {
+            const args = ['--section=pre-data', '--no-owner', '--no-privileges', '-d', cs, ...opts.pgRestoreArgs, ddlPath]
+            execFileSync('pg_restore', args, { stdio: 'pipe' })
+          } catch (err: unknown) {
+            const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
+            if (stderr) log.warn(`pg_restore warnings: ${stderr.slice(0, 500)}`)
+            else log.warn('pg_restore exited with warnings (this is often normal)')
+          }
+          await writeFile(preDataMarker, '', 'utf-8')
+          log.success('Pre-data DDL restored')
+        } else {
+          log.warn('No DDL file found — skipping pre-data')
+        }
       }
       console.log('')
     }
