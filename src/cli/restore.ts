@@ -220,6 +220,11 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       console.log('')
     }
 
+    // ── Disable triggers/FKs during bulk load ────────────────────────────────
+    // FK constraints cause failures when tables load in parallel (child before parent).
+    // session_replication_role = 'replica' disables triggers+FKs for the session.
+    // Each worker sets this on its own connection.
+
     // ── Step 5: Restore table data via COPY ─────────────────────────────────
     let hadDataFailures = false
     let succeededCount = 0
@@ -325,6 +330,8 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
           let client = workerClients.get(workerId)
           if (!client) {
             client = await createClient(cs)
+            // Disable FK checks so tables can load in any order
+            await client.query("SET session_replication_role = 'replica'")
             workerClients.set(workerId, client)
           }
           // Connection succeeded — tell dashboard we're working
