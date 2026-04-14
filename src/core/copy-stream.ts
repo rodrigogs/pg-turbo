@@ -183,31 +183,20 @@ export async function restoreChunk(
     const decompressor = createDecompressor(compression)
     const fileStream = createReadStream(inputPath, { highWaterMark: STREAM_HIGH_WATER_MARK })
 
-    let lastDataTime = Date.now()
-    const counter = createByteCounter((bytes) => {
-      lastDataTime = Date.now()
-      onProgress?.(bytes)
-    })
+    const counter = onProgress ? createByteCounter(onProgress) : undefined
 
-    const pipelinePromise = pipeline(fileStream, counter, decompressor, copyStream)
+    // No idle monitor for restore — data source is local disk (always fast).
+    // Idle monitor was designed for dump (COPY TO, data from network).
+    // During restore, PG can pause accepting data (index maintenance, WAL pressure)
+    // which is normal, not a dead connection.
+    const pipelineStreams = counter
+      ? [fileStream, counter, decompressor, copyStream]
+      : [fileStream, decompressor, copyStream]
 
-    const idlePromise = new Promise<never>((_, reject) => {
-      const check = setInterval(() => {
-        if (Date.now() - lastDataTime > COPY_IDLE_TIMEOUT_MS) {
-          clearInterval(check)
-          try {
-            ;(client as any).connection?.stream?.destroy()
-          } catch {}
-          reject(new Error(`Connection idle timeout — no data received for ${COPY_IDLE_TIMEOUT_MS / 1000}s`))
-        }
-      }, 1_000)
-      pipelinePromise.then(
-        () => clearInterval(check),
-        () => clearInterval(check),
-      )
-    })
+    // @ts-expect-error -- pipeline accepts spread of streams
+    const pipelinePromise = pipeline(...pipelineStreams) as Promise<void>
 
-    await Promise.race([pipelinePromise, idlePromise])
+    await pipelinePromise
     // Atomic: data + completion marker in the same transaction.
     // Either both persist (COMMIT) or neither does (ROLLBACK / crash).
     await client.query(`INSERT INTO ${PROGRESS_TABLE} (chunk_key) VALUES ($1) ON CONFLICT DO NOTHING`, [chunkKey])
