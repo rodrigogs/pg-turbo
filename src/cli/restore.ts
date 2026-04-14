@@ -196,7 +196,15 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
       if (!existsSync(preDataMarker) && !opts.dryRun) {
         if (existsSync(ddlPath)) {
           try {
-            const args = ['--section=pre-data', '--no-owner', '--no-privileges', '-d', cs, ...opts.pgRestoreArgs, ddlPath]
+            const args = [
+              '--section=pre-data',
+              '--no-owner',
+              '--no-privileges',
+              '-d',
+              cs,
+              ...opts.pgRestoreArgs,
+              ddlPath,
+            ]
             execFileSync('pg_restore', args, { stdio: 'pipe' })
           } catch (err: unknown) {
             const stderr = (err as { stderr?: Buffer })?.stderr?.toString() ?? ''
