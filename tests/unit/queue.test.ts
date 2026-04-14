@@ -64,36 +64,20 @@ describe('runWorkerPool', () => {
     expect(maxConcurrent).toBe(2)
   })
 
-  it('retries failed jobs', async () => {
+  it('fails immediately on non-transient errors (no retry)', async () => {
     const jobs = [makeJob(1)]
-    const task = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue({ rowCount: 1, bytesWritten: 1 })
+    const task = vi.fn().mockRejectedValue(new Error('FK violation'))
     const results = await runWorkerPool({
       jobs,
       workerCount: 1,
       task,
       onProgress: vi.fn(),
-      maxRetries: 3,
-      isResumable: () => false,
-    })
-    expect(results).toHaveLength(1)
-    expect(results[0].status).toBe('ok')
-    expect(task).toHaveBeenCalledTimes(2)
-  })
-
-  it('marks job failed after exhausting retries', async () => {
-    const jobs = [makeJob(1)]
-    const task = vi.fn().mockRejectedValue(new Error('always fails'))
-    const results = await runWorkerPool({
-      jobs,
-      workerCount: 1,
-      task,
-      onProgress: vi.fn(),
-      maxRetries: 2,
+      maxRetries: 5,
       isResumable: () => false,
     })
     expect(results).toHaveLength(1)
     expect(results[0].status).toBe('failed')
-    expect(task).toHaveBeenCalledTimes(2)
+    expect(task).toHaveBeenCalledTimes(1) // no retry
   })
 
   it('throws when workerCount is 0', async () => {
@@ -124,9 +108,10 @@ describe('runWorkerPool', () => {
     expect(task).toHaveBeenCalledTimes(1)
   })
 
-  it('applies retry delay via calculateDelay on failed jobs', async () => {
+  it('applies retry delay on transient errors', async () => {
     const start = Date.now()
-    const task = vi.fn().mockRejectedValueOnce(new Error('fail')).mockResolvedValue({ rowCount: 1, bytesWritten: 1 })
+    const networkErr = Object.assign(new Error('ECONNRESET'), { code: 'ECONNRESET' })
+    const task = vi.fn().mockRejectedValueOnce(networkErr).mockResolvedValue({ rowCount: 1, bytesWritten: 1 })
     const results = await runWorkerPool({
       jobs: [makeJob(1)],
       workerCount: 1,
@@ -202,7 +187,7 @@ describe('runWorkerPool', () => {
     expect(callCount).toBe(6)
   })
 
-  it('still fails on data errors after retry limit', async () => {
+  it('fails immediately on data errors (no retry)', async () => {
     const jobs = [makeJob(1)]
     const task = vi.fn().mockRejectedValue(new Error('unique constraint violation'))
 
@@ -211,12 +196,12 @@ describe('runWorkerPool', () => {
       workerCount: 1,
       task,
       onProgress: vi.fn(),
-      maxRetries: 2,
+      maxRetries: 10,
       isResumable: () => false,
       retryDelayMs: 0,
     })
 
     expect(results[0]?.status).toBe('failed')
-    expect(task).toHaveBeenCalledTimes(2) // Exactly maxRetries
+    expect(task).toHaveBeenCalledTimes(1) // no retry for data errors
   })
 })

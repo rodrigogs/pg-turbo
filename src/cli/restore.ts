@@ -357,9 +357,6 @@ export async function runRestore(opts: RestoreOptions): Promise<void> {
             )
             return { rowCount: 0, bytesWritten: chunkEstimatedBytes(job) }
           } catch (err) {
-            const msg = err instanceof Error ? err.message.slice(0, 120) : String(err)
-            const code = (err as any)?.code ?? ''
-            process.stderr.write(`[W${workerId}] restore chunk failed: [${code}] ${msg}\n`)
             destroyClient(client)
             workerClients.delete(workerId)
             throw err

@@ -61,18 +61,14 @@ export async function runWorkerPool(opts: WorkerPoolOptions): Promise<ChunkResul
         const error = err instanceof Error ? err : new Error(String(err))
 
         if (isTransientError(error)) {
+          // Connection/network errors: retry indefinitely
           job.networkRetries = (job.networkRetries ?? 0) + 1
           opts.onProgress({ type: 'retrying', workerId, job, error })
           retryQueue.push(job)
         } else {
-          job.attempt++
-          if (job.attempt < opts.maxRetries) {
-            opts.onProgress({ type: 'retrying', workerId, job, error })
-            retryQueue.push(job)
-          } else {
-            results.push({ job, status: 'failed', error, durationMs: Date.now() - startTime })
-            opts.onProgress({ type: 'failed', workerId, job, error })
-          }
+          // Data/logic errors: fail immediately (retrying won't help)
+          results.push({ job, status: 'failed', error, durationMs: Date.now() - startTime })
+          opts.onProgress({ type: 'failed', workerId, job, error })
         }
         opts.onWorkerError?.(workerId, error)
       }
